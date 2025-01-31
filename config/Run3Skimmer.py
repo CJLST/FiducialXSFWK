@@ -232,7 +232,7 @@ vars = {'RunNumber',
         'LumiNumber',
         'ZZMass',
         'ZZPt',
-        'ZZy',
+        'ZZyAbs',
         # 'CRflag',
         'Z1Flav',
         'Z2Flav',
@@ -292,7 +292,7 @@ if MC:
 ## SR
 df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]") ## Dummy
                                      .Define("ZZPt", "ZZCand_pt[bestCandIdx]")
-                                     .Define("ZZy", "abs(ZZCand_rapidity[bestCandIdx])")
+                                     .Define("ZZyAbs", "abs(ZZCand_rapidity[bestCandIdx])")
                                      # .Define("CRflag", "0") ## Dummy
                                      .Define("Z1Flav", "ZZCand_Z1flav[bestCandIdx]")
                                      .Define("Z2Flav", "ZZCand_Z2flav[bestCandIdx]") ## Dummy
