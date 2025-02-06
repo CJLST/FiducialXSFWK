@@ -372,6 +372,7 @@ def doTemplates(df_irr, df_red, binning, var, var_string, var_2nd='None'):
             for f in ['2e2mu', '4e', '4mu']:
                 df = df_irr[year][bkg][(df_irr[year][bkg].FinState == f) & (df_irr[year][bkg].ZZMass >= opt.LOWER_BOUND) & (df_irr[year][bkg].ZZMass <= opt.UPPER_BOUND)].copy()
                 len_tot = df['weight'].sum()
+                len_tot = len_tot[0] # spencer
                 yield_bkg[year,bkg,f] = len_tot
                 print(year, bkg, f, len_tot)
                 for i in range(nBins):
@@ -623,5 +624,6 @@ else: doTemplates(d_bkg, dfZX, obs_bins, obs_reco, obs_name, obs_reco_2nd)
 
 #Write file with expected background yields
 with open('../inputs/inputs_bkgTemplate_'+obs_name+'.py', 'w') as f:
+    f.write('from numpy import array, float32 \n')
     f.write('observableBins = '+str(obs_bins)+';\n')
     f.write('expected_yield = '+str(yield_bkg))

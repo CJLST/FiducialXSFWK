@@ -1,11 +1,42 @@
-## python3 Run3Skimmer.py --input ZZ4lAnalysis.root --output SKIMMED.root --mc
+## python2 Run3Skimmer.py --input ZZ4lAnalysis.root --output SKIMMED.root --mc
 ## Drop `--mc` option when running on Data
 ## Latest files: /eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/
 
 import ROOT
 import os,sys
 import optparse
-from ZZAnalysis.NanoAnalysis.tools import get_genEventSumw
+
+#from ZZAnalysis.NanoAnalysis.tools import get_genEventSumw
+
+## spencer                                                                                                                                                                                           
+def get_genEventSumw(input_file, maxEntriesPerSample=None):
+
+    f = input_file
+
+    runs  = f.Runs
+    event = f.Events
+    nRuns = runs.GetEntries()
+    nEntries = event.GetEntries()
+
+    iRun = 0
+    genEventCount = 0
+    genEventSumw = 0.
+
+    while iRun < nRuns and runs.GetEntry(iRun) :
+        genEventCount += runs.genEventCount
+        genEventSumw += runs.genEventSumw
+        iRun +=1
+    print ("gen=", genEventCount, "sumw=", genEventSumw)
+
+    if maxEntriesPerSample is not None:
+        print(f"Scaling to {maxEntriesPerSample} entries")
+        if nEntries>maxEntriesPerSample :
+            genEventSumw = genEventSumw*maxEntriesPerSample/nEntries
+            nEntries=maxEntriesPerSample
+        print("    scaled to:", nEntries, "sumw=", genEventSumw)
+
+    return genEventSumw
+## spencer                
 
 usage = ('usage: %prog [options]\n'
              + '%prog -h for help')
@@ -232,7 +263,7 @@ vars = {'RunNumber',
         'LumiNumber',
         'ZZMass',
         'ZZPt',
-        'ZZyAbs',
+        'ZZy',
         # 'CRflag',
         'Z1Flav',
         'Z2Flav',
@@ -249,7 +280,12 @@ vars = {'RunNumber',
         'LepSIP',
         'LepCombRelIsoPF',
         # 'LepMissingHit',
-        }
+        'pTj1', # spencer
+        'pTj2', # spencer
+        'mjj', #spencer
+	'absdetajj', # spencer
+	'absdphijj', # spencer
+	}
 if MC:
     vars.add('overallEventWeight')
     # vars.add('xsec')
@@ -292,7 +328,7 @@ if MC:
 ## SR
 df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]") ## Dummy
                                      .Define("ZZPt", "ZZCand_pt[bestCandIdx]")
-                                     .Define("ZZyAbs", "abs(ZZCand_rapidity[bestCandIdx])")
+                                     .Define("ZZy", "abs(ZZCand_rapidity[bestCandIdx])")
                                      # .Define("CRflag", "0") ## Dummy
                                      .Define("Z1Flav", "ZZCand_Z1flav[bestCandIdx]")
                                      .Define("Z2Flav", "ZZCand_Z2flav[bestCandIdx]") ## Dummy
@@ -329,7 +365,12 @@ df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]
                                      .Define('passedFullSelection', "1")
                                      .Define('genHEPMCweight', "Generator_weight")
                                      .Define('PUWeight', "puWeight")
-                                     )
+				    	.Define('pTj1', "Jet_pt.size() > 0 ? Jet_pt[0] : -1") #spencer
+				     	.Define('pTj2', "Jet_pt.size() > 1 ? Jet_pt[1] : -1") #spencer                                     
+					.Define('mjj', "Jet_pt.size() > 1 ? Jet_mass[0]+Jet_mass[1] : -1") #spencer
+					.Define('absdetajj', "Jet_pt.size() > 1 ? TMath::Abs(Jet_eta[0] - Jet_eta[1]) : -1") #spencer
+					.Define('absdphijj', "Jet_pt.size() > 1 ? TMath::Abs(Jet_phi[0] - Jet_phi[1]) : -1") #spencer
+				    )
 
 if 'ggH' in inFileName:
     df_SR = df_SR.Define('ggH_NNLOPS_weight', "ggH_NNLOPS_Weight")
