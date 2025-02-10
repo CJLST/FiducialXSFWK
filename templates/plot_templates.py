@@ -2,11 +2,12 @@ import os, sys
 import optparse
 import ROOT
 from tdrStyle import *
+sys.path.append('../helperstuff/')
 from binning import binning
 
 sPlotsStore = 'plots'
 
-print 'Welcome in plot_templates!'
+print('Welcome in plot_templates!')
 
 # Considering or not decimals in bin boundaries
 decimal = {
@@ -50,7 +51,7 @@ decimal = {
 def checkDir(folder_path):
     isdir = os.path.isdir(folder_path)
     if not isdir:
-        print('Directory {} does not exist. Creating it.' .format(folder_path))
+        print(('Directory {} does not exist. Creating it.' .format(folder_path)))
         os.mkdir(folder_path)
 
 def parseOptions():
@@ -176,7 +177,7 @@ for iYear in range(len(year)):
             h1D_2e2mu[iBkg,iBin] = ROOT.TH1D()
             h1D_2e2mu[iBkg,iBin] = fTemplateFile_2e2mu[iBkg,iBin].Get("m4l_"+obsTag+"_"+binRange[iBin])
             print(sTemplateFileName)
-            print("m4l_"+obsTag+"_"+binRange[iBin])
+            print(("m4l_"+obsTag+"_"+binRange[iBin]))
 
             sTemplateFileName = "XSBackground_"+bkgName[iBkg]+"_4mu_"+obsTag+"_"+binRange[iBin]+".root"
             fTemplateFile_4mu[iBkg,iBin] = ROOT.TFile(sTemplateDirName+"/"+sTemplateFileName, "READ")

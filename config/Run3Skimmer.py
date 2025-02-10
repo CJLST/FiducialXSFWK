@@ -233,6 +233,7 @@ vars = {'RunNumber',
         'ZZMass',
         'ZZPt',
         'ZZyAbs',
+        'njets_pt30_eta4p7',
         # 'CRflag',
         'Z1Flav',
         'Z2Flav',
@@ -272,7 +273,7 @@ if MC:
         vars.add('GENpT4l')
         vars.add('GENeta4l')
         vars.add('GENphi4l')
-        vars.add('GENrapidity4l')
+        vars.add('GENrapidity4lAbs')
         vars.add('GENZ_DaughtersId')
         vars.add('GENZ_MomId')
         vars.add('GENlep_Hindex')
@@ -293,6 +294,7 @@ if MC:
 df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]") ## Dummy
                                      .Define("ZZPt", "ZZCand_pt[bestCandIdx]")
                                      .Define("ZZyAbs", "abs(ZZCand_rapidity[bestCandIdx])")
+                                     .Define("njets_pt30_eta4p7", "HTXS_njets30[bestCandIdx]")
                                      # .Define("CRflag", "0") ## Dummy
                                      .Define("Z1Flav", "ZZCand_Z1flav[bestCandIdx]")
                                      .Define("Z2Flav", "ZZCand_Z2flav[bestCandIdx]") ## Dummy
@@ -347,7 +349,8 @@ if "H12" in inFileName:
                   .Define('GENpT4l', "FidZZ_pt")
                   .Define('GENeta4l', "FidZZ_eta")
                   .Define('GENphi4l', "FidZZ_phi")
-                  .Define('GENrapidity4l', "FidZZ_rapidity")
+                  .Define('GENrapidity4lAbs', "FidZZ_rapidity")
+                  .Define('GENnjets_pt30_eta4p7', )
                   .Define('GENZ_DaughtersId', "getGENlep_int(FidZ_DauPdgId)")
                   .Define('GENZ_MomId', "getGENlep_int(FidZ_MomPdgId)")
                   .Define('GENlep_Hindex', "getGENHindex(FidZZ_Z1l1Idx, FidZZ_Z1l2Idx, FidZZ_Z2l1Idx, FidZZ_Z2l2Idx)")
@@ -368,7 +371,8 @@ if "H12" in inFileName:
     'GENpT4l',
     'GENeta4l',
     'GENphi4l',
-    'GENrapidity4l',
+    'GENrapidity4lAbs',
+    'GENnjets_pt30_eta4p7',
     'GENZ_DaughtersId',
     'GENZ_MomId',
     'GENlep_Hindex',
@@ -394,7 +398,7 @@ if "H12" in inFileName:
                         .Define('GENpT4l', "FidZZ_pt")
                         .Define('GENeta4l', "FidZZ_eta")
                         .Define('GENphi4l', "FidZZ_phi")
-                        .Define('GENrapidity4l', "FidZZ_rapidity")
+                        .Define('GENrapidity4lAbs', "FidZZ_rapidity")
                         .Define('GENZ_DaughtersId', "getGENlep_int(FidZ_DauPdgId)")
                         .Define('GENZ_MomId', "getGENlep_int(FidZ_MomPdgId)")
                         .Define('GENlep_Hindex', "getGENHindex(FidZZ_Z1l1Idx, FidZZ_Z1l2Idx, FidZZ_Z2l1Idx, FidZZ_Z2l2Idx)")

@@ -12,10 +12,11 @@ import ROOT
 import json
 # from tdrStyle import *
 import random #-*-*-*-*-*-*-*-*-*-*-*-* Temporary - since we do not have discriminantsa in data yet, we perform a random generation -*-*-*-*-*-*-*-*-*-*-*-*
+sys.path.append('../helperstuff/')
+
 from binning import binning
 from paths import path
 
-# sys.path.append('../inputs/')
 # from observables import observables
 
 print('Welcome in RunTemplates!')
@@ -124,7 +125,7 @@ def add_leadjet(pt,eta):
 def rapidity(p, eta):
     return np.abs(np.log((np.sqrt(125*125 + p*p*np.cosh(eta)*np.cosh(eta))+p*np.sinh(eta))/np.sqrt(125*125+p*p)))
 def add_rapidity(df):
-    df['ZZy'] = rapidity(df['ZZPt'], df['ZZEta'])
+    df['ZZyAbs'] = rapidity(df['ZZPt'], df['ZZEta'])
     return df
 
 # Define the final state

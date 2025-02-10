@@ -69,8 +69,8 @@ sys.path.append('../../inputs/')
 sys.path.append('../../templates/')
 
 def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH, modelName, physicalModel, year, JES, doubleDiff, lowerBound, upperBound, rawObsName):
-    print '\n'
-    print 'Creating WorkSpace', year
+    print('\n')
+    print('Creating WorkSpace', year)
 
     if not doubleDiff:
         obsBin_low = observableBins[obsBin]
@@ -80,17 +80,17 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     elif doubleDiff:
         obsBin_low = observableBins[obsBin][0]
         obsBin_high = observableBins[obsBin][1]
-        obs_bin_lowest = min(x[0] for x in observableBins.values())
-        obs_bin_highest = max(x[1] for x in observableBins.values())
+        obs_bin_lowest = min(x[0] for x in list(observableBins.values()))
+        obs_bin_highest = max(x[1] for x in list(observableBins.values()))
         #second variables
         obsBin_2nd_low = observableBins[obsBin][2]
         obsBin_2nd_high = observableBins[obsBin][3]
-        obs_bin_2nd_lowest = min(x[2] for x in observableBins.values())
-        obs_bin_2nd_highest = max(x[3] for x in observableBins.values())
+        obs_bin_2nd_lowest = min(x[2] for x in list(observableBins.values()))
+        obs_bin_2nd_highest = max(x[3] for x in list(observableBins.values()))
 
     recobin = "recobin"+str(obsBin)
 
-    print recobin
+    print(recobin)
     JES = False
     doJES = False
 
@@ -160,7 +160,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
         comb_name = 'fakeH'
         sig_name = 'trueH'
 
-    print os.getcwd()
+    print(os.getcwd())
     if '2022' in year:
         # TODO: Fix this, it's ugly!!!
         massParaMap = readParam('/eos/user/m/mbonanom/run3_trees/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/FiducialXSFWK/fit/param/sim_massParam_ggH_105160_'+channel+'_'+year+'.txt')
@@ -525,8 +525,8 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
             trueH_shape[genbin].SetName(processName)
 
         fideff[genbin] = eff[modelName+"_"+channel+"_"+obsName+"_genbin"+str(genbin)+"_"+recobin]
-        print "fideff[genbin]", fideff[genbin]
-        print "model name is ", modelName
+        print("fideff[genbin]", fideff[genbin])
+        print("model name is ", modelName)
 
         _effName = "eff_hzz_"+sig_name+"_"+_obsName[obsName]+"_13TeV_"+_binName
         _effName = _effName + '_hzz_' + _obsName[obsName] + '_' + _recobin + '_cat' + channel + '_' + year
@@ -565,7 +565,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
             fidxs_xH[fState] += higgs_xs['WH_125.38']*higgs4l_br['125.38_'+fState]*acc['WH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]
             fidxs_xH[fState] += higgs_xs['ZH_125.38']*higgs4l_br['125.38_'+fState]*acc['ZH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]
             fidxs_xH[fState] += higgs_xs['ttH_125.38']*higgs4l_br['125.38_'+fState]*acc['ttH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]
-        print(fidxs, fidxs_ggH, fidxs_xH)
+        print((fidxs, fidxs_ggH, fidxs_xH))
         ggHName = 'ggH_' + _obsName[obsName]
         ggHName = ggHName+'_'+_binName
         ggH_shape[genbin] = ggH.Clone();
@@ -701,11 +701,11 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
 
                 fidxs_fl[str(genbin)] = ROOT.RooFormulaVar("fidxs_fl_"+str(genbin), "fidxs_fl_"+str(genbin), "(@0*@5+@1*@6+(@2+@3)*@7+@4*@8)", ROOT.RooArgList(fidxs_ggH[str(genbin)], fidxs_VBFH[str(genbin)], fidxs_WH[str(genbin)], fidxs_ZH[str(genbin)], fidxs_ttH[str(genbin)], scale_ggH[str(genbin)], scale_VBFH[str(genbin)], scale_VH[str(genbin)], scale_ttH[str(genbin)]))
 
-                print('ggH Bin', genbin, higgs_xs['ggH_125.38']*higgs4l_br['125.38_'+channel]*acc['ggH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)])
-                print('VBF Bin', genbin, higgs_xs['VBF_125.38']*higgs4l_br['125.38_'+channel]*acc['VBFH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)])
-                print('WH Bin', genbin, higgs_xs['WH_125.38']*higgs4l_br['125.38_'+channel]*acc['WH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)])
-                print('ZH Bin', genbin, higgs_xs['ZH_125.38']*higgs4l_br['125.38_'+channel]*acc['ZH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)])
-                print('ttH Bin', genbin, higgs_xs['ttH_125.38']*higgs4l_br['125.38_'+channel]*acc['ttH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)])
+                print(('ggH Bin', genbin, higgs_xs['ggH_125.38']*higgs4l_br['125.38_'+channel]*acc['ggH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]))
+                print(('VBF Bin', genbin, higgs_xs['VBF_125.38']*higgs4l_br['125.38_'+channel]*acc['VBFH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]))
+                print(('WH Bin', genbin, higgs_xs['WH_125.38']*higgs4l_br['125.38_'+channel]*acc['WH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]))
+                print(('ZH Bin', genbin, higgs_xs['ZH_125.38']*higgs4l_br['125.38_'+channel]*acc['ZH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]))
+                print(('ttH Bin', genbin, higgs_xs['ttH_125.38']*higgs4l_br['125.38_'+channel]*acc['ttH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]))
 
                 # Set name of the process according to conventions for combination
                 if observableBins[genbin+1] > 1000:
@@ -816,7 +816,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     frac_zjets = fractionsBackground['ZJetsCR_'+channel+'_'+obsName+'_'+recobin]
     frac_zjets_var = ROOT.RooRealVar("frac_zjet_"+recobin+"_"+channel+"_"+year,"frac_zjet_"+recobin+"_"+channel+"_"+year, frac_zjets);
 
-    print obsBin,"frac_qqzz",frac_qqzz,"frac_ggzz",frac_ggzz,"frac_zjets",frac_zjets
+    print(obsBin,"frac_qqzz",frac_qqzz,"frac_ggzz",frac_ggzz,"frac_zjets",frac_zjets)
 
     os.chdir('../../templates/'+year+"/"+obsName+"/")
 
@@ -853,9 +853,9 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     elif doubleDiff: qqzzTemplate = qqzzTempFile.Get("m4l_"+obsName+"_"+str(trunc(obsBin_low))+"_"+str(trunc(obsBin_high))+"_"+str(trunc(obsBin_2nd_low))+"_"+str(trunc(obsBin_2nd_high)))
     if obsName == 'rapidity4l': qqzzTemplate = qqzzTempFile.Get("m4l_"+obsName+"_"+str(obsBin_low)+"_"+str(obsBin_high))
     # elif doubleDiff: qqzzTemplate = qqzzTempFile.Get("m4l_"+obsName+"_"+str(trunc(obsBin_low))+"_"+str(trunc(obsBin_high))+"_"+str(trunc(obsBin_2nd_low))+"_"+str(trunc(obsBin_2nd_high)))
-    print qqzzTempFile
-    print qqzzTemplate.GetName()
-    print 'qqZZ bins',qqzzTemplate.GetNbinsX(),qqzzTemplate.GetBinLowEdge(1),qqzzTemplate.GetBinLowEdge(qqzzTemplate.GetNbinsX()+1)
+    print(qqzzTempFile)
+    print(qqzzTemplate.GetName())
+    print('qqZZ bins',qqzzTemplate.GetNbinsX(),qqzzTemplate.GetBinLowEdge(1),qqzzTemplate.GetBinLowEdge(qqzzTemplate.GetNbinsX()+1))
 
     ggzzTempFile = ROOT.TFile(template_ggzzName,"READ")
     if decimal[obsName] and doubleDiff: ggzzTemplate = ggzzTempFile.Get("m4l_"+obsName+"_"+str(obsBin_low)+"_"+str(obsBin_high)+"_"+str(obsBin_2nd_low)+"_"+str(obsBin_2nd_high))
@@ -864,7 +864,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     elif doubleDiff: ggzzTemplate = ggzzTempFile.Get("m4l_"+obsName+"_"+str(trunc(obsBin_low))+"_"+str(trunc(obsBin_high))+"_"+str(trunc(obsBin_2nd_low))+"_"+str(trunc(obsBin_2nd_high)))
     if obsName == 'rapidity4l': ggzzTemplate = ggzzTempFile.Get("m4l_"+obsName+"_"+str(obsBin_low)+"_"+str(obsBin_high))
     # elif doubleDiff: ggzzTemplate = ggzzTempFile.Get("m4l_"+obsName+"_"+str(trunc(obsBin_low))+"_"+str(trunc(obsBin_high))+"_"+str(trunc(obsBin_2nd_low))+"_"+str(trunc(obsBin_2nd_high)))
-    print 'ggZZ bins',ggzzTemplate.GetNbinsX(),ggzzTemplate.GetBinLowEdge(1),ggzzTemplate.GetBinLowEdge(ggzzTemplate.GetNbinsX()+1)
+    print('ggZZ bins',ggzzTemplate.GetNbinsX(),ggzzTemplate.GetBinLowEdge(1),ggzzTemplate.GetBinLowEdge(ggzzTemplate.GetNbinsX()+1))
 
     zjetsTempFile = ROOT.TFile(template_zjetsName,"READ")
     if decimal[obsName] and doubleDiff: zjetsTemplate = zjetsTempFile.Get("m4l_"+obsName+"_"+str(obsBin_low)+"_"+str(obsBin_high)+"_"+str(obsBin_2nd_low)+"_"+str(obsBin_2nd_high))
@@ -873,7 +873,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     elif doubleDiff: zjetsTemplate = zjetsTempFile.Get("m4l_"+obsName+"_"+str(trunc(obsBin_low))+"_"+str(trunc(obsBin_high))+"_"+str(trunc(obsBin_2nd_low))+"_"+str(trunc(obsBin_2nd_high)))
     if obsName == 'rapidity4l': zjetsTemplate = zjetsTempFile.Get("m4l_"+obsName+"_"+str(obsBin_low)+"_"+str(obsBin_high))
     # elif doubleDiff: zjetsTemplate = zjetsTempFile.Get("m4l_"+obsName+"_"+str(trunc(obsBin_low))+"_"+str(trunc(obsBin_high))+"_"+str(trunc(obsBin_2nd_low))+"_"+str(trunc(obsBin_2nd_high)))
-    print 'zjets bins',zjetsTemplate.GetNbinsX(),zjetsTemplate.GetBinLowEdge(1),zjetsTemplate.GetBinLowEdge(zjetsTemplate.GetNbinsX()+1)
+    print('zjets bins',zjetsTemplate.GetNbinsX(),zjetsTemplate.GetBinLowEdge(1),zjetsTemplate.GetBinLowEdge(zjetsTemplate.GetNbinsX()+1))
 
     os.chdir('../../../datacard/datacard_'+year)
 
@@ -913,7 +913,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     data_obs_file = ROOT.TFile("/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/Data/reducedTree_AllData_"+year+".root")
     data_obs_tree = data_obs_file.Get("SR")
 
-    print obsName,obsBin_low,obsBin_high
+    print(obsName,obsBin_low,obsBin_high)
     chan = ROOT.RooRealVar("chan", "chan", 0, 3)
     # if (obsName == "nJets"): obsName = "njets_reco_pt30_eta4p7"
     if (channel=='4mu'):
@@ -921,19 +921,19 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
         elif (obsName.startswith("rapidity4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>105.0 && CMS_zz4l_mass<160.0 && abs("+obsName_help+")>="+str(obsBin_low)+" && abs("+obsName_help+")<"+str(obsBin_high)+" && chan == 1)")
         elif not doubleDiff and not obsName.startswith("mass4l"): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && chan == 1)")
         elif doubleDiff: data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,observable_2nd,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && "+obsName_2nd_help+">="+str(obsBin_2nd_low)+" && "+obsName_2nd_help+"<"+str(obsBin_2nd_high)+" && chan == 1)")
-        print data_obs.numEntries()
+        print(data_obs.numEntries())
     if (channel=='4e'):
         if (obsName.startswith("mass4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && chan == 2)")
         elif (obsName.startswith("rapidity4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>105.0 && CMS_zz4l_mass<160.0 && abs("+obsName_help+")>="+str(obsBin_low)+" && abs("+obsName_help+")<"+str(obsBin_high)+" && chan == 2)")
         elif not doubleDiff and not obsName.startswith("mass4l"): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && chan == 2)")
         elif doubleDiff: data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,observable_2nd,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && "+obsName_2nd_help+">="+str(obsBin_2nd_low)+" && "+obsName_2nd_help+"<"+str(obsBin_2nd_high)+" && chan == 2)")
-        print data_obs.numEntries()
+        print(data_obs.numEntries())
     if (channel=='2e2mu'):
         if (obsName.startswith("mass4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && chan == 3)")
         elif (obsName.startswith("rapidity4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>105.0 && CMS_zz4l_mass<160.0 && abs("+obsName_help+")>="+str(obsBin_low)+" && abs("+obsName_help+")<"+str(obsBin_high)+" && chan == 3)")
         elif not doubleDiff and not obsName.startswith("mass4l"): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && chan == 3)")
         elif doubleDiff: data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,observable_2nd,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && "+obsName_2nd_help+">="+str(obsBin_2nd_low)+" && "+obsName_2nd_help+"<"+str(obsBin_2nd_high)+" && chan == 3)")
-        print data_obs.numEntries()
+        print(data_obs.numEntries())
     data_obs_file.Close()
 
     # Create workspace
@@ -1123,7 +1123,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     else:
         fout = ROOT.TFile('hzz4l_'+channel+'S_13TeV_xs_'+modelName+'_'+_obsName[obsName]+'_'+physicalModel+'.Databin'+str(obsBin)+'.NoFakeH.root','RECREATE')
 
-    print "write ws to fout"
+    print("write ws to fout")
     fout.WriteTObject(wout)
     fout.Close()
     os.chdir('../../fit')
