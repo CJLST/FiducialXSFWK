@@ -365,11 +365,12 @@ df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]
                                      .Define('passedFullSelection', "1")
                                      .Define('genHEPMCweight', "Generator_weight")
                                      .Define('PUWeight', "puWeight")
-				    	.Define('pTj1', "Jet_pt.size() > 0 ? Jet_pt[0] : -1") #spencer
-				     	.Define('pTj2', "Jet_pt.size() > 1 ? Jet_pt[1] : -1") #spencer                                     
-					.Define('mjj', "Jet_pt.size() > 1 ? Jet_mass[0]+Jet_mass[1] : -1") #spencer
-					.Define('absdetajj', "Jet_pt.size() > 1 ? TMath::Abs(Jet_eta[0] - Jet_eta[1]) : -1") #spencer
-					.Define('absdphijj', "Jet_pt.size() > 1 ? TMath::Abs(Jet_phi[0] - Jet_phi[1]) : -1") #spencer
+	  .Define('pTj1', "Jet_pt.size() > 0 ? Jet_pt[0] : -1") #spencer
+	  .Define('pTj2', "Jet_pt.size() > 1 ? Jet_pt[1] : -1") #spencer                                     
+	  #.Define('mjj', "Jet_pt.size() > 1 ? Jet_mass[0]+Jet_mass[1] : -1") #spencer
+          .Define("mjj", "Jet_pt.size() > 1 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[0], Jet_eta[0], Jet_phi[0], Jet_mass[0]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[1], Jet_eta[1], Jet_phi[1], Jet_mass[1])).M() : -1")
+          .Define('absdetajj', "Jet_pt.size() > 1 ? TMath::Abs(Jet_eta[0] - Jet_eta[1]) : -1") #spencer
+	  .Define('absdphijj', "Jet_pt.size() > 1 ? TMath::Abs(Jet_phi[0] - Jet_phi[1]) : -1") #spencer
 				    )
 
 if 'ggH' in inFileName:
