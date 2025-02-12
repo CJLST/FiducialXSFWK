@@ -123,7 +123,9 @@ def get_pdf_weights(pdf_weights):
     return w_nom, w_scale, w_as
     
 def build_histos(tree, sel, w_gen, w_nom, w_scale):
+
     h_nom = ak.sum(w_gen[sel] * w_nom[sel])
+
     h_scale = {}
 
     for i in w_scale:
@@ -138,13 +140,19 @@ def get_scale_unc(process, channel, tree, scale, observable, nnlops = False):
         cutchan_gen = get_zh_chan_cuts(channel, tree)
     else:
         cutchan_gen = get_chan_cuts(channel, tree)
-        
+
     full_sel = cutm4l_gen & cutobs_gen & cutchan_gen & tree['passedFiducial'] == 1
     
-    w_gen = tree['genHEPMCweight']
+    fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/{year}/{process}/ZZ4lAnalysis.root" # spencer
+    with uproot.open(f'{fname}') as f: # spencer
+        tree = f['AllEvents'].arrays() # spencer
+
+    #w_gen = tree['genHEPMCweight']
+    w_gen = tree['Generator_weight'] # spencer
     
     if nnlops:
-        w_nnlops = tree['ggH_NNLOPS_weight']
+        #w_nnlops = tree['ggH_NNLOPS_weight']
+        w_nnlops = tree['ggH_NNLOPS_Weight'] # spencer
         w_gen = w_gen * w_nnlops
         
     if scale == "qcd":
@@ -194,25 +202,17 @@ def load_tree(fname):
     tree_tot = ak.concatenate([tree, tree_failed])
     return tree_tot
 
-'''
 def get_th_xsec(process, obs_gen, suffix):
     # TODO: Improve
-    obs_name_dict = {"GENmass4l": "mass4l", "GENpT4l": "PTH", "GENrapidity4l": "YH"}
-    obs_name = obs_name_dict[obs_gen]
+    # obs_name_dict = {"GENmass4l": "mass4l", "GENpT4l": "PTH", "GENrapidity4l": "YH"}
+    # obs_name = obs_name_dict[obs_gen]
     
     if (('ZH' not in process) and ('W' not in process)):
         th_xs = __import__(f'fidXS_{suffix}{obs_name}_{process.split("125")[0]}', globals(), locals(), vars)
     else:
         th_xs = __import__(f'fidXS_{suffix}{obs_name}_VH', globals(), locals(), vars)
     return th_xs
-'''
 
-xsec_pT4l.py
-def get_th_xsec(process, obs_gen, suffix):
-    if (('ZH' not in process) and ('W' not in process)):
-        th_xs = __import__(f'fidXS_{suffix}{obs_name}_{process.split("125")[0]}', globals(), locals(), vars)
-    else
-    
 def get_unc_dict(obs_gen, tree, th_xs, channel, bins, nnlops):
     unc_var_dn = {}
     unc_var_up = {}
@@ -228,7 +228,7 @@ def get_unc_dict(obs_gen, tree, th_xs, channel, bins, nnlops):
             observable = [obs_gen, obs_gen_low, obs_gen_high]
 
             var_up, var_dn = get_scale_unc(process, channel, tree, var, observable, nnlops)
-
+            
             up = 1 + (var_up-1) + YR4_UNC[process][var]['up']
             # Correlate
             # np.sqrt((var_up-1)**2 + YR4_UNC[process][var]['up']**2)
@@ -250,14 +250,8 @@ def get_uncerainties(obs_gen, year, process, channel, bins, nnlops):
     unc = {}
 
     #fname = f"/eos/user/m/mbonanom/Run3RedTrees/lheWeights/2022EE/{process}_MC_2022EE_skimmed.root"
+    fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/{year}/{process}/{process}_reducedTree_MC_{year}_skimmed_nnlops.root" # spencer
 
-    # spencer
-    if nnlops:
-        fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/{year}/{process}/{process}_reducedTree_MC_{year}_skimmed_nnlops.root"
-    else:
-        fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/{year}/{process}/{process}_reducedTree_MC_{year}.root"
-    # spencer
-        
     if (process == "ggH125") and nnlops:
         suffix = "NNLOPS_"
     else:
