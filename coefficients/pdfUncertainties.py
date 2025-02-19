@@ -14,9 +14,9 @@ import matplotlib.pyplot as plt
 import mplhep as hep
 plt.style.use(hep.style.CMS)
 
-sys.path.append('/eos/user/m/mbonanom/run3_trees/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/FiducialXSFWK/inputs')
-
-
+#sys.path.append('/eos/user/m/mbonanom/run3_trees/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/FiducialXSFWK/inputs')
+sys.path.append('../inputs')
+#sys.path.append('/eos/user/m/mbonanom/Run3RedTrees/lheWeights/2022EE')
 def get_zh_chan_cuts(channel, tree):
 
     genz_idx0 = abs(tree['GENZ_DaughtersId'][:,0])
@@ -169,7 +169,7 @@ def load_tree(fname):
 
 def get_th_xsec(process, obs_gen, suffix):
     # TODO: Improve
-    obs_name_dict = {"GENmass4l": "mass4l", "GENpT4l": "PTH", "GENrapidity4l": "YH"}
+    obs_name_dict = {"GENmass4l": "mass4l", "GENpT4l": "pT4l", "GENrapidity4l": "YH"}
     obs_name = obs_name_dict[obs_gen]
     
     if (('ZH' not in process) and ('W' not in process)):
@@ -213,7 +213,8 @@ def get_unc_dict(obs_gen, tree, th_xs, channel, bins, nnlops):
 
 def get_uncerainties(obs_gen, process, channel, bins, nnlops):
     unc = {}
-    fname = f"/eos/user/m/mbonanom/Run3RedTrees/lheWeights/2022EE/{process}_MC_2022EE_skimmed.root"
+    #fname = f"/eos/user/m/mbonanom/Run3RedTrees/lheWeights/2022EE/{process}_MC_2022EE_skimmed.root"
+    fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/2022EE/{process}/{process}_MC_2022EE_skimmed.root"
     
     if (process == "ggH125") and nnlops:
         suffix = "NNLOPS_"
@@ -273,11 +274,10 @@ if __name__ == '__main__':
     # global obs
     m4l_low = 105
     m4l_high = 160
-
+    '''
     obs_gen = 'GENmass4l'
     bins = [0, 2, 4, 6, 8]
 
-    channel = '4l'
     process = 'ggH125'
 
     for process in ["ggH125"]:#, "VBFH125", "ttH125", "ZH125"]:
@@ -294,8 +294,10 @@ if __name__ == '__main__':
     for process in ["ggH125"]:
         unc = get_uncerainties(obs_gen, process, channel, bins, True)
         save_uncertainties(process, obs_gen, True)
-
+    '''
     obs_gen = 'GENpT4l'
+    channel = '4l'
+
     bins = [0, 30, 80, 10000]
     for process in ["VBFH125", "ttH125", "ZH125"]:
         unc = get_uncerainties(obs_gen, process, channel, bins, False)

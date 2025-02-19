@@ -80,13 +80,13 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     elif doubleDiff:
         obsBin_low = observableBins[obsBin][0]
         obsBin_high = observableBins[obsBin][1]
-        obs_bin_lowest = min(x[0] for x in list(observableBins.values()))
-        obs_bin_highest = max(x[1] for x in list(observableBins.values()))
+        obs_bin_lowest = min(x[0] for x in observableBins.values())
+        obs_bin_highest = max(x[1] for x in observableBins.values())
         #second variables
         obsBin_2nd_low = observableBins[obsBin][2]
         obsBin_2nd_high = observableBins[obsBin][3]
-        obs_bin_2nd_lowest = min(x[2] for x in list(observableBins.values()))
-        obs_bin_2nd_highest = max(x[3] for x in list(observableBins.values()))
+        obs_bin_2nd_lowest = min(x[2] for x in observableBins.values())
+        obs_bin_2nd_highest = max(x[3] for x in observableBins.values())
 
     recobin = "recobin"+str(obsBin)
 
@@ -103,7 +103,8 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
     # from inputs_sig imports some coefficients
-    _temp = __import__('inputs_sig_'+obsName+'_'+year, globals(), locals(), ['acc','eff','inc_wrongfrac','binfrac_wrongfrac','outinratio'], -1)
+    #_temp = __import__('inputs_sig_'+obsName+'_'+year, globals(), locals(), ['acc','eff','inc_wrongfrac','binfrac_wrongfrac','outinratio'], -1)
+    _temp = __import__('inputs_sig_'+obsName+'_'+year, globals(), locals(), ['acc','eff','inc_wrongfrac','binfrac_wrongfrac','outinratio'], 0) # spencer
     acc = _temp.acc
     eff = _temp.eff
     outinratio = _temp.outinratio
@@ -114,17 +115,20 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     #number_fake = _temp.number_fake
 
     # import h4l xs br
-    _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
+    #_temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
+    _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], 0) # spencer
     if('2022' in year):
         higgs_xs = _temp.higgs_xs_136TeV
     else:
         higgs_xs = _temp.higgs_xs
     higgs4l_br = _temp.higgs4l_br
 
-    _temp = __import__('inputs_bkg_'+obsName+'_'+year, globals(), locals(), ['fractionsBackground'], -1)
+    #_temp = __import__('inputs_bkg_'+obsName+'_'+year, globals(), locals(), ['fractionsBackground'], -1)
+    _temp = __import__('inputs_bkg_'+obsName+'_'+year, globals(), locals(), ['fractionsBackground'], 0) # spencer
     fractionsBackground = _temp.fractionsBackground
 
-    _temp = __import__('observables', globals(), locals(), ['observables'], -1)
+    #_temp = __import__('observables', globals(), locals(), ['observables'], -1)
+    _temp = __import__('observables', globals(), locals(), ['observables'], 0) # spencer
     observables = _temp.observables
 
     if (not obsName=="mass4l"):
@@ -163,10 +167,11 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     print(os.getcwd())
     if '2022' in year:
         # TODO: Fix this, it's ugly!!!
-        massParaMap = readParam('/eos/user/m/mbonanom/run3_trees/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/FiducialXSFWK/fit/param/sim_massParam_ggH_105160_'+channel+'_'+year+'.txt')
+        #massParaMap = readParam('/eos/user/m/mbonanom/run3_trees/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/FiducialXSFWK/fit/param/sim_massParam_ggH_105160_'+channel+'_'+year+'.txt')
+        massParaMap = readParam('/afs/cern.ch/work/l/lurda/HZZ/CMSSW_14_1_0_pre4/src/FiducialXSFWK/fit/param/sim_massParam_ggH_105160_'+channel+'_'+year+'.txt') # spencer
     else:
-        massParaMap = readParam('/home/llr/cms/tarabini/CMSSW_10_2_13/src/HiggsAnalysis/FiducialXSFWK/fit/param/sim_massParam_ggH_105160_'+channel+'_'+year+'_update.txt')
-
+        #massParaMap = readParam('/home/llr/cms/tarabini/CMSSW_10_2_13/src/HiggsAnalysis/FiducialXSFWK/fit/param/sim_massParam_ggH_105160_'+channel+'_'+year+'_update.txt')
+        massParaMap = readParam('/afs/cern.ch/work/l/lurda/HZZ/CMSSW_14_1_0_pre4/src/FiducialXSFWK/fit/param/sim_massParam_ggH_105160_'+channel+'_'+year+'_update.txt')
     CMS_zz4l_mean_m_sig = ROOT.RooRealVar("CMS_zz4l_mean_m_sig","CMS_zz4l_mean_m_sig",-10,10)
     CMS_zz4l_mean_e_sig = ROOT.RooRealVar("CMS_zz4l_mean_e_sig","CMS_zz4l_mean_e_sig",-10,10)
     CMS_zz4l_sigma_m_sig = ROOT.RooRealVar("CMS_zz4l_sigma_m_sig","CMS_zz4l_sigma_m_sig",-10,10)
@@ -565,7 +570,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
             fidxs_xH[fState] += higgs_xs['WH_125.38']*higgs4l_br['125.38_'+fState]*acc['WH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]
             fidxs_xH[fState] += higgs_xs['ZH_125.38']*higgs4l_br['125.38_'+fState]*acc['ZH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]
             fidxs_xH[fState] += higgs_xs['ttH_125.38']*higgs4l_br['125.38_'+fState]*acc['ttH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]
-        print((fidxs, fidxs_ggH, fidxs_xH))
+        print(fidxs, fidxs_ggH, fidxs_xH)
         ggHName = 'ggH_' + _obsName[obsName]
         ggHName = ggHName+'_'+_binName
         ggH_shape[genbin] = ggH.Clone();
@@ -701,11 +706,11 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
 
                 fidxs_fl[str(genbin)] = ROOT.RooFormulaVar("fidxs_fl_"+str(genbin), "fidxs_fl_"+str(genbin), "(@0*@5+@1*@6+(@2+@3)*@7+@4*@8)", ROOT.RooArgList(fidxs_ggH[str(genbin)], fidxs_VBFH[str(genbin)], fidxs_WH[str(genbin)], fidxs_ZH[str(genbin)], fidxs_ttH[str(genbin)], scale_ggH[str(genbin)], scale_VBFH[str(genbin)], scale_VH[str(genbin)], scale_ttH[str(genbin)]))
 
-                print(('ggH Bin', genbin, higgs_xs['ggH_125.38']*higgs4l_br['125.38_'+channel]*acc['ggH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]))
-                print(('VBF Bin', genbin, higgs_xs['VBF_125.38']*higgs4l_br['125.38_'+channel]*acc['VBFH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]))
-                print(('WH Bin', genbin, higgs_xs['WH_125.38']*higgs4l_br['125.38_'+channel]*acc['WH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]))
-                print(('ZH Bin', genbin, higgs_xs['ZH_125.38']*higgs4l_br['125.38_'+channel]*acc['ZH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]))
-                print(('ttH Bin', genbin, higgs_xs['ttH_125.38']*higgs4l_br['125.38_'+channel]*acc['ttH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]))
+                print('ggH Bin', genbin, higgs_xs['ggH_125.38']*higgs4l_br['125.38_'+channel]*acc['ggH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)])
+                print('VBF Bin', genbin, higgs_xs['VBF_125.38']*higgs4l_br['125.38_'+channel]*acc['VBFH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)])
+                print('WH Bin', genbin, higgs_xs['WH_125.38']*higgs4l_br['125.38_'+channel]*acc['WH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)])
+                print('ZH Bin', genbin, higgs_xs['ZH_125.38']*higgs4l_br['125.38_'+channel]*acc['ZH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)])
+                print('ttH Bin', genbin, higgs_xs['ttH_125.38']*higgs4l_br['125.38_'+channel]*acc['ttH125_'+channel+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)])
 
                 # Set name of the process according to conventions for combination
                 if observableBins[genbin+1] > 1000:

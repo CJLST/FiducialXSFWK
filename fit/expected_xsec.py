@@ -1,5 +1,6 @@
 import ROOT
-import sys, os, pwd, commands
+#import sys, os, pwd, commands
+import sys, os, pwd # spencer
 from subprocess import *
 import optparse, shlex, re
 import math
@@ -7,7 +8,12 @@ import time
 from decimal import *
 import json
 
+sys.path.append('../inputs/')
+
 from higgs_xsbr_13TeV import *
+
+sys.path.append('../helperstuff/')
+
 from binning import binning
 
 def parseOptions():
@@ -51,10 +57,11 @@ def exp_xsec():
     if doubleDiff: obsName = obs_name+'_'+obs_name_2nd
     else: obsName = obs_name
     _th_MH = opt.THEORYMASS
-    print 'Running Fiducial XS computation - '+obsName+' - bin boundaries: ', observableBins, '\n'
-    print 'Theory xsec and BR at MH = '+_th_MH
+    print('Running Fiducial XS computation - '+obsName+' - bin boundaries: ', observableBins, '\n')
+    print('Theory xsec and BR at MH = '+_th_MH)
 
-    _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
+    #_temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
+    _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], 0) # spencer
     if(opt.YEAR=='Run3'):
         higgs_xs = _temp.higgs_xs_136TeV
     else:
@@ -62,7 +69,8 @@ def exp_xsec():
     higgs4l_br = _temp.higgs4l_br
     fname = 'inputs_sig_'+obsName+'_'+opt.YEAR
     if opt.DOHIG: fname = fname + '_HIG19001'
-    _temp = __import__(fname, globals(), locals(), ['acc'], -1)
+    #_temp = __import__(fname, globals(), locals(), ['acc'], -1)
+    _temp = __import__(fname, globals(), locals(), ['acc'], 0) # spencer
     acc = _temp.acc
     XH = []
     nBins = len(observableBins)
@@ -77,14 +85,14 @@ def exp_xsec():
             XH_fs += higgs_xs['WH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['WH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             XH_fs += higgs_xs['ZH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['ZH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             XH_fs += higgs_xs['ttH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['ttH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
-            print 'Bin ', obsBin, '\t SigmaBin', obsBin, channel, ' = ', XH_fs
-            print 'XH',  XH_fs - higgs_xs['ggH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['ggH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)] 
+            print('Bin ', obsBin, '\t SigmaBin', obsBin, channel, ' = ', XH_fs)
+            print('XH',  XH_fs - higgs_xs['ggH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['ggH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)])
             XH[obsBin]+=XH_fs
 
         _obsxsec = XH[obsBin]
 
-        print '\n'
-        print 'Bin ', obsBin, '\t SigmaBin', obsBin, ' = ', _obsxsec
+        print('\n')
+        print('Bin ', obsBin, '\t SigmaBin', obsBin, ' = ', _obsxsec)
         xs['SigmaBin'+str(obsBin)] = _obsxsec
 
     with open('../inputs/xsec_'+obsName+'.py', 'w') as f:

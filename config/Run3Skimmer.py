@@ -5,7 +5,10 @@
 import ROOT
 import os,sys
 import optparse
-from ZZAnalysis.NanoAnalysis.tools import get_genEventSumw
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../helperstuff/")))
+
+from binning import get_genEventSumw
 
 usage = ('usage: %prog [options]\n'
              + '%prog -h for help')
@@ -232,8 +235,7 @@ vars = {'RunNumber',
         'LumiNumber',
         'ZZMass',
         'ZZPt',
-        'ZZyAbs',
-        'njets_pt30_eta4p7',
+        'ZZy',
         # 'CRflag',
         'Z1Flav',
         'Z2Flav',
@@ -255,8 +257,8 @@ if MC:
     vars.add('overallEventWeight')
     # vars.add('xsec')
     # vars.add('L1prefiringWeight')
-    # vars.add('LHEPdfWeight')
-    # vars.add('LHEScaleWeight')
+    vars.add('LHEPdfWeight')
+    vars.add('LHEScaleWeight')
     vars.add('PUWeight')
     # vars.add('LHEWeight_originalXWGTUP')
     vars.add('lep_Hindex')
@@ -273,7 +275,7 @@ if MC:
         vars.add('GENpT4l')
         vars.add('GENeta4l')
         vars.add('GENphi4l')
-        vars.add('GENrapidity4lAbs')
+        vars.add('GENrapidity4l')
         vars.add('GENZ_DaughtersId')
         vars.add('GENZ_MomId')
         vars.add('GENlep_Hindex')
@@ -293,8 +295,7 @@ if MC:
 ## SR
 df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]") ## Dummy
                                      .Define("ZZPt", "ZZCand_pt[bestCandIdx]")
-                                     .Define("ZZyAbs", "abs(ZZCand_rapidity[bestCandIdx])")
-                                     .Define("njets_pt30_eta4p7", "HTXS_njets30[bestCandIdx]")
+                                     .Define("ZZy", "abs(ZZCand_rapidity[bestCandIdx])")
                                      # .Define("CRflag", "0") ## Dummy
                                      .Define("Z1Flav", "ZZCand_Z1flav[bestCandIdx]")
                                      .Define("Z2Flav", "ZZCand_Z2flav[bestCandIdx]") ## Dummy
@@ -349,8 +350,7 @@ if "H12" in inFileName:
                   .Define('GENpT4l', "FidZZ_pt")
                   .Define('GENeta4l', "FidZZ_eta")
                   .Define('GENphi4l', "FidZZ_phi")
-                  .Define('GENrapidity4lAbs', "FidZZ_rapidity")
-                  .Define('GENnjets_pt30_eta4p7', )
+                  .Define('GENrapidity4l', "FidZZ_rapidity")
                   .Define('GENZ_DaughtersId', "getGENlep_int(FidZ_DauPdgId)")
                   .Define('GENZ_MomId', "getGENlep_int(FidZ_MomPdgId)")
                   .Define('GENlep_Hindex', "getGENHindex(FidZZ_Z1l1Idx, FidZZ_Z1l2Idx, FidZZ_Z2l1Idx, FidZZ_Z2l2Idx)")
@@ -371,8 +371,7 @@ if "H12" in inFileName:
     'GENpT4l',
     'GENeta4l',
     'GENphi4l',
-    'GENrapidity4lAbs',
-    'GENnjets_pt30_eta4p7',
+    'GENrapidity4l',
     'GENZ_DaughtersId',
     'GENZ_MomId',
     'GENlep_Hindex',
@@ -381,8 +380,8 @@ if "H12" in inFileName:
     'LumiNumber',
     'passedFiducial',
     'passedFullSelection',
-    # 'LHEPdfWeight',
-    # 'LHEScaleWeight',
+    'LHEPdfWeight',
+    'LHEScaleWeight',
     'genHEPMCweight',
     'PUWeight'
     }
@@ -398,7 +397,7 @@ if "H12" in inFileName:
                         .Define('GENpT4l', "FidZZ_pt")
                         .Define('GENeta4l', "FidZZ_eta")
                         .Define('GENphi4l', "FidZZ_phi")
-                        .Define('GENrapidity4lAbs', "FidZZ_rapidity")
+                        .Define('GENrapidity4l', "FidZZ_rapidity")
                         .Define('GENZ_DaughtersId', "getGENlep_int(FidZ_DauPdgId)")
                         .Define('GENZ_MomId', "getGENlep_int(FidZ_MomPdgId)")
                         .Define('GENlep_Hindex', "getGENHindex(FidZZ_Z1l1Idx, FidZZ_Z1l2Idx, FidZZ_Z2l1Idx, FidZZ_Z2l2Idx)")
@@ -420,6 +419,8 @@ df_SR.Snapshot('ZZTree/candTree', outFileName, vars, opts)
 if "H12" in inFileName:
     df_fail.Snapshot('ZZTree/candTree_failed', outFileName, vars_fail, opts)
 
+print('Reaching end1')
+
 ## Add counter only with the 40th entry
 counters = ROOT.TH1F("Counters", "Counters", 50, 0, 100)
 if opt.MC:
@@ -428,6 +429,7 @@ if opt.MC:
     counters.SetBinContent(40, genEventSumw)
     root.Close()
 
+print('Reaching end')
 root_file = ROOT.TFile(outFileName, "UPDATE")
 counters.Write()
 root_file.Close()

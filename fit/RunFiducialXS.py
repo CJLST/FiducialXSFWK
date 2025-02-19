@@ -1,4 +1,5 @@
 import ROOT
+#import sys, os, pwd, commands
 import sys, os, pwd, subprocess
 from subprocess import *
 import optparse, shlex, re
@@ -71,21 +72,37 @@ if (opt.YEAR == 'Full'): years = ['2016','2017','2018']
 if (opt.YEAR == 'Run3'): years = ['2022', '2022EE']
 
 # Define function for processing of os command
+'''
 def processCmd(cmd, quiet = 0):
     output = '\n'
     p = Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT, bufsize=-1)
     for line in iter(p.stdout.readline, ''):
         output=output+str(line)
-        #print(line, end=' ')
+        print(line),
     p.stdout.close()
     if p.wait() != 0:
         raise RuntimeError("%r failed, exit status: %d" % (cmd, p.returncode))
     return output
+'''
 
+def processCmd(cmd, quiet=0):
+    output = ''
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=-1, text=True)
+
+    for line in iter(p.stdout.readline, ''):
+        output += line  # No need for str(line), as 'text=True' ensures it's a string
+        if not quiet:
+            print(line, end='')  # Print the output in real-time
+
+    p.stdout.close()
+    if p.wait() != 0:
+        raise RuntimeError(f"Command '{cmd}' failed with exit status: {p.returncode}")
+
+    return output
 
 ### Produce datacards for given obs and bin, for all final states
 def produceDatacards(obsName, observableBins, ModelName, physicalmodel):
-    #print('\n')
+    print('\n')
     print('[Producing workspace/datacards for obsName '+obsName+', bins '+str(observableBins)+']')
     fStates = ['2e2mu','4mu','4e']
     print(observableBins)
@@ -180,7 +197,6 @@ def runv3(years, observableBins, obsName, fitName, physicalModel, fStates=['4e',
 
     cmd_t2w = 'text2workspace.py %s -P HiggsAnalysis.CombinedLimit.PhysicsModel:multiSignalModel --PO verbose ' %card_name
     cmd_t2w += "--PO 'higgsMassRange=123,127' "
-
     for i in range(nBins):
         if '_' in obsName and not 'floating' in obsName and not 'kL' in obsName and not obsName == 'njets_pt30_eta4p7':
             low = str(observableBins[i][0]).replace('.','p').replace('-','m')
@@ -210,7 +226,7 @@ def runv3(years, observableBins, obsName, fitName, physicalModel, fStates=['4e',
     cmds.append(cmd)
 
     os.chdir('../combine_files/')
-
+    
     # cmd_fit = 'combine -n _%s_Fit -M MultiDimFit %s ' %(fitName, card_name.replace('txt', 'root'))
     # cmd_fit += '-m 125.38 --freezeParameters MH --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 -t -1 --setParameters '
     for i in range(nBins):
@@ -233,7 +249,6 @@ def runv3(years, observableBins, obsName, fitName, physicalModel, fStates=['4e',
         print(cmd_fit_tmp)
         processCmd(cmd_fit_tmp)
         cmds.append(cmd_fit_tmp)
-
 
     # if obsName == 'mass4l_zzfloating':
     if 'zzfloating' in obsName:
@@ -340,7 +355,8 @@ def runFiducialXS():
     #     doubleDiff = False
     _th_MH = opt.THEORYMASS
     # prepare the set of bin boundaries to run over, it is retrieved from inputs file
-    _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins'], 0)
+    #_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins'], -1)
+    _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins'], 0) # spencer
     observableBins = _temp.observableBins
     print('Running Fiducial XS computation - '+obsName+' - bin boundaries: ', observableBins, '\n')
     print('Theory xsec and BR at MH = '+_th_MH)
@@ -360,7 +376,8 @@ def runFiducialXS():
         years_bis.append('Run3')
     for year in years_bis:
         if not os.path.exists('../inputs/inputs_sig_'+obsName+'_'+year+'_ORIG.py'):
-            cmd = 'python addConstrainedModel.py -l -q -b --obsName="'+obsName+'" --year="'+year+'"'
+            #cmd = 'python addConstrainedModel.py -l -q -b --obsName="'+obsName+'" --year="'+year+'"'
+            cmd = 'python3 addConstrainedModel.py -l -q -b --obsName="'+obsName+'" --year="'+year+'"' # spencer
             if doubleDiff: cmd += ' --doubleDiff'
             print(cmd)
             output = processCmd(cmd)
@@ -372,15 +389,17 @@ def runFiducialXS():
     if 'Full' in years: years.remove('Full')
     if 'Run3' in years: years.remove('Run3')
     # "__import__" to SetParameters when running the expected measurement
-    _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
+    #_temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
+    _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], 0) # spencer 
     if(opt.YEAR=='Run3'):
         higgs_xs = _temp.higgs_xs_136TeV
     else:
         higgs_xs = _temp.higgs_xs
     higgs4l_br = _temp.higgs4l_br
-    _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['acc'], -1)
+    #_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['acc'], -1)
+    _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['acc'], 0) # spencer
     acc = _temp.acc
-
+    
     DataModelName = 'SM_125'
     if obsName.startswith("mass4l"):
         PhysicalModels = ['v2','v3']
@@ -419,15 +438,15 @@ def runFiducialXS():
                     cmds.append(cmd)
                 else:
                     print('There is a problem during the combination over bins')
-
+            
             # combine 3 final states
             cmd = 'combineCards.py hzz4l_4muS_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.txt hzz4l_4eS_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.txt hzz4l_2e2muS_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.txt > hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.txt'
             print(cmd, '\n')
             processCmd(cmd,1)
             cmds.append(cmd)
-
+            
             os.chdir(_fit_dir)
-
+        
         # Combine 3 years
         # we go back from datacard_Y to datacard folder
         os.chdir('../datacard/')
@@ -437,7 +456,7 @@ def runFiducialXS():
             print(cmd, '\n')
             processCmd(cmd,1)
             cmds.append(cmd)
-
+            
             if 'zzfloating' in obsName:
                 cmd = 'echo "nuis group = CMS_eff_e CMS_eff_m CMS_hzz2e2mu_Zjets_2022 CMS_hzz4e_Zjets_2022 CMS_hzz4mu_Zjets_2022 CMS_hzz2e2mu_Zjets_2022EE CMS_hzz4e_Zjets_2022EE CMS_hzz4mu_Zjets_2022EE lumi_13p6TeV_2022 CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2022 CMS_zz4l_n_sig_2_2022 CMS_zz4l_n_sig_1_2022 CMS_zz4l_n_sig_3_2022EE CMS_zz4l_n_sig_2_2022EE CMS_zz4l_n_sig_1_2022EE CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
             else:
@@ -510,7 +529,7 @@ def runFiducialXS():
         print(cmd, '\n')
         processCmd(cmd,1)
         cmds.append(cmd)
-
+    
         # From datacard directory to combine_files, to store fit results
         os.chdir('../combine_files/')
         print('Current directory: combine_files')
@@ -794,5 +813,6 @@ with open('commands_'+obsName+'.py', 'w') as f:
         f.write('\n')
 print("all modules successfully compiled")
 
-processCmd('python expected_xsec.py --obsName "'+opt.OBSNAME+'" --year="'+opt.YEAR+'"')
+#processCmd('python expected_xsec.py --obsName "'+opt.OBSNAME+'" --year="'+opt.YEAR+'"')
+processCmd('python3 expected_xsec.py --obsName "'+opt.OBSNAME+'" --year="'+opt.YEAR+'"') # spencer
 sys.path.remove('../inputs/')

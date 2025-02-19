@@ -1,6 +1,6 @@
 universe   = vanilla
 executable = run.sh
-arguments  = pT4l Run3
+arguments  = pT4l Run3 24
 output     = logs/$(ClusterId).$(Process).out
 error      = logs/$(ClusterId).$(Process).err
 log        = logs/$(ClusterId).$(Process).log

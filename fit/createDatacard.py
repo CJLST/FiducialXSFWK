@@ -1,5 +1,5 @@
 import os,sys
-
+from numpy import array, float32 # spencer
 
 def fixJes(jesnp, jes_evts_noWeight):
     if jes_evts_noWeight <= 50:
@@ -66,17 +66,21 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
 
     # Background expectations
     sys.path.append('../inputs')
-    _temp = __import__('inputs_bkgTemplate_'+obsName, globals(), locals(), ['expected_yield'], -1)
+    #_temp = __import__('inputs_bkgTemplate_'+obsName, globals(), locals(), ['expected_yield'], -1)
+    _temp = __import__('inputs_bkgTemplate_'+obsName, globals(), locals(), ['expected_yield'], 0) # spencer 
     expected_yield = _temp.expected_yield
-    _temp = __import__('inputs_bkg_'+obsName+'_'+year, globals(), locals(), ['fractionsBackground'], -1)
+    #_temp = __import__('inputs_bkg_'+obsName+'_'+year, globals(), locals(), ['fractionsBackground'], -1)
+    _temp = __import__('inputs_bkg_'+obsName+'_'+year, globals(), locals(), ['fractionsBackground'], 0) # spencer 
     fractionsBackground = _temp.fractionsBackground
     if jes:
         sys.path.append('../coefficients/JES')
         jesNames = ['Abs', 'Abs_year', 'BBEC1', 'BBEC1_year', 'EC2', 'EC2_year', 'FlavQCD', 'HF', 'HF_year', 'RelBal', 'RelSample_year']
         jesNames_datacard = [j.replace('year',year) for j in jesNames] # The name of the nuisance in the datacard should have the correspoding year
-        _temp = __import__('JESNP_'+obsName, globals(), locals(), ['JESNP'], -1)
+        #_temp = __import__('JESNP_'+obsName, globals(), locals(), ['JESNP'], -1)
+        _temp = __import__('JESNP_'+obsName, globals(), locals(), ['JESNP'], 0) # spencer
         jesnp = _temp.JESNP
-        _temp = __import__('JESNP_evts_'+obsName, globals(), locals(), ['evts_noWeight'], -1)
+        #_temp = __import__('JESNP_evts_'+obsName, globals(), locals(), ['evts_noWeight'], -1)
+        _temp = __import__('JESNP_evts_'+obsName, globals(), locals(), ['evts_noWeight'], 0) # spencer
         jes_evts_noWeight = _temp.evts_noWeight
         sys.path.remove('../coefficients/JES')
     sys.path.remove('../inputs')
@@ -205,6 +209,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     if zzfloating:
         file.write('1 1 '+str(expected_yield[year,'ZX',channel])+'\n')
     else:
+        print(expected_yield[year,'qqzz',channel])
         file.write(str(expected_yield[year,'qqzz',channel])+' '+str(expected_yield[year,'ggzz',channel])+' '+str(expected_yield[year,'ZX',channel])+'\n')
     file.write('------------ \n')
 
@@ -257,26 +262,30 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     elif yearSetting == 'Run3':
         if zzfloating:
             # lumi
-            file.write('lumi_13TeV_2022 lnN ')
+            #file.write('lumi_13TeV_2022 lnN ')
+            file.write('lumi_13p6TeV_2022 lnN ') # spencer
             for i in range(nBins+2): # signals + out + fake
                 file.write(lumi['2022']+' ')
             file.write('- - -\n') # qqzz + ggzz + ZX
         else:
             # lumi
-            file.write('lumi_13TeV_2022 lnN ')
+            #file.write('lumi_13TeV_2022 lnN ')
+            file.write('lumi_13p6TeV_2022 lnN ') # spencer
             for i in range(nBins+4): # All except ZX
                 file.write(lumi['2022']+' ')
             file.write('-\n') # ZX
     else:
         if zzfloating:
             # lumi
-            file.write('lumi_13TeV_'+year+' lnN ')
+            #file.write('lumi_13TeV_'+year+' lnN ')
+            file.write('lumi_13p6TeV_2022 lnN ') # spencer
             for i in range(nBins+2): # signals + out + fake
                 file.write(lumi[year]+' ')
             file.write('- - -\n') # qqzz + ggzz + ZX
         else:
             # lumi
-            file.write('lumi_13TeV_'+year+' lnN ')
+            #file.write('lumi_13TeV_'+year+' lnN ')
+            file.write('lumi_13p6TeV_2022 lnN ') # spencer
             for i in range(nBins+4): # All except ZX
                 file.write(lumi[year]+' ')
             file.write('-\n') # ZX
@@ -380,13 +389,15 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     xHName = 'xH_' + _obsName[obsName]
     # Background expectations in [105,160]
     sys.path.append('../inputs')
-    _temp = __import__('inputs_bkgTemplate_'+obsName, globals(), locals(), ['expected_yield'], -1)
+    #_temp = __import__('inputs_bkgTemplate_'+obsName, globals(), locals(), ['expected_yield'], -1)
+    _temp = __import__('inputs_bkgTemplate_'+obsName, globals(), locals(), ['expected_yield'], 0) # spencer
     expected_yield = _temp.expected_yield
     if jes:
         sys.path.append('../coefficients/JES')
         jesNames = ['Abs', 'Abs_year', 'BBEC1', 'BBEC1_year', 'EC2', 'EC2_year', 'FlavQCD', 'HF', 'HF_year', 'RelBal', 'RelSample_year']
         jesNames_datacard = [j.replace('year',year) for j in jesNames] # The name of the nuisance in the datacard should have the correspoding year
-        _temp = __import__('JESNP_'+obsName+'_'+str(year), globals(), locals(), ['JESNP'], -1)
+        #_temp = __import__('JESNP_'+obsName+'_'+str(year), globals(), locals(), ['JESNP'], -1)
+        _temp = __import__('JESNP_'+obsName+'_'+str(year), globals(), locals(), ['JESNP'], 0) # spencer
         jesnp = _temp.JESNP
         sys.path.remove('../coefficients/JES')
         # print(jesnp)
@@ -573,3 +584,4 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     if channel == '4mu' or channel == '2e2mu':
         file.write('CMS_eff_m lnN ')
         # for i in range(nBins+4)
+
