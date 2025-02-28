@@ -241,7 +241,7 @@ vars = {'RunNumber',
         'Z2Flav',
         'Z1Mass',
         'Z2Mass',
-        'dataMCWeight',
+        #'dataMCWeight',
         # 'PFMET',
         'LepPt',
         'LepEta',
@@ -255,11 +255,13 @@ vars = {'RunNumber',
         }
 if MC:
     vars.add('overallEventWeight')
+    vars.add('dataMCWeight')
     # vars.add('xsec')
     # vars.add('L1prefiringWeight')
     vars.add('LHEPdfWeight')
     vars.add('LHEScaleWeight')
     vars.add('PUWeight')
+    vars.add('Generator_weight')
     # vars.add('LHEWeight_originalXWGTUP')
     vars.add('lep_Hindex')
     if "H12" in inFileName:
@@ -301,7 +303,7 @@ df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]
                                      .Define("Z2Flav", "ZZCand_Z2flav[bestCandIdx]") ## Dummy
                                      .Define("Z1Mass", "ZZCand_Z1mass[bestCandIdx]")
                                      .Define("Z2Mass", "ZZCand_Z2mass[bestCandIdx]") ## Dummy
-                                     .Define("dataMCWeight", "ZZCand_dataMCWeight[bestCandIdx]")
+                                     #.Define("dataMCWeight", "ZZCand_dataMCWeight[bestCandIdx]")
                                      .Define('RunNumber', "run")
                                      .Define('EventNumber', "event")
                                      .Define('LumiNumber', "luminosityBlock")
@@ -330,13 +332,17 @@ df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]
                                      # .Define('PFMET', "MET_pt")
                                      .Define('lep_Hindex', "getHindex(LepPt)")
                                      .Define('passedFullSelection', "1")
-                                     .Define('genHEPMCweight', "Generator_weight")
-                                     .Define('PUWeight', "puWeight")
+                                     #.Define('genHEPMCweight', "Generator_weight")
+                                     #.Define('PUWeight', "puWeight")
                                      )
-
+if MC:
+    df_SR = (df_SR.Define('genHEPMCweight', "Generator_weight")
+                  .Define('PUWeight', "puWeight")
+                  .Define('dataMCWeight', "ZZCand_dataMCWeight[bestCandIdx]")
+             )
 if 'ggH' in inFileName:
     df_SR = df_SR.Define('ggH_NNLOPS_weight', "ggH_NNLOPS_Weight")
-            
+
 if "H12" in inFileName:
     df_SR = (df_SR.Define('GENlep_pt', "getGENlep_vector(FidDressedLeps_pt)")
                   .Define('GENlep_eta', "getGENlep_vector(FidDressedLeps_eta)")
@@ -411,15 +417,13 @@ if "H12" in inFileName:
     if 'ggH' in inFileName:
         vars_fail.add('ggH_NNLOPS_weight')
         df_fail = df_fail.Define('ggH_NNLOPS_weight', "ggH_NNLOPS_Weight")
-    
+
 opts.fMode = 'UPDATE'
 print(f"df nEntries: {df_SR.Count().GetValue()}")
 
 df_SR.Snapshot('ZZTree/candTree', outFileName, vars, opts)
 if "H12" in inFileName:
     df_fail.Snapshot('ZZTree/candTree_failed', outFileName, vars_fail, opts)
-
-print('Reaching end1')
 
 ## Add counter only with the 40th entry
 counters = ROOT.TH1F("Counters", "Counters", 50, 0, 100)
@@ -429,7 +433,6 @@ if opt.MC:
     counters.SetBinContent(40, genEventSumw)
     root.Close()
 
-print('Reaching end')
 root_file = ROOT.TFile(outFileName, "UPDATE")
 counters.Write()
 root_file.Close()
