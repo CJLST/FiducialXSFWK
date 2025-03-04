@@ -66,8 +66,10 @@ def prepareTrees(year):
     d_bkg = {}
 
     for bkg in bkgs:
-        fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+bkg+"/"+bkg+"_reducedTree_MC_"+year+"_skimmed.root"
-        d_bkg[bkg] = uproot.open(fname)[key]
+        #fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+bkg+"/"+bkg+"_reducedTree_MC_"+year+"_skimmed.root"
+        fname = "/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/"+year+"/"+bkg+"/ZZ4lAnalysis_SKIMMED.root" # spencer
+        #d_bkg[bkg] = uproot.open(fname)[key]
+        d_bkg[bkg] = uproot.open(fname)["ZZTree/candTree"] # spencer
 
     return d_bkg
 
@@ -82,12 +84,12 @@ def xsecs(year):
         genweight = d_bkg[bkg].arrays("genHEPMCweight", library="np")["genHEPMCweight"]
         if 'ZZTo' in bkg:
             # TODO: Add EW KFactor once in the samples
-            KFactor_QCD_qqZZ_M_Weight = d_bkg[bkg].arrays("KFactor_QCD_qqZZ_M", library="np")["KFactor_QCD_qqZZ_M"]
-            # KFactor_QCD_qqZZ_M_Weight = d_bkg[bkg].arrays("KFactor_QCD_qqZZ_M_Weight", library="np")["KFactor_QCD_qqZZ_M_Weight"]
+            # KFactor_QCD_qqZZ_M_Weight = d_bkg[bkg].arrays("KFactor_QCD_qqZZ_M", library="np")["KFactor_QCD_qqZZ_M"]
+            KFactor_QCD_qqZZ_M_Weight = d_bkg[bkg].arrays("KFactor_QCD_qqZZ_M_Weight", library="np")["KFactor_QCD_qqZZ_M_Weight"] # spencer
             xsec = total_weight/(puweight*genweight*KFactor_QCD_qqZZ_M_Weight)
         elif 'ggTo' in bkg:
-            KFactor_QCD_ggZZ_Nominal_Weight = d_bkg[bkg].arrays("KFactor_QCD_ggZZ_Nominal", library="np")["KFactor_QCD_ggZZ_Nominal"]
-            # KFactor_QCD_ggZZ_Nominal_Weight = d_bkg[bkg].arrays("KFactor_QCD_ggZZ_Nominal_Weight", library="np")["KFactor_QCD_ggZZ_Nominal_Weight"]
+            #KFactor_QCD_ggZZ_Nominal_Weight = d_bkg[bkg].arrays("KFactor_QCD_ggZZ_Nominal", library="np")["KFactor_QCD_ggZZ_Nominal"]
+            KFactor_QCD_ggZZ_Nominal_Weight = d_bkg[bkg].arrays("KFactor_QCD_ggZZ_Nominal_Weight", library="np")["KFactor_QCD_ggZZ_Nominal_Weight"] # spencer
             xsec = total_weight/(puweight*genweight*KFactor_QCD_ggZZ_Nominal_Weight)
         else:
             xsec = total_weight/(puweight*genweight)
@@ -100,9 +102,10 @@ def xsecs(year):
 def generators(year):
     gen_bkg = {}
     for bkg in bkgs:
-        fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+bkg+"/"+bkg+"_reducedTree_MC_"+year+"_skimmed.root"
-        gen_bkg[bkg] = uproot.open(fname)["candTree/Counter"].array()[0]
-
+        #fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+bkg+"/"+bkg+"_reducedTree_MC_"+year+"_skimmed.root"
+        fname = "/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/"+year+"/"+bkg+"/ZZ4lAnalysis_SKIMMED.root" # spencer
+        #gen_bkg[bkg] = uproot.open(fname)["candTree/Counter"].array()[0]
+        gen_bkg[bkg] = uproot.open(fname)["Counters"].values()[39] # spencer
     return gen_bkg
 
 # Jets variables
@@ -152,12 +155,18 @@ def dataframes(year, year_mc):
         lumi = 26.6728
     elif year_mc == '2022':
         lumi = 7.9804
+    elif year_mc == '2023preBPix':
+        lumi = 17.794
+    elif year_mc == '2023postBPix':
+        lumi = 9.451
+    
     d_df_bkg = {}
     d_bkg = prepareTrees(year_mc)
     gen_bkg = generators(year_mc)
     xsec_bkg = xsecs(year_mc)
     for bkg in bkgs:
-        b_bkg = ['ZZMass', 'ZZyAbs', 'ZZPt', 'Z1Flav', 'Z2Flav', 'Z1Mass', 'Z2Mass', 'overallEventWeight', 'dataMCWeight']
+        #b_bkg = ['ZZMass', 'ZZyAbs', 'ZZPt', 'Z1Flav', 'Z2Flav', 'Z1Mass', 'Z2Mass', 'overallEventWeight', 'dataMCWeight']
+        b_bkg = ['ZZMass', 'ZZy', 'ZZPt', 'Z1Flav', 'Z2Flav', 'Z1Mass', 'Z2Mass', 'overallEventWeight', 'dataMCWeight'] # spencer
         gen = gen_bkg[bkg]
         xsec = xsec_bkg[bkg]
         df_b = d_bkg[bkg].arrays(b_bkg, library="np")
@@ -221,7 +230,8 @@ def GetFakeRate(lep_Pt, lep_eta, lep_ID):
 
 # Open Fake Rates files
 def openFR(year):
-    fnameFR = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII/FRfiles/FakeRates_SS_%s.root" %year
+    #fnameFR = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII/FRfiles/FakeRates_SS_%s.root" %year
+    fnameFR = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII/FRfiles/FakeRates_SS_2022.root" # SPENCER FIX THIS
     file = uproot.open(fnameFR)
     # Retrieve FR from TGraphErrors
     input_file_FR = ROOT.TFile(fnameFR)
@@ -330,7 +340,15 @@ def ZXYield(df, year, year_mc):
 
 def doZX(year, year_mc):
     keyZX = 'CRZLLTree/candTree'
-    data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/'+year_mc+'/Data/AllData_'+year_mc+'.root'
+
+    #data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/'+year_mc+'/Data/AllData_'+year_mc+'.root'
+    data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/2022/Data/AllData_2022.root' # SPENCER FIX THIS
+    
+    #if (year=="2022"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/2022/Data/Data_eraCD_preEE_SKIMMED.root' # spencer
+    #if (year=="2022EE"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/2022EE/Data/Data_eraEFG_postEE_SKIMMED.root' # spencer
+    #if (year=="2023preBPix"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/2023preBPix/Data/Data_eraC_preBPix_SKIMMED.root' # spencer
+    #if (year=="2023postBPix"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/2023postBPix/Data/Data_eraD_postBPix_SKIMMED.root' # spencer 
+
     ttreeZX = uproot.open(data)[keyZX]
     ttreeZX = ttreeZX.arrays(branches_ZX, library="np")
     dfZX = pd.DataFrame(columns=branches_ZX)
@@ -372,7 +390,7 @@ def doTemplates(df_irr, df_red, binning, var, var_string, var_2nd='None'):
             for f in ['2e2mu', '4e', '4mu']:
                 df = df_irr[year][bkg][(df_irr[year][bkg].FinState == f) & (df_irr[year][bkg].ZZMass >= opt.LOWER_BOUND) & (df_irr[year][bkg].ZZMass <= opt.UPPER_BOUND)].copy()
                 len_tot = df['weight'].sum()
-                len_tot = len_tot[0] # spencer
+                # len_tot = len_tot[0] # spencer
                 yield_bkg[year,bkg,f] = len_tot
                 print(year, bkg, f, len_tot)
                 for i in range(nBins):
@@ -540,11 +558,11 @@ def doTemplates(df_irr, df_red, binning, var, var_string, var_2nd='None'):
 # -----------------------------------------------------------------------------------------
 
 # General settings
-bkgs = ['ZZTo4l', 'ggTo2e2mu_Contin_MCFM701', 'ggTo2e2tau_Contin_MCFM701', 'ggTo2mu2tau_Contin_MCFM701',
-        'ggTo4e_Contin_MCFM701', 'ggTo4mu_Contin_MCFM701', 'ggTo4tau_Contin_MCFM701']
+#bkgs = ['ZZTo4l', 'ggTo2e2mu_Contin_MCFM701', 'ggTo2e2tau_Contin_MCFM701', 'ggTo2mu2tau_Contin_MCFM701', 'ggTo4e_Contin_MCFM701', 'ggTo4mu_Contin_MCFM701', 'ggTo4tau_Contin_MCFM701']
+bkgs = ['ZZTo4l', 'ggTo2e2mu_Contin_MCFM701', 'ggTo4e_Contin_MCFM701', 'ggTo4mu_Contin_MCFM701']
 eos_path_FR = path['eos_path_FR']
 eos_path = path['eos_path']
-key = 'candTree'
+key = 'ZZTree/candTree'
 
 if (opt.YEAR == '2016'):
     years_MC = ['2016pre', '2016post']
@@ -559,8 +577,8 @@ if (opt.YEAR == 'Full'):
     years_MC = ['2016pre', '2016post', '2017', '2018']
     years = [2016,2017,2018]
 if (opt.YEAR == 'Run3'):
-    years_MC = ['2022EE', '2022']
-    years = ["2022EE", "2022"] 
+    years_MC = ['2022', '2022EE', '2023preBPix', '2023postBPix']
+    years = ["2022", "2022EE", "2023preBPix", "2023postBPix"] 
 
 obs_bins, doubleDiff = binning(opt.OBSNAME)
 
@@ -603,9 +621,11 @@ if (opt.YEAR == '2017' or opt.YEAR == 'Full'):
 if (opt.YEAR == '2018' or opt.YEAR == 'Full'):
     d_bkg[2018] = d_bkg_tmp['2018']
 if (opt.YEAR == 'Run3'):
-    d_bkg['2022EE'] = d_bkg_tmp['2022EE']
     d_bkg['2022'] = d_bkg_tmp['2022']
-
+    d_bkg['2022EE'] = d_bkg_tmp['2022EE']
+    d_bkg['2023preBPix'] = d_bkg_tmp['2023preBPix']
+    d_bkg['2023postBPix'] = d_bkg_tmp['2023postBPix']
+    
 # Generate pandas for ZX
 branches_ZX = ['ZZMass', 'Z1Flav', 'Z2Flav', 'LepLepId', 'LepEta', 'LepPt', 'Z2Mass', 'Z1Mass', 'ZZPt', 'ZZyAbs']
 dfZX={}

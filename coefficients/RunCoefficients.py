@@ -96,10 +96,11 @@ def prepareTrees(year):
     d_sig = {}
     d_sig_failed = {}
     for signal in signals_original:
-        if "ggH" in signal:
-            fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
-        else:
-            fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
+        #if "ggH" in signal:
+        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
+        #else:
+        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
+        fname = "/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/"+year+"/"+signal+"/ZZ4lAnalysis_SKIMMED.root" # spencer
         print(fname)
         d_sig[signal] = uproot.open(fname)[key]
         d_sig_failed[signal] = uproot.open(fname)[key_failed]
@@ -211,11 +212,13 @@ def add_cuth4l_reco(Hindex,genIndex,momMomId,momId): #(Hindex, momMomId,momId):
 def generators(year):
     gen_sig = {}
     for signal in signals_original:
-        if "ggH" in signal:
-            fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
-        else:
-            fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
-        gen_sig[signal] = uproot.open(fname)["candTree/Counter"].array()[0]
+        #if "ggH" in signal:
+        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
+        #else:
+        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
+        fname = "/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/"+year+"/"+signal+"/ZZ4lAnalysis_SKIMMED.root" # spencer
+        #gen_sig[signal] = uproot.open(fname)["candTree/Counter"].array()[0]
+        gen_sig[signal] = uproot.open(fname)["Counters"].values()[39] # spencer 
         print("Counters is: ", gen_sig[signal])
     return gen_sig
 
@@ -310,6 +313,10 @@ def dataframes(year, doubleDiff):
         lumi = 26.6728
     elif year == '2022':
         lumi = 7.9804
+    elif year == '2023preBPix':
+        lumi = 17.794
+    elif year == '2023postBPix':
+        lumi = 9.451
     d_df_sig = {}
     d_df_sig_failed = {}
     d_sig, d_sig_failed = prepareTrees(year)
@@ -615,15 +622,15 @@ else:
     signals_original = ['ggH125', 'VBFH125', 'WminusH125', 'WplusH125', 'ZH125', "ttH125"]
     signals = ['ggH125', 'VBFH125', 'WH125', 'ZH125', 'ttH125']
 eos_path_sig = path['eos_path_sig']
-key = 'candTree'
-key_failed = 'candTree_failed'
+#key = 'candTree'
+#key_failed = 'candTree_failed'
+key = 'ZZTree/candTree' # spencer
+key_failed = 'ZZTree/candTree_failed' # spencer
 
 if (opt.YEAR == '2016'): years = ['2016post']
 if (opt.YEAR == '2017'): years = ['2017']
 if (opt.YEAR == '2018'): years = ['2018']
-if (opt.YEAR == 'Run3'): years = ['2022', '2022EE']
-if (opt.YEAR == '2022'): years = ['2022'] # spencer
-if (opt.YEAR == '2022EE'): years = ['2022EE'] # spencer
+if (opt.YEAR == 'Run3'): years = ['2022', '2022EE', '2023preBPix', '2023postBPix']
 if (opt.YEAR == 'Full'): years = ['2016post','2017','2018']
 
 obs_bins, doubleDiff = binning(opt.OBSNAME)

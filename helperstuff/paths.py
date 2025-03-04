@@ -4,10 +4,14 @@ path = {
  #'eos_path': '/eos/user/a/atarabin/',
  #'eos_path_FR': '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIILegacy/200205_CutBased/'
 
- 'eos_path_sig': '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/',
- 'eos_path': '/eos/user/s/sellissp',
- 'eos_path_FR': '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/',
+ #'eos_path_sig': '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/',
+ #'eos_path': '/eos/user/s/sellissp',
+ #'eos_path_FR': '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/',
 
+ 'eos_path_sig': '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/',
+ 'eos_path': '/eos/user/s/sellissp',
+ 'eos_path_FR': '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/',
+    
 }
 
 
