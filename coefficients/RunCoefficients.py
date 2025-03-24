@@ -100,7 +100,7 @@ def prepareTrees(year):
         #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
         #else:
         #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
-        fname = "/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/"+year+"/"+signal+"/ZZ4lAnalysis_SKIMMED.root" # spencer
+        fname = path['eos_path_sig']+year+"/"+signal+"/ZZ4lAnalysis_SKIMMED.root"
         print(fname)
         d_sig[signal] = uproot.open(fname)[key]
         d_sig_failed[signal] = uproot.open(fname)[key_failed]
@@ -216,7 +216,7 @@ def generators(year):
         #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
         #else:
         #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
-        fname = "/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/"+year+"/"+signal+"/ZZ4lAnalysis_SKIMMED.root" # spencer
+        fname = path['eos_path_sig']+year+"/"+signal+"/ZZ4lAnalysis_SKIMMED.root"
         #gen_sig[signal] = uproot.open(fname)["candTree/Counter"].array()[0]
         gen_sig[signal] = uproot.open(fname)["Counters"].values()[39] # spencer 
         print("Counters is: ", gen_sig[signal])
@@ -543,7 +543,7 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
             if doubleDiff: obs_name_dic = obs_name+'_'+obs_name_2nd
             else: obs_name_dic = obs_name
             #Fix 2016post to 2016
-            if 'post' in year:
+            if '2016post' in year:
                 year_label = '2016'
             else:
                 year_label = year
@@ -633,6 +633,14 @@ if (opt.YEAR == '2018'): years = ['2018']
 if (opt.YEAR == 'Run3'): years = ['2022', '2022EE', '2023preBPix', '2023postBPix']
 if (opt.YEAR == 'Full'): years = ['2016post','2017','2018']
 
+if (opt.YEAR == '2022'): years = ['2022']
+if (opt.YEAR == '2022EE'): years = ['2022EE']
+if (opt.YEAR == '2023preBPix'): years = ['2023preBPix']
+if (opt.YEAR == '2023postBPix'): years = ['2023postBPix']
+
+if (opt.YEAR == '2022full'): years = ['2022', '2022EE']
+if (opt.YEAR == '2023full'): years = ['2023preBPix', '2023postBPix']
+
 obs_bins, doubleDiff = binning(opt.OBSNAME)
 if doubleDiff:
     obs_name = opt.OBSNAME.split(' vs ')[0]
@@ -679,7 +687,7 @@ for year in years:
     d_sig_tot[year] = d_sup
 
 # Create dataframe FullRun2
-if((opt.YEAR == 'Full') or (opt.YEAR == 'Run3')):
+if((opt.YEAR == 'Full') or (opt.YEAR == 'Run3') or (opt.YEAR == '2022full') or (opt.YEAR == '2023full')):
     d_sig_full = {}
     for signal in signals:
         frame = [d_sig_tot[year][signal] for year in years]

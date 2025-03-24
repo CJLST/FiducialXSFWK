@@ -306,7 +306,7 @@ vars = {'RunNumber',
         'Z2Flav',
         'Z1Mass',
         'Z2Mass',
-        'dataMCWeight',
+        #'dataMCWeight',
         # 'PFMET',
         'LepPt',
         'LepEta',
@@ -322,12 +322,9 @@ vars = {'RunNumber',
         'pTj2', # spencer
         'Nj', # spencer 
         'mjj', #spencer
-        'detajj', # spencer
         'absdetajj', # spencer
-	'absdphijj', # spencer
-        'pTHj', # spencer
-        'mHj', # spencer
-        'pTHjj' # spencer
+        'dphijj', # spencer 
+        
 }
 if MC:
     vars.add('overallEventWeight')
@@ -337,7 +334,8 @@ if MC:
     vars.add('LHEScaleWeight_') # spencer
     vars.add('PUWeight')
     # vars.add('LHEWeight_originalXWGTUP')
-    vars.add('lep_Hindex')
+    vars.add('lep_Hindex') # SHOULD THIS BE GENLEP_HINDEX ? - SPENCER
+    vars.add('dataMCWeight') # spencer
     if "H12" in inFileName:
         vars.add('GENlep_pt')
         vars.add('GENlep_eta')
@@ -358,8 +356,15 @@ if MC:
         # vars.add('GENlep_index')
         vars.add('lep_genindex')
         vars.add('passedFiducial')
+        vars.add('GENpTj1') # spencer
+        vars.add('GENpTj2') # spencer
+        vars.add('GENNj') # spencer
+        vars.add('GENmjj') # spencer
+        vars.add('GENabsdetajj') # spencer
+        vars.add('GENdphijj') # spencer
     vars.add('passedFullSelection')
     vars.add('genHEPMCweight')
+    
     if 'ggH' in inFileName:
         vars.add('ggH_NNLOPS_weight')
     if 'ZZTo' in inFileName:
@@ -367,7 +372,8 @@ if MC:
         vars.add('KFactor_QCD_qqZZ_M_Weight')
     if 'ggTo' in inFileName:
         vars.add('KFactor_QCD_ggZZ_Nominal_Weight')
-
+    
+        
 ## SR
 df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]") ## Dummy
                                      .Define("ZZPt", "ZZCand_pt[bestCandIdx]")
@@ -377,7 +383,7 @@ df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]
                                      .Define("Z2Flav", "ZZCand_Z2flav[bestCandIdx]") ## Dummy
                                      .Define("Z1Mass", "ZZCand_Z1mass[bestCandIdx]")
                                      .Define("Z2Mass", "ZZCand_Z2mass[bestCandIdx]") ## Dummy
-                                     .Define("dataMCWeight", "ZZCand_dataMCWeight[bestCandIdx]")
+                                     #.Define("dataMCWeight", "ZZCand_dataMCWeight[bestCandIdx]")
                                      .Define('RunNumber', "run")
                                      .Define('EventNumber', "event")
                                      .Define('LumiNumber', "luminosityBlock")
@@ -406,27 +412,30 @@ df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]
                                      # .Define('PFMET', "MET_pt")
                                      .Define('lep_Hindex', "getHindex(LepPt)")
                                      .Define('passedFullSelection', "1")
-                                     .Define('genHEPMCweight', "Generator_weight")
-                                     .Define('PUWeight', "puWeight")
-          # spencer
-          .Define('pTj1', "Jet_pt.size() > 0 ? Jet_pt[0] : -1")
-          .Define('pTj2', "Jet_pt.size() > 1 ? Jet_pt[1] : -1")
-          .Define('Nj', "Jet_pt.size()")
-          .Define('mjj', "Jet_pt.size() > 1 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[0], Jet_eta[0], Jet_phi[0], Jet_mass[0]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[1], Jet_eta[1], Jet_phi[1], Jet_mass[1])).M() : -1")
-          .Define('detajj', "Jet_pt.size() > 1 ? (Jet_eta[0] - Jet_eta[1]) : -1")
-          .Define('absdetajj', "Jet_pt.size() > 1 ? TMath::Abs(Jet_eta[0] - Jet_eta[1]) : -1")
-	  .Define('absdphijj', "Jet_pt.size() > 1 ? deltaphi(ROOT::Math::PtEtaPhiMVector(Jet_pt[0], Jet_eta[0], Jet_phi[0], Jet_mass[0]), ROOT::Math::PtEtaPhiMVector(Jet_pt[1], Jet_eta[1], Jet_phi[1], Jet_mass[1])) : -1")
-          .Define('pTHj', "Jet_pt.size() > 0 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[0], Jet_eta[0], Jet_phi[0], Jet_mass[0])).Pt() : -1")
-          .Define('mHj', "Jet_pt.size() > 0 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[0], Jet_eta[0], Jet_phi[0], Jet_mass[0])).M() : -1")
-          .Define('pTHjj', "Jet_pt.size() > 1 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[0], Jet_eta[0], Jet_phi[0], Jet_mass[0]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[1], Jet_eta[1], Jet_phi[1], Jet_mass[1])).Pt() : -1")
-          # spencer
+
+    # spencer
+    .Define('pTj1', "Jet_pt[JetLeadingIdx]")
+    .Define('pTj2',  "Jet_pt[JetSubleadingIdx]")
+    .Define('Nj', "nCleanedJetsPt30")
+    .Define('mjj', "nCleanedJetsPt30 > 1 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).M() : -1")
+    .Define('absdetajj', "nCleanedJetsPt30 > 1 ? TMath::Abs(Jet_eta[JetLeadingIdx] - Jet_eta[JetSubleadingIdx]) : -1")
+    .Define('dphijj', "nCleanedJetsPt30 > 1 ? deltaphi(ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])) : -1")
+    # spencer           
           
-)
+    )
 
+if MC:
+    df_SR = (df_SR.Define('LHEPdfWeight_', "LHEPdfWeight") # spencer
+         .Define('LHEScaleWeight_', "LHEScaleWeight") # spencer
+         .Define("dataMCWeight", "ZZCand_dataMCWeight[bestCandIdx]") # spencer
+         .Define('genHEPMCweight', "Generator_weight") # spencer
+         .Define('PUWeight', "puWeight")) # spencer
 
-if 'ggH' in inFileName:
-          df_SR = df_SR.Define('ggH_NNLOPS_weight', "ggH_NNLOPS_Weight")
-            
+    
+if 'ggH' in inFileName: df_SR = df_SR.Define('ggH_NNLOPS_weight', "ggH_NNLOPS_Weight")
+if 'ZZTo' in inFileName: df_SR = df_SR.Define('KFactor_QCD_qqZZ_M_weight', "KFactor_QCD_qqZZ_M_Weight") # spencer
+if 'ggTo' in inFileName: df_SR = df_SR.Define('KFactor_QCD_ggZZ_Nominal_weight', "KFactor_QCD_ggZZ_Nominal_Weight") # spencer
+
 if "H12" in inFileName:
     df_SR = (df_SR.Define('GENlep_pt', "getGENlep_vector(FidDressedLeps_pt)")
                   .Define('GENlep_eta', "getGENlep_vector(FidDressedLeps_eta)")
@@ -445,10 +454,16 @@ if "H12" in inFileName:
                   .Define('GENZ_MomId', "getGENlep_int(FidZ_MomPdgId)")
                   .Define('GENlep_Hindex', "getGENHindex(FidZZ_Z1l1Idx, FidZZ_Z1l2Idx, FidZZ_Z2l1Idx, FidZZ_Z2l2Idx)")
                   .Define('lep_genindex', "getLepGENindex(LepPt, LepEta, LepPhi, GENlep_id, LepLepId, GENlep_pt, GENlep_eta, GENlep_phi)")
-             .Define('LHEPdfWeight_', "LHEPdfWeight") # spencer
-             .Define('LHEScaleWeight_', "LHEScaleWeight") # spencer
-    )
-
+                  # spencer
+                  .Define('GENpTj1', "GenJet_pt[JetLeadingIdx]")
+                  .Define('GENpTj2', "GenJet_pt[JetSubleadingIdx]")
+                  .Define('GENNj', "nGenJet")
+                  .Define('GENmjj', "nGenJet > 1 ? (ROOT::Math::PtEtaPhiMVector(GenJet_pt[JetLeadingIdx], GenJet_eta[JetLeadingIdx], GenJet_phi[JetLeadingIdx], GenJet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[JetSubleadingIdx], GenJet_eta[JetSubleadingIdx], GenJet_phi[JetSubleadingIdx], GenJet_mass[JetSubleadingIdx])).M() : -1")
+                  .Define('GENabsdetajj', "nGenJet > 1 ? TMath::Abs(GenJet_eta[JetLeadingIdx] - GenJet_eta[JetSubleadingIdx]) : -1")
+                  .Define('GENdphijj', "nGenJet > 1 ? deltaphi(ROOT::Math::PtEtaPhiMVector(GenJet_pt[JetLeadingIdx], GenJet_eta[JetLeadingIdx], GenJet_phi[JetLeadingIdx], GenJet_mass[JetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(GenJet_pt[JetSubleadingIdx], GenJet_eta[JetSubleadingIdx], GenJet_phi[JetSubleadingIdx], GenJet_mass[JetSubleadingIdx])) : -1")
+                  # spencer
+             )
+    
     df_filter = df_all.Filter("isNotInEvents(event)")
     print(f"df_filter nEntries: {df_filter.Count().GetValue()}")
     vars_fail = {'GENlep_pt',
@@ -475,7 +490,13 @@ if "H12" in inFileName:
     'LHEPdfWeight_', # spencer
     'LHEScaleWeight_', # spencer
     'genHEPMCweight',
-    'PUWeight'
+    'PUWeight',
+    'GENpTj1', # spencer
+    'GENpTj2', # spencer
+    'GENNj', # spencer
+    'GENmjj', # spencer
+    'GENabsdetajj', # spencer
+    'GENdphijj', # spencer
     }
     df_fail = (df_filter.Define('GENlep_pt', "getGENlep_vector(FidDressedLeps_pt)")
                         .Define('GENlep_eta', "getGENlep_vector(FidDressedLeps_eta)")
@@ -501,7 +522,17 @@ if "H12" in inFileName:
                         .Define('PUWeight', "puWeight")
                .Define('LHEPdfWeight_', "LHEPdfWeight") # spencer
                .Define('LHEScaleWeight_', "LHEScaleWeight") # spencer    
-                )
+            # spencer - FIX THESE JetLeadingIdx JetSubleadingIdx NOT IN ALLEVENTS
+            .Define('GENpTj1', "GenJet_pt[0]") 
+            .Define('GENpTj2', "GenJet_pt[1]")
+            .Define('GENNj', "nGenJet")
+            .Define('GENmjj', "nGenJet > 1 ? (ROOT::Math::PtEtaPhiMVector(GenJet_pt[0], GenJet_eta[0], GenJet_phi[0], GenJet_mass[0]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[1], GenJet_eta[1], GenJet_phi[1], GenJet_mass[1])).M() : -1")
+            .Define('GENabsdetajj', "nGenJet > 1 ? TMath::Abs(GenJet_eta[0] - GenJet_eta[1]) : -1")
+            .Define('GENdphijj', "nGenJet > 1 ? deltaphi(ROOT::Math::PtEtaPhiMVector(GenJet_pt[0], GenJet_eta[0], GenJet_phi[0], GenJet_mass[0]), ROOT::Math::PtEtaPhiMVector(GenJet_pt[1], GenJet_eta[1], GenJet_phi[1], GenJet_mass[1])) : -1")
+            # spencer
+
+    )
+
     if 'ggH' in inFileName:
         vars_fail.add('ggH_NNLOPS_weight')
         df_fail = df_fail.Define('ggH_NNLOPS_weight', "ggH_NNLOPS_Weight")

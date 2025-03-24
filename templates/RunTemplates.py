@@ -12,11 +12,10 @@ import ROOT
 import json
 # from tdrStyle import *
 import random #-*-*-*-*-*-*-*-*-*-*-*-* Temporary - since we do not have discriminantsa in data yet, we perform a random generation -*-*-*-*-*-*-*-*-*-*-*-*
+
+from observables import observables
 from binning import binning
 from paths import path
-
-# sys.path.append('../inputs/')
-# from observables import observables
 
 print('Welcome in RunTemplates!')
 
@@ -67,7 +66,7 @@ def prepareTrees(year):
 
     for bkg in bkgs:
         #fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+bkg+"/"+bkg+"_reducedTree_MC_"+year+"_skimmed.root"
-        fname = "/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/"+year+"/"+bkg+"/ZZ4lAnalysis_SKIMMED.root" # spencer
+        fname = path['eos_path_sig']+year+"/"+bkg+"/ZZ4lAnalysis_SKIMMED.root" # spencer
         #d_bkg[bkg] = uproot.open(fname)[key]
         d_bkg[bkg] = uproot.open(fname)["ZZTree/candTree"] # spencer
 
@@ -103,7 +102,7 @@ def generators(year):
     gen_bkg = {}
     for bkg in bkgs:
         #fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+bkg+"/"+bkg+"_reducedTree_MC_"+year+"_skimmed.root"
-        fname = "/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/"+year+"/"+bkg+"/ZZ4lAnalysis_SKIMMED.root" # spencer
+        fname = path['eos_path_sig']+year+"/"+bkg+"/ZZ4lAnalysis_SKIMMED.root" # spencer
         #gen_bkg[bkg] = uproot.open(fname)["candTree/Counter"].array()[0]
         gen_bkg[bkg] = uproot.open(fname)["Counters"].values()[39] # spencer
     return gen_bkg
@@ -165,8 +164,7 @@ def dataframes(year, year_mc):
     gen_bkg = generators(year_mc)
     xsec_bkg = xsecs(year_mc)
     for bkg in bkgs:
-        #b_bkg = ['ZZMass', 'ZZyAbs', 'ZZPt', 'Z1Flav', 'Z2Flav', 'Z1Mass', 'Z2Mass', 'overallEventWeight', 'dataMCWeight']
-        b_bkg = ['ZZMass', 'ZZy', 'ZZPt', 'Z1Flav', 'Z2Flav', 'Z1Mass', 'Z2Mass', 'overallEventWeight', 'dataMCWeight'] # spencer
+        b_bkg = ['ZZMass', 'ZZy', 'ZZPt', 'Z1Flav', 'Z2Flav', 'Z1Mass', 'Z2Mass', 'overallEventWeight', 'dataMCWeight', 'pTj1', 'pTj2', 'Nj', 'mjj', 'absdetajj', 'dphijj'] # spencer
         gen = gen_bkg[bkg]
         xsec = xsec_bkg[bkg]
         df_b = d_bkg[bkg].arrays(b_bkg, library="np")
@@ -230,8 +228,10 @@ def GetFakeRate(lep_Pt, lep_eta, lep_ID):
 
 # Open Fake Rates files
 def openFR(year):
-    #fnameFR = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII/FRfiles/FakeRates_SS_%s.root" %year
-    fnameFR = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII/FRfiles/FakeRates_SS_2022.root" # SPENCER FIX THIS
+    
+    if ( year == "2022" or year == "2022EE" ): fnameFR = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII/FRfiles/FakeRates_SS_%s.root" %year
+    else: fnameFR = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII/FRfiles/FakeRates_SS_2022.root" # SPENCER FIX THIS
+
     file = uproot.open(fnameFR)
     # Retrieve FR from TGraphErrors
     input_file_FR = ROOT.TFile(fnameFR)
@@ -341,13 +341,14 @@ def ZXYield(df, year, year_mc):
 def doZX(year, year_mc):
     keyZX = 'CRZLLTree/candTree'
 
-    #data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/'+year_mc+'/Data/AllData_'+year_mc+'.root'
-    data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/2022/Data/AllData_2022.root' # SPENCER FIX THIS
+    #if ( year == "2022" or year == "2022EE" ): data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/'+year_mc+'/Data/AllData_'+year_mc+'.root'
+    #else: data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/2022/Data/AllData_2022.root' # SPENCER FIX THIS
     
-    #if (year=="2022"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/2022/Data/Data_eraCD_preEE_SKIMMED.root' # spencer
-    #if (year=="2022EE"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/2022EE/Data/Data_eraEFG_postEE_SKIMMED.root' # spencer
-    #if (year=="2023preBPix"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/2023preBPix/Data/Data_eraC_preBPix_SKIMMED.root' # spencer
-    #if (year=="2023postBPix"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/2023postBPix/Data/Data_eraD_postBPix_SKIMMED.root' # spencer 
+    #if (year=="2022"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2022_Data/Data_eraCD_preEE_SKIMMED.root'
+    if (year=="2022"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/032025/2022_Data/Data_eraCD_preEE_SKIMMED.root'
+    if (year=="2022EE"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2022_Data/Data_eraEFG_postEE_SKIMMED.root'
+    if (year=="2023preBPix"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2023_Data/Data_eraC_preBPix_SKIMMED.root'
+    if (year=="2023postBPix"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2023_Data/Data_eraD_postBPix_SKIMMED.root'
 
     ttreeZX = uproot.open(data)[keyZX]
     ttreeZX = ttreeZX.arrays(branches_ZX, library="np")
@@ -415,7 +416,7 @@ def doTemplates(df_irr, df_red, binning, var, var_string, var_2nd='None'):
                     sel = sel_bin_low & sel_bin_high & sel_bin_mass_low & sel_bin_mass_high & sel_fstate
                     if doubleDiff: sel &= sel_bin_2nd_low & sel_bin_2nd_high
 
-                    if 'zzfloating' in obs_name:
+                    if 'zzfloating' in obs_name: # revise for 2023
                         df_preEE_qqzz = df_irr["2022"]["qqzz"][(df_irr["2022"]["qqzz"].ZZMass >= opt.LOWER_BOUND) & (df_irr["2022"]["qqzz"].ZZMass <= opt.UPPER_BOUND) & (df_irr["2022"]["qqzz"][var] >= bin_low) & (df_irr["2022"]["qqzz"][var] < bin_high)].copy()
                         df_postEE_qqzz = df_irr["2022EE"]["qqzz"][(df_irr["2022EE"]["qqzz"].ZZMass >= opt.LOWER_BOUND) & (df_irr["2022EE"]["qqzz"].ZZMass <= opt.UPPER_BOUND) & (df_irr["2022EE"]["qqzz"][var] >= bin_low) & (df_irr["2022EE"]["qqzz"][var] < bin_high)].copy()
                         df_preEE_ggzz = df_irr["2022"]["ggzz"][(df_irr["2022"]["ggzz"].ZZMass >= opt.LOWER_BOUND) & (df_irr["2022"]["ggzz"].ZZMass <= opt.UPPER_BOUND) & (df_irr["2022"]["ggzz"][var] >= bin_low) & (df_irr["2022"]["ggzz"][var] < bin_high)].copy()
@@ -455,12 +456,12 @@ def doTemplates(df_irr, df_red, binning, var, var_string, var_2nd='None'):
                     w = np.asarray(w).astype('float')
                     # ------
 
-                    if(('rapidity4l' in obs_name) | ('cos' in obs_name) | ('phi' in obs_name) | ('deta' in obs_name) | acFlag):
-                        histo = ROOT.TH1D("m4l_"+var_string+"_"+str(bin_low)+"_"+str(bin_high), "m4l_"+var_string+"_"+str(bin_low)+"_"+str(bin_high), 20, opt.LOWER_BOUND, opt.UPPER_BOUND)
-                    elif doubleDiff and 'rapidity' in var_string:
+                    if doubleDiff and 'rapidity' in var_string:
                         histo = ROOT.TH1D("m4l_"+var_string+"_"+str(bin_low)+"_"+str(bin_high)+"_"+str(bin_low_2nd)+"_"+str(bin_high_2nd), "m4l_"+var_string+"_"+str(bin_low)+"_"+str(bin_high)+'_'+str(bin_low_2nd)+"_"+str(bin_high_2nd), 20, opt.LOWER_BOUND, opt.UPPER_BOUND)
                     elif doubleDiff:
                         histo = ROOT.TH1D("m4l_"+var_string+"_"+str(int(bin_low))+"_"+str(int(bin_high))+"_"+str(int(bin_low_2nd))+"_"+str(int(bin_high_2nd)), "m4l_"+var_string+"_"+str(int(bin_low))+"_"+str(int(bin_high))+'_'+str(int(bin_low_2nd))+"_"+str(int(bin_high_2nd)), 20, opt.LOWER_BOUND, opt.UPPER_BOUND)
+                    elif (('rapidity4l' in obs_name) | ('cos' in obs_name) | ('phi' in obs_name) | ('deta' in obs_name) | acFlag):
+                        histo = ROOT.TH1D("m4l_"+var_string+"_"+str(bin_low)+"_"+str(bin_high), "m4l_"+var_string+"_"+str(bin_low)+"_"+str(bin_high), 20, opt.LOWER_BOUND, opt.UPPER_BOUND)
                     else:
                         histo = ROOT.TH1D("m4l_"+var_string+"_"+str(int(bin_low))+"_"+str(int(bin_high)), "m4l_"+var_string+"_"+str(int(bin_low))+"_"+str(int(bin_high)), 20, opt.LOWER_BOUND, opt.UPPER_BOUND)
 
@@ -468,12 +469,12 @@ def doTemplates(df_irr, df_red, binning, var, var_string, var_2nd='None'):
                     histo.FillN(len(mass4l), mass4l, w)
                     smoothAndNormaliseTemplate(histo, 1)
 
-                    if (('rapidity4l' in obs_name) | ('cos' in obs_name) | ('phi' in obs_name) | ('deta' in obs_name) | acFlag):
-                        outFile = ROOT.TFile.Open(str(year)+"/"+var_string+"/XSBackground_"+bkg+"_"+f+"_"+var_string+"_"+str(bin_low)+"_"+str(bin_high)+".root", "RECREATE")
-                    elif doubleDiff and 'rapidity' in var_string:
+                    if doubleDiff and 'rapidity' in var_string:
                         outFile = ROOT.TFile.Open(str(year)+"/"+var_string+"/XSBackground_"+bkg+"_"+f+"_"+var_string+"_"+str(bin_low)+"_"+str(bin_high)+"_"+str(bin_low_2nd)+"_"+str(bin_high_2nd)+".root", "RECREATE")
                     elif doubleDiff:
                         outFile = ROOT.TFile.Open(str(year)+"/"+var_string+"/XSBackground_"+bkg+"_"+f+"_"+var_string+"_"+str(int(bin_low))+"_"+str(int(bin_high))+"_"+str(int(bin_low_2nd))+"_"+str(int(bin_high_2nd))+".root", "RECREATE")
+                    elif (('rapidity4l' in obs_name) | ('cos' in obs_name) | ('phi' in obs_name) | ('deta' in obs_name) | acFlag):
+                        outFile = ROOT.TFile.Open(str(year)+"/"+var_string+"/XSBackground_"+bkg+"_"+f+"_"+var_string+"_"+str(bin_low)+"_"+str(bin_high)+".root", "RECREATE")
                     else:
                         outFile = ROOT.TFile.Open(str(year)+"/"+var_string+"/XSBackground_"+bkg+"_"+f+"_"+var_string+"_"+str(int(bin_low))+"_"+str(int(bin_high))+".root", "RECREATE")
                     outFile.cd()
@@ -518,7 +519,9 @@ def doTemplates(df_irr, df_red, binning, var, var_string, var_2nd='None'):
 
                 df = df_red[year][sel].copy()
                 len_bin = df['yield_SR'].sum() # Number of bkg events in bin i
+
                 fractionBkg['ZJetsCR_'+f+'_'+var_string+'_recobin'+str(i)] = float(len_bin/len_tot)
+
                 # ------
                 if(len_bin <= 0): df = df_inclusive
                 mass4l = df['ZZMass'].to_numpy()
@@ -526,22 +529,23 @@ def doTemplates(df_irr, df_red, binning, var, var_string, var_2nd='None'):
                 w = df['yield_SR'].to_numpy()
                 w = np.asarray(w).astype('float')
                 # ------
-                if(('rapidity4l' in obs_name) | ('cos' in obs_name) | ('phi' in obs_name) | ('deta' in obs_name) | acFlag):
-                    histo = ROOT.TH1D("m4l_"+var_string+"_"+str(bin_low)+"_"+str(bin_high), "m4l_"+var_string+"_"+str(bin_low)+"_"+str(bin_high), 20, opt.LOWER_BOUND, opt.UPPER_BOUND)
-                elif doubleDiff and 'rapidity' in var_string:
+                if doubleDiff and 'rapidity' in var_string:
                     histo = ROOT.TH1D("m4l_"+var_string+"_"+str(bin_low)+"_"+str(bin_high)+"_"+str(bin_low_2nd)+"_"+str(bin_high_2nd), "m4l_"+var_string+"_"+str(bin_low)+"_"+str(bin_high)+str(bin_low_2nd)+"_"+str(bin_high_2nd), 20, opt.LOWER_BOUND, opt.UPPER_BOUND)
                 elif doubleDiff:
                     histo = ROOT.TH1D("m4l_"+var_string+"_"+str(int(bin_low))+"_"+str(int(bin_high))+"_"+str(int(bin_low_2nd))+"_"+str(int(bin_high_2nd)), "m4l_"+var_string+"_"+str(int(bin_low))+"_"+str(int(bin_high))+str(int(bin_low_2nd))+"_"+str(int(bin_high_2nd)), 20, opt.LOWER_BOUND, opt.UPPER_BOUND)
+                elif(('rapidity4l' in obs_name) | ('cos' in obs_name) | ('phi' in obs_name) | ('deta' in obs_name) | acFlag):
+                    histo = ROOT.TH1D("m4l_"+var_string+"_"+str(bin_low)+"_"+str(bin_high), "m4l_"+var_string+"_"+str(bin_low)+"_"+str(bin_high), 20, opt.LOWER_BOUND, opt.UPPER_BOUND)
                 else:
                     histo = ROOT.TH1D("m4l_"+var_string+"_"+str(int(bin_low))+"_"+str(int(bin_high)), "m4l_"+var_string+"_"+str(int(bin_low))+"_"+str(int(bin_high)), 20, opt.LOWER_BOUND, opt.UPPER_BOUND)
+
                 histo.FillN(len(mass4l), mass4l, w)
                 smoothAndNormaliseTemplate(histo, 1)
-                if(('rapidity4l' in obs_name) | ('cos' in obs_name) | ('phi' in obs_name) | ('deta' in obs_name) | acFlag):
-                    outFile = ROOT.TFile.Open(str(year)+"/"+var_string+"/XSBackground_ZJetsCR_"+f+"_"+var_string+"_"+str(bin_low)+"_"+str(bin_high)+".root", "RECREATE")
-                elif doubleDiff and 'rapidity' in var_string:
+                if doubleDiff and 'rapidity' in var_string:
                     outFile = ROOT.TFile.Open(str(year)+"/"+var_string+"/XSBackground_ZJetsCR_"+f+"_"+var_string+"_"+str(bin_low)+"_"+str(bin_high)+"_"+str(bin_low_2nd)+"_"+str(bin_high_2nd)+".root", "RECREATE")
                 elif doubleDiff:
                     outFile = ROOT.TFile.Open(str(year)+"/"+var_string+"/XSBackground_ZJetsCR_"+f+"_"+var_string+"_"+str(int(bin_low))+"_"+str(int(bin_high))+"_"+str(int(bin_low_2nd))+"_"+str(int(bin_high_2nd))+".root", "RECREATE")
+                elif(('rapidity4l' in obs_name) | ('cos' in obs_name) | ('phi' in obs_name) | ('deta' in obs_name) | acFlag):
+                     outFile = ROOT.TFile.Open(str(year)+"/"+var_string+"/XSBackground_ZJetsCR_"+f+"_"+var_string+"_"+str(bin_low)+"_"+str(bin_high)+".root", "RECREATE")
                 else:
                     outFile = ROOT.TFile.Open(str(year)+"/"+var_string+"/XSBackground_ZJetsCR_"+f+"_"+var_string+"_"+str(int(bin_low))+"_"+str(int(bin_high))+".root", "RECREATE")
                 outFile.cd()
@@ -558,8 +562,8 @@ def doTemplates(df_irr, df_red, binning, var, var_string, var_2nd='None'):
 # -----------------------------------------------------------------------------------------
 
 # General settings
-#bkgs = ['ZZTo4l', 'ggTo2e2mu_Contin_MCFM701', 'ggTo2e2tau_Contin_MCFM701', 'ggTo2mu2tau_Contin_MCFM701', 'ggTo4e_Contin_MCFM701', 'ggTo4mu_Contin_MCFM701', 'ggTo4tau_Contin_MCFM701']
-bkgs = ['ZZTo4l', 'ggTo2e2mu_Contin_MCFM701', 'ggTo4e_Contin_MCFM701', 'ggTo4mu_Contin_MCFM701']
+bkgs = ['ZZTo4l', 'ggTo2e2mu_Contin_MCFM701', 'ggTo2e2tau_Contin_MCFM701', 'ggTo2mu2tau_Contin_MCFM701', 'ggTo4e_Contin_MCFM701', 'ggTo4mu_Contin_MCFM701', 'ggTo4tau_Contin_MCFM701']
+#bkgs = ['ZZTo4l', 'ggTo2e2mu_Contin_MCFM701', 'ggTo4e_Contin_MCFM701', 'ggTo4mu_Contin_MCFM701']
 eos_path_FR = path['eos_path_FR']
 eos_path = path['eos_path']
 key = 'ZZTree/candTree'
@@ -576,9 +580,30 @@ if (opt.YEAR == '2018'):
 if (opt.YEAR == 'Full'):
     years_MC = ['2016pre', '2016post', '2017', '2018']
     years = [2016,2017,2018]
+
 if (opt.YEAR == 'Run3'):
     years_MC = ['2022', '2022EE', '2023preBPix', '2023postBPix']
-    years = ["2022", "2022EE", "2023preBPix", "2023postBPix"] 
+    years = ["2022", "2022EE", "2023preBPix", "2023postBPix"]
+
+if (opt.YEAR == '2022'):
+    years_MC = ['2022']
+    years = ["2022"]
+if (opt.YEAR == '2022EE'):
+    years_MC = ['2022EE']
+    years = ["2022EE"]
+if (opt.YEAR == '2023preBPix'):
+    years_MC = ['2023preBPix']
+    years = ["2023preBPix"]
+if (opt.YEAR == '2023postBPix'):
+    years_MC = ['2023postBPix']
+    years = ["2023postBPix"]
+    
+if (opt.YEAR == '2022full'):
+    years_MC = ['2022', '2022EE']
+    years = ["2022", "2022EE"]
+if (opt.YEAR == '2023full'):
+    years_MC = ['2023preBPix', '2023postBPix']
+    years = ["2023preBPix", "2023postBPix"]
 
 obs_bins, doubleDiff = binning(opt.OBSNAME)
 
@@ -620,14 +645,32 @@ if (opt.YEAR == '2017' or opt.YEAR == 'Full'):
     d_bkg[2017] = d_bkg_tmp['2017']
 if (opt.YEAR == '2018' or opt.YEAR == 'Full'):
     d_bkg[2018] = d_bkg_tmp['2018']
+
 if (opt.YEAR == 'Run3'):
     d_bkg['2022'] = d_bkg_tmp['2022']
     d_bkg['2022EE'] = d_bkg_tmp['2022EE']
     d_bkg['2023preBPix'] = d_bkg_tmp['2023preBPix']
     d_bkg['2023postBPix'] = d_bkg_tmp['2023postBPix']
+
+if (opt.YEAR == '2022'):
+    d_bkg['2022'] = d_bkg_tmp['2022']
+if (opt.YEAR == '2022EE'):
+    d_bkg['2022EE'] = d_bkg_tmp['2022EE']
+if (opt.YEAR == '2023preBPix'):
+    d_bkg['2023preBPix'] = d_bkg_tmp['2023preBPix']
+if (opt.YEAR == '2023postBPix'):
+    d_bkg['2023postBPix'] = d_bkg_tmp['2023postBPix']
+
+if (opt.YEAR == '2022full'):
+    d_bkg['2022'] = d_bkg_tmp['2022']
+    d_bkg['2022EE'] = d_bkg_tmp['2022EE']
+if (opt.YEAR == '2023full'):
+    d_bkg['2023preBPix'] = d_bkg_tmp['2023preBPix']
+    d_bkg['2023postBPix'] = d_bkg_tmp['2023postBPix']
     
 # Generate pandas for ZX
-branches_ZX = ['ZZMass', 'Z1Flav', 'Z2Flav', 'LepLepId', 'LepEta', 'LepPt', 'Z2Mass', 'Z1Mass', 'ZZPt', 'ZZyAbs']
+branches_ZX = ['ZZMass', 'Z1Flav', 'Z2Flav', 'LepLepId', 'LepEta', 'LepPt', 'Z2Mass', 'Z1Mass', 'ZZPt', 'ZZy', 'pTj1', 'pTj2', 'Nj', 'absdetajj', 'mjj', 'dphijj']
+
 dfZX={}
 for year, year_mc in zip(years, years_MC):
     g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE = openFR(year_mc)
@@ -639,6 +682,11 @@ for year, year_mc in zip(years, years_MC):
     print(year,'done')
 
 yield_bkg = {}
+
+if ( obs_name == "rapidity4l" or obs_name == "rapidity4l_pT4l" ):
+    for year, year_mc in zip(years, years_MC):
+        dfZX[year_mc].rename(columns={'ZZyAbs': 'ZZy'}, inplace=True) # spencer
+        
 if not doubleDiff:doTemplates(d_bkg, dfZX, obs_bins, obs_reco, obs_name)
 else: doTemplates(d_bkg, dfZX, obs_bins, obs_reco, obs_name, obs_reco_2nd)
 

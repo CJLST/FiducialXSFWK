@@ -161,8 +161,24 @@ elif year == '2017':
     _lumi = '41.48'
 elif year == '2018':
     _lumi = '59.83'
+
 elif year == 'Run3':
+    _lumi = '62'
+
+elif year == '2022':
+    _lumi = '7.98'
+elif year == '2022EE':
+    _lumi = '26.67'
+elif year == '2023preBPix':
+    _lumi = '17.79'
+elif year == '2023postBPix':
+    _lumi = '9.45'
+
+elif year == '2022full':
     _lumi = '34.7'
+elif year == '2023full':
+    _lumi = '27.3'
+    
 else:
     _lumi = '138'
 
@@ -802,7 +818,7 @@ for i in range(nBins):
     Text.SetTextAlign(31);
     Text.SetTextSize(0.5*c.GetTopMargin())
     leftText = "CMS"
-    re = "#bf{%s fb^{-1} (13 TeV)}" %(_lumi)
+    re = "#bf{%s fb^{-1} (13.6 TeV)}" %(_lumi)
     Text.AddText(re)
     Text.SetFillStyle(0)
     Text.SetLineStyle(0)
@@ -1070,8 +1086,8 @@ for i in range(nBins):
         resultsXS_asimov['SM_125_'+obsName+'_genbin'+str(i)+'_statOnly'] = {"uncerDn": -1.0*abs(exp_nom_stat[2]), "uncerUp": exp_nom_stat[1], "central": exp_nom[0]}
 
     c.Update()
-    c.SaveAs("plots/lhscan_compare_"+obsName+"_"+poi+".pdf")
-    c.SaveAs("plots/lhscan_compare_"+obsName+"_"+poi+".png")
+    #c.SaveAs("plots/lhscan_compare_"+obsName+"_"+poi+".pdf")
+    c.SaveAs("plots/"+year+"_lhscan_compare_"+obsName+"_"+poi+".png")
 
 if v4_flag:
     if opt.UNBLIND:
