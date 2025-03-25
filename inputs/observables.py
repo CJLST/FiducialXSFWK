@@ -5,9 +5,9 @@ observables = {
 'mass4l_zzfloating':
     {'obs_reco': 'ZZMass',
     'obs_gen': 'GENmass4l'},
-'njets_pt30_eta4p7':
-    {'obs_reco': 'njets_pt30_eta4p7',
-    'obs_gen': 'GENnjets_pt30_eta4p7'},
+'Nj':
+    {'obs_reco': 'Nj',
+    'obs_gen': 'GENNj'},
 'pT4l':
     {'obs_reco': 'ZZPt',
     'obs_gen': 'GENpT4l'},
@@ -15,8 +15,8 @@ observables = {
     {'obs_reco': 'ZZPt',
     'obs_gen': 'GENpT4l'},
 'rapidity4l':
-    {'obs_reco': 'ZZyAbs',
-    'obs_gen': 'GENrapidity4lAbs'},
+    {'obs_reco': 'ZZy',
+    'obs_gen': 'GENrapidity4l'},
 'costhetaZ1':
     {'obs_reco': 'helcosthetaZ1',
     'obs_gen': 'GENcosTheta1'},
@@ -92,7 +92,7 @@ observables = {
 'rapidity4l vs pT4l':
     {'obs_reco': 'ZZy',
     'obs_reco_2nd': 'ZZPt',
-    'obs_gen': 'GENrapidity4lAbs',
+    'obs_gen': 'GENrapidity4l',
     'obs_gen_2nd': 'GENpT4l'},
 'njets_pt30_eta4p7 vs pT4l':
     {'obs_reco': 'njets_pt30_eta4p7',
@@ -119,4 +119,10 @@ observables = {
     'obs_gen_2nd': 'GENpT4l',
     'obs_reco': 'TCjmax',
     'obs_gen': 'GENTCjmax'},
+'absdetajj vs mjj': # spencer
+    {'obs_reco': 'absdetajj',
+     'obs_gen': 'GENabsdetajj',
+     'obs_reco_2nd': 'mjj',
+     'obs_gen_2nd': 'GENmjj'},
 }
+

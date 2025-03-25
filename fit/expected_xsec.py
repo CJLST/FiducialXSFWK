@@ -9,11 +9,7 @@ from decimal import *
 import json
 
 sys.path.append('../inputs/')
-
 from higgs_xsbr_13TeV import *
-
-sys.path.append('../helperstuff/')
-
 from binning import binning
 
 def parseOptions():

@@ -1,4 +1,5 @@
 import ROOT
+#import sys, os, pwd, commands
 import sys, os, pwd, subprocess
 from subprocess import *
 import optparse, shlex, re
@@ -6,9 +7,8 @@ import math
 import time
 from decimal import *
 import json
-sys.path.append('../inputs')
+
 from higgs_xsbr_13TeV import *
-sys.path.append('../helperstuff')
 from binning import binning
 
 def parseOptions():
@@ -56,7 +56,9 @@ def exp_xsec():
     print('Running Fiducial XS computation - '+obsName+' - bin boundaries: ', observableBins, '\n')
     print('Theory xsec and BR at MH = '+_th_MH)
 
-    _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], 0)
+    #_temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
+    _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], 0) # spencer
+    
     if(opt.YEAR=='Run3'):
         higgs_xs = _temp.higgs_xs_136TeV
     else:
@@ -64,11 +66,17 @@ def exp_xsec():
     higgs4l_br = _temp.higgs4l_br
     fname = 'inputs_sig_'+obsName+'_'+opt.YEAR
     if opt.DOHIG: fname = fname + '_HIG19001'
-    _temp = __import__(fname, globals(), locals(), ['acc'], 0)
+
+    #_temp = __import__(fname, globals(), locals(), ['acc'], -1)
+    _temp = __import__(fname, globals(), locals(), ['acc'], 0) # spencer
+    
     acc = _temp.acc
     if opt.NNLOPS:
         fname = 'inputs_sig_'+obsName+'_NNLOPS_'+opt.YEAR
-        _temp = __import__(fname, globals(), locals(), ['acc'], 0)
+
+        #_temp = __import__(fname, globals(), locals(), ['acc'], -1)
+        _temp = __import__(fname, globals(), locals(), ['acc'], 0) # spencer
+        
         acc_ggh = _temp.acc
     else:
         acc_ggh = acc
@@ -105,7 +113,7 @@ def exp_xsec():
 
         for channel in ['4e','4mu','2e2mu']:
             print(channel)
-            print((acc_ggh['ggH125_'+suffix+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]))
+            print(acc_ggh['ggH125_'+suffix+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)])
             xxs_ggh = higgs_xs['ggH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc_ggh['ggH125_'+suffix+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             xxs_vbf = higgs_xs['VBF_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['VBFH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             xxs_zh = higgs_xs['ZH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['ZH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
@@ -158,6 +166,60 @@ def exp_xsec():
     else:
         obsFull = obsName
 
+    '''
+    with open('../inputs/fidXS_'+suffix+obsFull+'_ggH.py', 'w') as f:
+        f.write('Boundaries = '+str(observableBins)+'\n')
+        f.write('fidXS = '+str(xs_ggh.values())+'\n')
+        f.write('fidXS_scale_up = '+str(xs_ggh.values())+'\n')
+        f.write('fidXS_scale_dn = '+str(xs_ggh.values())+'\n')
+        f.write('fidXS_pdf_up = '+str(xs_ggh.values())+'\n')
+        f.write('fidXS_pdf_dn = '+str(xs_ggh.values())+'\n')
+        f.write('fidXS_alpha_up = '+str(xs_ggh.values())+'\n')
+        f.write('fidXS_alpha_dn = '+str(xs_ggh.values())+'\n')
+
+    with open('../inputs/fidXS_'+obsFull+'_VBFH.py', 'w') as f:
+        f.write('Boundaries = '+str(observableBins)+'\n')
+        f.write('fidXS = '+str(xs_vbf.values())+'\n')
+        f.write('fidXS_scale_up = '+str(xs_vbf.values())+'\n')
+        f.write('fidXS_scale_dn = '+str(xs_vbf.values())+'\n')
+        f.write('fidXS_pdf_up = '+str(xs_vbf.values())+'\n')
+        f.write('fidXS_pdf_dn = '+str(xs_vbf.values())+'\n')
+        f.write('fidXS_alpha_up = '+str(xs_vbf.values())+'\n')
+        f.write('fidXS_alpha_dn = '+str(xs_vbf.values())+'\n')
+
+    with open('../inputs/fidXS_'+obsFull+'_VH.py', 'w') as f:
+        f.write('Boundaries = '+str(observableBins)+'\n')
+        f.write('fidXS = '+str(xs_vh.values())+'\n')
+        f.write('fidXS_scale_up = '+str(xs_vh.values())+'\n')
+        f.write('fidXS_scale_dn = '+str(xs_vh.values())+'\n')
+        f.write('fidXS_pdf_up = '+str(xs_vh.values())+'\n')
+        f.write('fidXS_pdf_dn = '+str(xs_vh.values())+'\n')
+        f.write('fidXS_alpha_up = '+str(xs_vh.values())+'\n')
+        f.write('fidXS_alpha_dn = '+str(xs_vh.values())+'\n')
+
+    with open('../inputs/fidXS_'+obsFull+'_ttH.py', 'w') as f:
+        f.write('Boundaries = '+str(observableBins)+'\n')
+        f.write('fidXS = '+str(xs_tth.values())+'\n')
+        f.write('fidXS_scale_up = '+str(xs_tth.values())+'\n')
+        f.write('fidXS_scale_dn = '+str(xs_tth.values())+'\n')
+        f.write('fidXS_pdf_up = '+str(xs_tth.values())+'\n')
+        f.write('fidXS_pdf_dn = '+str(xs_tth.values())+'\n')
+        f.write('fidXS_alpha_up = '+str(xs_tth.values())+'\n')
+        f.write('fidXS_alpha_dn = '+str(xs_tth.values())+'\n')
+
+    with open('../inputs/fidXS_'+obsFull+'_xH.py', 'w') as f:
+        f.write('Boundaries = '+str(observableBins)+'\n')
+        f.write('fidXS = '+str(xs_xh.values())+'\n')
+        f.write('fidXS_scale_up = '+str(xs_xh.values())+'\n')
+        f.write('fidXS_scale_dn = '+str(xs_xh.values())+'\n')
+        f.write('fidXS_pdf_up = '+str(xs_xh.values())+'\n')
+        f.write('fidXS_pdf_dn = '+str(xs_xh.values())+'\n')
+        f.write('fidXS_alpha_up = '+str(xs_xh.values())+'\n')
+        f.write('fidXS_alpha_dn = '+str(xs_xh.values())+'\n')
+    '''
+
+    
+    #''' 
     with open('../inputs/fidXS_'+suffix+obsFull+'_ggH.py', 'w') as f:
         f.write('Boundaries = '+str(observableBins)+'\n')
         f.write('fidXS = '+str(list(xs_ggh.values()))+'\n')
@@ -207,4 +269,6 @@ def exp_xsec():
         f.write('fidXS_pdf_dn = '+str(list(xs_xh.values()))+'\n')
         f.write('fidXS_alpha_up = '+str(list(xs_xh.values()))+'\n')
         f.write('fidXS_alpha_dn = '+str(list(xs_xh.values()))+'\n')
+    #'''
+    
 exp_xsec()

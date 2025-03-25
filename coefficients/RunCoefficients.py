@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
 import pandas as pd
-
-import awkward as ak
+import awkward
+import awkward as ak # spencer
 import uproot #3 as uproot
 from math import sqrt, log
 import sys,os
@@ -20,7 +20,7 @@ from binning import binning
 from paths import path
 
 print('Welcome in RunCoefficients!')
-NENTRIES=-1
+
 def parseOptions():
 
     global opt, args, runAllSteps
@@ -32,7 +32,7 @@ def parseOptions():
     # input options
     parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
     parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
-    parser.add_option('',   '--year',  dest='YEAR',  type='string', default='Full',   help='Year -> 2022, 2022EE or Run3')
+    parser.add_option('',   '--year',  dest='YEAR',  type='string', default='Full',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--verbose', action='store_true', dest='VERBOSE', default=False, help='print values')
     parser.add_option('',   '--AC', action='store_true', dest='AC', default=False, help='AC samples')
     parser.add_option('',   '--m4lLower',  dest='LOWER_BOUND',  type='int',default=105.0,   help='Lower bound for m4l')
@@ -96,11 +96,11 @@ def prepareTrees(year):
     d_sig = {}
     d_sig_failed = {}
     for signal in signals_original:
-        if "ggH" in signal:
-            #fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
-            fname = "/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/"+year+"/"+signal+"/ZZ4lAnalysis_SKIMMED.root"
-        else:
-            #fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
+        #if "ggH" in signal:
+        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
+        #else:
+        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
+        fname = path['eos_path_sig']+year+"/"+signal+"/ZZ4lAnalysis_SKIMMED.root"
         print(fname)
         d_sig[signal] = uproot.open(fname)[key]
         d_sig_failed[signal] = uproot.open(fname)[key_failed]
@@ -117,8 +117,8 @@ def xsecs(year):
         #total_weight = d_sig[signal].pandas.df('overallEventWeight').overallEventWeight
         #puweight = d_sig[signal].pandas.df('PUWeight').PUWeight
         #genweight = d_sig[signal].pandas.df('genHEPMCweight').genHEPMCweight
-        if 'ggH' in signal:  df = d_sig[signal].arrays(['overallEventWeight', 'PUWeight', 'genHEPMCweight', 'ggH_NNLOPS_weight'], library="pd", entry_stop=NENTRIES) # spencer
-        else: df = d_sig[signal].arrays(['overallEventWeight', 'PUWeight', 'genHEPMCweight'], library="pd", entry_stop=NENTRIES) # spencer
+        if 'ggH' in signal:  df = d_sig[signal].arrays(['overallEventWeight', 'PUWeight', 'genHEPMCweight', 'ggH_NNLOPS_weight'], library="pd") # spencer
+        else: df = d_sig[signal].arrays(['overallEventWeight', 'PUWeight', 'genHEPMCweight'], library="pd") # spencer
         total_weight = df['overallEventWeight'] # spencer
         puweight = df['PUWeight'] # spencer
         genweight = df['genHEPMCweight'] # spencer
@@ -212,11 +212,13 @@ def add_cuth4l_reco(Hindex,genIndex,momMomId,momId): #(Hindex, momMomId,momId):
 def generators(year):
     gen_sig = {}
     for signal in signals_original:
-        if "ggH" in signal:
-            fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
-        else:
-            fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
-        gen_sig[signal] = uproot.open(fname)["candTree/Counter"].array()[0]
+        #if "ggH" in signal:
+        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
+        #else:
+        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
+        fname = path['eos_path_sig']+year+"/"+signal+"/ZZ4lAnalysis_SKIMMED.root"
+        #gen_sig[signal] = uproot.open(fname)["candTree/Counter"].array()[0]
+        gen_sig[signal] = uproot.open(fname)["Counters"].values()[39] # spencer 
         print("Counters is: ", gen_sig[signal])
     return gen_sig
 
@@ -235,7 +237,7 @@ def createDataframe(d_sig,fail,gen,xsec,signal,lumi,obs_reco,obs_gen,obs_reco_2n
         if (obs_reco_2nd!='None'): b_sig.append(obs_reco_2nd)
         
     #df = d_sig.pandas.df(b_sig, flatten = False)
-    df = d_sig.arrays(b_sig, library="pd", entry_stop=NENTRIES) # spencer
+    df = d_sig.arrays(b_sig, library="pd") # spencer
 
     if not fail: # spencer
         df['ZZMass'] = ak.flatten(df['ZZMass'], axis=-1) # spencer
@@ -301,7 +303,13 @@ def createDataframe(d_sig,fail,gen,xsec,signal,lumi,obs_reco,obs_gen,obs_reco_2n
 
 # Set up data frames
 def dataframes(year, doubleDiff):
-    if year == '2022EE':
+    if year == '2016post':
+        lumi = 36.31
+    elif year == '2017':
+        lumi = 41.48
+    elif year == '2018':
+        lumi = 59.83
+    elif year == '2022EE':
         lumi = 26.6728
     elif year == '2022':
         lumi = 7.9804
@@ -535,10 +543,10 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
             if doubleDiff: obs_name_dic = obs_name+'_'+obs_name_2nd
             else: obs_name_dic = obs_name
             #Fix 2016post to 2016
-            #if 'post' in year:
-            #    year_label = '2016'
-            #else:
-            year_label = year
+            if '2016post' in year:
+                year_label = '2016'
+            else:
+                year_label = year
             if (os.path.exists('../inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+str(year_label)+'_ORIG.py')):
                 os.system('rm ../inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+str(year_label)+'_ORIG.py')
             with open('../inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+str(year_label)+'.py', 'w') as f:
@@ -614,12 +622,24 @@ else:
     signals_original = ['ggH125', 'VBFH125', 'WminusH125', 'WplusH125', 'ZH125', "ttH125"]
     signals = ['ggH125', 'VBFH125', 'WH125', 'ZH125', 'ttH125']
 eos_path_sig = path['eos_path_sig']
-key = 'candTree'
-key_failed = 'candTree_failed'
+#key = 'candTree'
+#key_failed = 'candTree_failed'
+key = 'ZZTree/candTree' # spencer
+key_failed = 'ZZTree/candTree_failed' # spencer
 
-if (opt.YEAR == 'Run3'): years = ['2022', '2022EE']
-if (opt.YEAR == '2022'): years = ['2022'] # spencer
-if (opt.YEAR == '2022EE'): years = ['2022EE'] # spencer
+if (opt.YEAR == '2016'): years = ['2016post']
+if (opt.YEAR == '2017'): years = ['2017']
+if (opt.YEAR == '2018'): years = ['2018']
+if (opt.YEAR == 'Run3'): years = ['2022', '2022EE', '2023preBPix', '2023postBPix']
+if (opt.YEAR == 'Full'): years = ['2016post','2017','2018']
+
+if (opt.YEAR == '2022'): years = ['2022']
+if (opt.YEAR == '2022EE'): years = ['2022EE']
+if (opt.YEAR == '2023preBPix'): years = ['2023preBPix']
+if (opt.YEAR == '2023postBPix'): years = ['2023postBPix']
+
+if (opt.YEAR == '2022full'): years = ['2022', '2022EE']
+if (opt.YEAR == '2023full'): years = ['2023preBPix', '2023postBPix']
 
 obs_bins, doubleDiff = binning(opt.OBSNAME)
 if doubleDiff:
@@ -667,16 +687,16 @@ for year in years:
     d_sig_tot[year] = d_sup
 
 # Create dataframe FullRun2
-if((opt.YEAR == 'Full') or (opt.YEAR == 'Run3')):
+if((opt.YEAR == 'Full') or (opt.YEAR == 'Run3') or (opt.YEAR == '2022full') or (opt.YEAR == '2023full')):
     d_sig_full = {}
     for signal in signals:
         frame = [d_sig_tot[year][signal] for year in years]
         d_sig_full[signal] = pd.concat(frame, ignore_index=True, sort=True)
 else: # If I work with one year only, the FullRun2 df coincides with d_sig_tot (it is useful when fullNNLOPS is calculated)
-    #if opt.YEAR == '2016':
-    #    d_sig_full = d_sig_tot[opt.YEAR+'post']
-    #else:
-    d_sig_full = d_sig_tot[opt.YEAR]
+    if opt.YEAR == '2016':
+        d_sig_full = d_sig_tot[opt.YEAR+'post']
+    else:
+        d_sig_full = d_sig_tot[opt.YEAR]
 print('Dataframes created successfully')
 
 if not opt.AC_ONLYACC:

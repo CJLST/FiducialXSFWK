@@ -1,16 +1,20 @@
 ### ------- lxplus -------
-# path = {
-# 'eos_path_sig': '/eos/user/a/atarabin/MC_samples/',
-# 'eos_path': '/eos/user/a/atarabin/',
-# 'eos_path_FR': '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIILegacy/200205_CutBased/'
-#
-# }
-
 path = {
- 'eos_path_sig': '/eos/user/l/lurda/',
- 'eos_path': '/eos/user/l/lurda/',
- 'eos_path_FR': '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/'
- }
+ #'eos_path_sig': '/eos/user/a/atarabin/MC_samples/',
+ #'eos_path': '/eos/user/a/atarabin/',
+ #'eos_path_FR': '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIILegacy/200205_CutBased/'
+
+ 'eos_path_sig': '/eos/home-s/sellissp/HZZ/SAMPLES/032025/',
+ 'eos_path': '/eos/user/s/sellissp',
+ 'eos_path_FR': '/eos/home-s/sellissp/HZZ/SAMPLES/032025/',
+
+ #'eos_path_sig': '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/',
+ #'eos_path': '/eos/user/s/sellissp',
+ #'eos_path_FR': '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/',
+    
+}
+
+
 ### ------- polui UL -------
 ## To get ReReco path, remove MC_samples_UL
 #path = {

@@ -14,9 +14,34 @@ import matplotlib.pyplot as plt
 import mplhep as hep
 plt.style.use(hep.style.CMS)
 
+import optparse # spencer
+
+sys.path.append('../helperstuff/') # spencer
+from observables import observables # spencer
+from binning import binning # spencer
+
 #sys.path.append('/eos/user/m/mbonanom/run3_trees/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/FiducialXSFWK/inputs')
-sys.path.append('../inputs')
-#sys.path.append('/eos/user/m/mbonanom/Run3RedTrees/lheWeights/2022EE')
+sys.path.append('/eos/home-s/sellissp/HZZ/RUNIII/CMSSW_14_1_0_pre4/src/FiducialXSFWK_HZZRun3/inputs') # spencer
+
+# spencer
+def parseOptions(): 
+
+    global opt, args, runAllSteps
+
+    usage = ('usage: %prog [options]\n'
+             + '%prog -h for help')
+    parser = optparse.OptionParser(usage)
+
+    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
+    parser.add_option('',   '--year',  dest='YEAR',  type='string', default='Full',   help='Year -> 2016 or 2017 or 2018 or Full')
+
+    global opt, args
+    (opt, args) = parser.parse_args()
+
+global opt, args, runAllSteps
+parseOptions()
+# spencer
+
 def get_zh_chan_cuts(channel, tree):
 
     genz_idx0 = abs(tree['GENZ_DaughtersId'][:,0])
@@ -98,7 +123,9 @@ def get_pdf_weights(pdf_weights):
     return w_nom, w_scale, w_as
     
 def build_histos(tree, sel, w_gen, w_nom, w_scale):
+
     h_nom = ak.sum(w_gen[sel] * w_nom[sel])
+
     h_scale = {}
 
     for i in w_scale:
@@ -113,13 +140,19 @@ def get_scale_unc(process, channel, tree, scale, observable, nnlops = False):
         cutchan_gen = get_zh_chan_cuts(channel, tree)
     else:
         cutchan_gen = get_chan_cuts(channel, tree)
-        
+
     full_sel = cutm4l_gen & cutobs_gen & cutchan_gen & tree['passedFiducial'] == 1
     
-    w_gen = tree['genHEPMCweight']
+    fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/{year}/{process}/ZZ4lAnalysis.root" # spencer
+    with uproot.open(f'{fname}') as f: # spencer
+        tree = f['AllEvents'].arrays() # spencer
+
+    #w_gen = tree['genHEPMCweight']
+    w_gen = tree['Generator_weight'] # spencer
     
     if nnlops:
-        w_nnlops = tree['ggH_NNLOPS_weight']
+        #w_nnlops = tree['ggH_NNLOPS_weight']
+        w_nnlops = tree['ggH_NNLOPS_Weight'] # spencer
         w_gen = w_gen * w_nnlops
         
     if scale == "qcd":
@@ -161,23 +194,25 @@ def get_scale_unc(process, channel, tree, scale, observable, nnlops = False):
 
 def load_tree(fname):
     with uproot.open(f'{fname}') as f:
-        tree = f['ZZTree/candTree'].arrays()
-        tree_failed = f['ZZTree/candTree_failed'].arrays()
-
+        #tree = f['ZZTree/candTree'].arrays()
+        tree = f['candTree'].arrays() # spencer
+        #tree_failed = f['ZZTree/candTree_failed'].arrays()
+        tree_failed = f['candTree_failed'].arrays() # spencer
+        
     tree_tot = ak.concatenate([tree, tree_failed])
     return tree_tot
 
 def get_th_xsec(process, obs_gen, suffix):
     # TODO: Improve
-    obs_name_dict = {"GENmass4l": "mass4l", "GENpT4l": "pT4l", "GENrapidity4l": "YH"}
-    obs_name = obs_name_dict[obs_gen]
+    # obs_name_dict = {"GENmass4l": "mass4l", "GENpT4l": "PTH", "GENrapidity4l": "YH"}
+    # obs_name = obs_name_dict[obs_gen]
     
     if (('ZH' not in process) and ('W' not in process)):
         th_xs = __import__(f'fidXS_{suffix}{obs_name}_{process.split("125")[0]}', globals(), locals(), vars)
     else:
         th_xs = __import__(f'fidXS_{suffix}{obs_name}_VH', globals(), locals(), vars)
     return th_xs
-        
+
 def get_unc_dict(obs_gen, tree, th_xs, channel, bins, nnlops):
     unc_var_dn = {}
     unc_var_up = {}
@@ -193,7 +228,7 @@ def get_unc_dict(obs_gen, tree, th_xs, channel, bins, nnlops):
             observable = [obs_gen, obs_gen_low, obs_gen_high]
 
             var_up, var_dn = get_scale_unc(process, channel, tree, var, observable, nnlops)
-
+            
             up = 1 + (var_up-1) + YR4_UNC[process][var]['up']
             # Correlate
             # np.sqrt((var_up-1)**2 + YR4_UNC[process][var]['up']**2)
@@ -211,11 +246,12 @@ def get_unc_dict(obs_gen, tree, th_xs, channel, bins, nnlops):
     
     return unc_var_up, unc_var_dn
 
-def get_uncerainties(obs_gen, process, channel, bins, nnlops):
+def get_uncerainties(obs_gen, year, process, channel, bins, nnlops):
     unc = {}
+
     #fname = f"/eos/user/m/mbonanom/Run3RedTrees/lheWeights/2022EE/{process}_MC_2022EE_skimmed.root"
-    fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/2022EE/{process}/{process}_MC_2022EE_skimmed.root"
-    
+    fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/{year}/{process}/{process}_reducedTree_MC_{year}_skimmed_nnlops.root" # spencer
+
     if (process == "ggH125") and nnlops:
         suffix = "NNLOPS_"
     else:
@@ -270,14 +306,61 @@ YR4_UNC = {'ggH125': {'qcd': {'up': 0.077, 'dn': 0.088},
 
 
 if __name__ == '__main__':
-    # TODO: Improve and generalize this part
-    # global obs
+
+    # spencer
+
     m4l_low = 105
     m4l_high = 160
+    channel = '4l'  
+    year = opt.YEAR
+
+    bins, doubleDiff = binning(opt.OBSNAME)
+    if doubleDiff:
+        obs_name = opt.OBSNAME.split(' vs ')[0]
+        obs_name_2nd = opt.OBSNAME.split(' vs ')[1]
+        obs_name_2d = opt.OBSNAME
+    else:
+        obs_name = opt.OBSNAME
+    
+    _temp = __import__('observables', globals(), locals(), ['observables'], 0) # spencer
+    observables = _temp.observables
+
+    if doubleDiff:
+        obs_gen = observables[obs_name_2d]['obs_gen']
+        obs_gen_2nd = observables[obs_name_2d]['obs_gen_2nd']
+    else:
+        obs_gen = observables[obs_name]['obs_gen']
+
+    for process in ["ggH125"]:
+        
+        unc = get_uncerainties(obs_gen, year, process, channel, bins, True)
+        save_uncertainties(process, obs_gen, True)
+
+        if doubleDiff:
+
+            unc = get_uncerainties(obs_gen_2nd, year, process, channel, bins, True)
+            save_uncertainties(process, obs_gen_2nd, True)
+
+    for process in ["ggH125", "VBFH125", "ttH125", "ZH125"]:
+
+        unc = get_uncerainties(obs_gen, year, process, channel, bins, False)
+        save_uncertainties(process, obs_gen, False) 
+
+        if doubleDiff:
+
+            unc = get_uncerainties(obs_gen_2nd, year, process, channel, bins, False)
+            save_uncertainties(process, obs_gen_2nd, False)
+    
+    # spencer
+            
     '''
+    m4l_low = 105
+    m4l_high = 160
+
     obs_gen = 'GENmass4l'
     bins = [0, 2, 4, 6, 8]
 
+    channel = '4l'
     process = 'ggH125'
 
     for process in ["ggH125"]:#, "VBFH125", "ttH125", "ZH125"]:
@@ -294,11 +377,10 @@ if __name__ == '__main__':
     for process in ["ggH125"]:
         unc = get_uncerainties(obs_gen, process, channel, bins, True)
         save_uncertainties(process, obs_gen, True)
-    '''
-    obs_gen = 'GENpT4l'
-    channel = '4l'
 
+    obs_gen = 'GENpT4l'
     bins = [0, 30, 80, 10000]
     for process in ["VBFH125", "ttH125", "ZH125"]:
         unc = get_uncerainties(obs_gen, process, channel, bins, False)
         save_uncertainties(process, obs_gen, False)
+    '''
