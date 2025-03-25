@@ -158,3 +158,16 @@ fit/*.txt
 impacts
 pvalues/*
 plots/*
+
+#coefficients
+
+coefficients/RunCoefficients_.py
+coefficients/logs/303092.0.err
+coefficients/logs/303092.0.out
+coefficients/logs/303094.0.err
+coefficients/logs/303094.0.out
+coefficients/lurda.cc
+coefficients/runpt.sh
+coefficients/submitpt.sub
+config/Run3Skimmer_.py
+templates/RunTemplates_.py
