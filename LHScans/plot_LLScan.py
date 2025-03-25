@@ -802,7 +802,7 @@ for i in range(nBins):
     Text.SetTextAlign(31);
     Text.SetTextSize(0.5*c.GetTopMargin())
     leftText = "CMS"
-    re = "#bf{%s fb^{-1} (13 TeV)}" %(_lumi)
+    re = "#bf{%s fb^{-1} (13.6 TeV)}" %(_lumi)
     Text.AddText(re)
     Text.SetFillStyle(0)
     Text.SetLineStyle(0)

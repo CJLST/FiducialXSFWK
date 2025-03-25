@@ -15,8 +15,8 @@ observables = {
     {'obs_reco': 'ZZPt',
     'obs_gen': 'GENpT4l'},
 'rapidity4l':
-    {'obs_reco': 'ZZyAbs',
-    'obs_gen': 'GENrapidity4lAbs'},
+    {'obs_reco': 'ZZy',
+    'obs_gen': 'GENrapidity4l'},
 'costhetaZ1':
     {'obs_reco': 'helcosthetaZ1',
     'obs_gen': 'GENcosTheta1'},

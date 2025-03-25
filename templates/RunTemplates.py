@@ -67,7 +67,8 @@ def prepareTrees(year):
     d_bkg = {}
 
     for bkg in bkgs:
-        fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+bkg+"/"+bkg+"_reducedTree_MC_"+year+"_skimmed.root"
+        #fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+bkg+"/"+bkg+"_reducedTree_MC_"+year+"_skimmed.root"
+        fname = "/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/"+year+"/"+bkg+"/ZZ4lAnalysis_SKIMMED.root"
         d_bkg[bkg] = uproot.open(fname)[key]
 
     return d_bkg
@@ -101,7 +102,8 @@ def xsecs(year):
 def generators(year):
     gen_bkg = {}
     for bkg in bkgs:
-        fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+bkg+"/"+bkg+"_reducedTree_MC_"+year+"_skimmed.root"
+        #fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+bkg+"/"+bkg+"_reducedTree_MC_"+year+"_skimmed.root"
+        fname = "/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/"+year+"/"+bkg+"/ZZ4lAnalysis_SKIMMED.root"
         gen_bkg[bkg] = uproot.open(fname)["candTree/Counter"].array()[0]
 
     return gen_bkg

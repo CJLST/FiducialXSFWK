@@ -38,7 +38,7 @@ opts.fMode = 'RECREATE'
 events = df.Take[df.GetColumnType('event')]('event')
 event_values = df.AsNumpy(["event"])["event"]
 event_list = list(set(event_values))
- 
+
 ROOT.gInterpreter.Declare(f"""
     #include <vector>
     #include <set>
@@ -235,14 +235,14 @@ vars = {'RunNumber',
         'LumiNumber',
         'ZZMass',
         'ZZPt',
-        'ZZy',
-        # 'CRflag',
+        'ZZyAbs',
+        #'CRflag',
         'Z1Flav',
         'Z2Flav',
         'Z1Mass',
         'Z2Mass',
         #'dataMCWeight',
-        # 'PFMET',
+        #'PFMET',
         'LepPt',
         'LepEta',
         'LepPhi',
@@ -252,6 +252,7 @@ vars = {'RunNumber',
         'LepSIP',
         'LepCombRelIsoPF',
         # 'LepMissingHit',
+        'nJet'
         }
 if MC:
     vars.add('overallEventWeight')
@@ -281,6 +282,7 @@ if MC:
         vars.add('GENZ_DaughtersId')
         vars.add('GENZ_MomId')
         vars.add('GENlep_Hindex')
+        vars.add('nGenJet')
         # vars.add('GENlep_index')
         vars.add('lep_genindex')
         vars.add('passedFiducial')
@@ -297,7 +299,7 @@ if MC:
 ## SR
 df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]") ## Dummy
                                      .Define("ZZPt", "ZZCand_pt[bestCandIdx]")
-                                     .Define("ZZy", "abs(ZZCand_rapidity[bestCandIdx])")
+                                     .Define("ZZyAbs", "abs(ZZCand_rapidity[bestCandIdx])")
                                      # .Define("CRflag", "0") ## Dummy
                                      .Define("Z1Flav", "ZZCand_Z1flav[bestCandIdx]")
                                      .Define("Z2Flav", "ZZCand_Z2flav[bestCandIdx]") ## Dummy
@@ -334,6 +336,7 @@ df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]
                                      .Define('passedFullSelection', "1")
                                      #.Define('genHEPMCweight', "Generator_weight")
                                      #.Define('PUWeight', "puWeight")
+                                     .Define('nJet', "nJet")
                                      )
 if MC:
     df_SR = (df_SR.Define('genHEPMCweight', "Generator_weight")
@@ -361,6 +364,7 @@ if "H12" in inFileName:
                   .Define('GENZ_MomId', "getGENlep_int(FidZ_MomPdgId)")
                   .Define('GENlep_Hindex', "getGENHindex(FidZZ_Z1l1Idx, FidZZ_Z1l2Idx, FidZZ_Z2l1Idx, FidZZ_Z2l2Idx)")
                   .Define('lep_genindex', "getLepGENindex(LepPt, LepEta, LepPhi, GENlep_id, LepLepId, GENlep_pt, GENlep_eta, GENlep_phi)")
+                  .Define('nGenJet', "nGenJet")
             )
 
     df_filter = df_all.Filter("isNotInEvents(event)")

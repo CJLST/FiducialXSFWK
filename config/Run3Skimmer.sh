@@ -7,7 +7,7 @@ if [ -z "$1" ]; then
 fi
 
 # Define the main path
-path="/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226"
+path="/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/"
 
 # Get the directory from the command line argument
 directory="$1"
@@ -20,7 +20,7 @@ while IFS= read -r sample; do
 
     if [ -n "$sample" ]; then
         echo "Processing sample: $sample"
-        
+
         # Execute the python command with the corresponding path and directory
         python3 Run3Skimmer.py --input "$path/$directory/$sample/ZZ4lAnalysis.root" --output "$path/$directory/$sample/ZZ4lAnalysis_SKIMMED.root" --mc
     fi
