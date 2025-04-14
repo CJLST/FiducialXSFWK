@@ -6,7 +6,7 @@ from binning import binning
 
 sPlotsStore = 'plots'
 
-print 'Welcome in plot_templates!'
+print ('Welcome in plot_templates!')
 
 # Considering or not decimals in bin boundaries
 decimal = {

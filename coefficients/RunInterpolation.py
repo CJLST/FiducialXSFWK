@@ -7,7 +7,8 @@ import mplhep as hep
 import optparse,sys,os
 
 # sys.path.append('../inputs/')
-from observables import observables
+#from observables import observables
+sys.path.append('../helperstuff/')
 from binning import binning
 
 print ('Welcome in RunInterpolation!')
@@ -19,8 +20,8 @@ def parseOptions():
     parser = optparse.OptionParser(usage)
 
     # input options
-    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
-    parser.add_option('',   '--year',  dest='YEAR',  type='string', default='Full',   help='Year -> 2016 or 2017 or 2018 or Full')
+    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='pT4l',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
+    parser.add_option('',   '--year',  dest='YEAR',  type='string', default='2022',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--extrapMass',  dest='EXTRAP',  type='float', default=125.38,   help='Mass at which extrapolate')
     parser.add_option('',   '--nnlops', action='store_true', dest='NNLOPS', default=False, help='Flag to extrapolate NNLOPS acceptance at 125.38')
     # The following two options are used together to calculate the acceptance in AC scenario to plot AC predictions on fiducial plot

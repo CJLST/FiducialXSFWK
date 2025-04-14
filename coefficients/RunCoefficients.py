@@ -30,10 +30,10 @@ def parseOptions():
     parser = optparse.OptionParser(usage)
 
     # input options
-    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
-    parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
-    parser.add_option('',   '--year',  dest='YEAR',  type='string', default='Full',   help='Year -> 2016 or 2017 or 2018 or Full')
-    parser.add_option('',   '--verbose', action='store_true', dest='VERBOSE', default=False, help='print values')
+    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='pT4l',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
+    parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='|0|30|80|200|10000|',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
+    parser.add_option('',   '--year',  dest='YEAR',  type='string', default='2022',   help='Year -> 2016 or 2017 or 2018 or Full')
+    parser.add_option('',   '--verbose', action='store_true', dest='VERBOSE', default=True, help='print values')
     parser.add_option('',   '--AC', action='store_true', dest='AC', default=False, help='AC samples')
     parser.add_option('',   '--m4lLower',  dest='LOWER_BOUND',  type='int',default=105.0,   help='Lower bound for m4l')
     parser.add_option('',   '--m4lUpper',  dest='UPPER_BOUND',  type='int',default=140.0,   help='Upper bound for m4l')
@@ -41,8 +41,8 @@ def parseOptions():
     parser.add_option('',   '--AC_onlyAcc', action='store_true', dest='AC_ONLYACC', default=False, help='Flag in case we are interested in only the acceptance')
     parser.add_option('',   '--AC_hypothesis', dest='AC_HYP',  type='string',default='',   help='Name of the AC hypothesis, e.g. 0M, 0PM')
     # The following option are used in case of interpolation to calculate acceptance at 125.38 GeV
-    parser.add_option('',   '--interpolation', action='store_true', dest='INTER', default=False, help='Calculate acceptances at 124 and 126 GeV')
-    parser.add_option('',   '--hypothesis', dest='HYP',  type='string',default='', help='specify mass value: 24(124) or 26(126)')
+    parser.add_option('',   '--interpolation', action='store_true', dest='INTER', default=True, help='Calculate acceptances at 124 and 126 GeV')
+    parser.add_option('',   '--hypothesis', dest='HYP',  type='string',default='26', help='specify mass value: 24(124) or 26(126)')
     # store options and arguments as global variables
     global opt, args
     (opt, args) = parser.parse_args()
@@ -80,7 +80,7 @@ def weight(df, fail, xsec, gen, lumi, additional = None):
     df['weight_reco'] = weight_reco #Powheg
     df['weight_histo_gen'] = weight_histo_gen #Powheg
     df['weight_histo_reco'] = weight_histo_reco #Powheg
-    if additional == 'ggH':
+    if additional == 'ggH': #Applies extra NNLOPS weights for gluon-gluon fusion Higgs production
         weight_gen_NNLOPS = weight_gen * df.ggH_NNLOPS_weight
         weight_reco_NNLOPS = weight_reco * df.ggH_NNLOPS_weight
         weight_histo_gen_NNLOPS = weight_histo_gen * df.ggH_NNLOPS_weight
@@ -90,6 +90,13 @@ def weight(df, fail, xsec, gen, lumi, additional = None):
         df['weight_histo_gen_NNLOPS'] = weight_histo_gen_NNLOPS #NNLOPS (only ggH)
         df['weight_histo_reco_NNLOPS'] = weight_histo_reco_NNLOPS #NNLOPS (only ggH)
     return df
+
+#Calculates different types of event weights for histogram filling:
+#weight_gen: based on generator-level sign of event weights.
+#weight_reco: additional corrections like pile-up and data-MC scale factors.
+#weight_histo_*: scaled by luminosity and cross-section to normalize MC.
+#if additional == 'ggH': #Applies extra NNLOPS weights for gluon-gluon fusion Higgs production
+
 
 # Uproot to generate pandas
 def prepareTrees(year):
@@ -106,7 +113,9 @@ def prepareTrees(year):
         d_sig_failed[signal] = uproot.open(fname)[key_failed]
 
     return d_sig, d_sig_failed
-
+#Loads ROOT files using uproot and returns the TTree objects for each signal process for both:
+#Passed events
+#Failed events (didn’t pass fiducial/reco cuts)
 
 # Calculate cross sections
 def xsecs(year):
@@ -134,6 +143,9 @@ def xsecs(year):
         xsec_sig[signal] = xsec[0]
     print(signal, xsec_sig[signal])
     return xsec_sig
+#Computes cross-section values for each signal sample using:
+#xsec = sum of overall weights / (PUWeight * genHEPMCweight * (ggH weight if applicable) )
+ 
     
 
 def add_fin_state_reco(i, j):
@@ -153,7 +165,7 @@ def add_fin_state_reco(i, j):
     elif abs(i) == 0 and abs(j) == 0:
         fin = 'other'
     return fin
-
+#Determines the reconstructed final state of an event based on Z1 and Z2 flavors (e.g., 4e, 4mu, 2e2mu, etc).
 
 def add_fin_state_gen(lepId, Hindex, number):
     if (Hindex[0]==99) | (Hindex[1]==99) | (Hindex[2]==99) | (Hindex[3]==99):
@@ -167,7 +179,7 @@ def add_fin_state_gen(lepId, Hindex, number):
     else:
         fin = 'other'
     return fin
-
+#Determines generator-level final state using lepton IDs and Higgs decay product indices.
 def add_fin_state_gen_out(ZdauId,event):
     if (abs(ZdauId[0])==11) and (abs(ZdauId[1])==11):
         fin = '4e'
@@ -178,7 +190,7 @@ def add_fin_state_gen_out(ZdauId,event):
     else:
         fin = 'other'
     return fin
-
+#Alternative gen-level final state classifier using Z daughters (simplified version, not using Higgs indices).
 
 def add_fin_state_gen_out_ZH(ZdauId,momId):
     if ((abs(ZdauId[0])==11) and (abs(ZdauId[1])==11) and (momId[0]==25) and (momId[1]==25)) or ((abs(ZdauId[0])==11) and (abs(ZdauId[2])==11) and (momId[0]==25) and (momId[2]==25)) or ((abs(ZdauId[1])==11) and (abs(ZdauId[2])==11) and (momId[1]==25) and (momId[2]==25)):
@@ -190,7 +202,7 @@ def add_fin_state_gen_out_ZH(ZdauId,momId):
     else:
         fin = 'other'
     return fin
-
+#Tailored version of gen final state classification for ZH samples, requires mother ID check (ensure daughters came from Higgs).
 
 def add_cuth4l_gen(momMomId,Hindex):
     if (int(Hindex[0])==99) | (int(Hindex[1])==99) | (int(Hindex[2])==99) | (int(Hindex[3])==99):
@@ -199,6 +211,7 @@ def add_cuth4l_gen(momMomId,Hindex):
         return True
     else:
         return False
+#Checks if all four generator-level leptons are descendants of a Higgs boson (i.e., if it’s a true H→ZZ→4l decay).
 
 def add_cuth4l_reco(Hindex,genIndex,momMomId,momId): #(Hindex, momMomId,momId):
     if (Hindex[0]==99) | (Hindex[1]==99) | (Hindex[2]==99) | (Hindex[3]==99) | (int(Hindex[0])==-1) | (int(Hindex[1])==-1) | (int(Hindex[2])==-1) | (int(Hindex[3])==-1):
@@ -207,6 +220,7 @@ def add_cuth4l_reco(Hindex,genIndex,momMomId,momId): #(Hindex, momMomId,momId):
         return True
     else:
         return False
+#Checks if all reconstructed leptons originated from a Z that came from a Higgs (via gen association).
 
 # Get the "number" of MC events to divide the weights
 def generators(year):
@@ -221,6 +235,7 @@ def generators(year):
         gen_sig[signal] = uproot.open(fname)["Counters"].values()[39] # spencer 
         print("Counters is: ", gen_sig[signal])
     return gen_sig
+#Retrieves the number of generated events from a special histogram (Counters) in the ROOT file. This number is needed to normalize event weights.
 
 def createDataframe(d_sig,fail,gen,xsec,signal,lumi,obs_reco,obs_gen,obs_reco_2nd='None',obs_gen_2nd='None'):
     b_sig = ['EventNumber','GENmass4l', 'GENlep_id', 'GENlep_MomId',
@@ -299,6 +314,12 @@ def createDataframe(d_sig,fail,gen,xsec,signal,lumi,obs_reco,obs_gen,obs_reco_2n
         df = df.drop(columns=['ggH_NNLOPS_weight'])
 
     return df
+#Central function to:
+#Extract event variables from the ROOT files using uproot
+#Assign final states (reco & gen)
+#Apply fiducial cuts at gen & reco level
+#Apply weights
+#Return a clean pandas DataFrame for further analysis
 
 
 # Set up data frames
@@ -336,6 +357,11 @@ def dataframes(year, doubleDiff):
         print('Signal failed created')
     return d_df_sig, d_df_sig_failed
 
+#Set Luminosity (lumi): Assigns luminosity based on the year.
+#Prepare Data: Loads signal (d_sig) and failed signal (d_sig_failed) data using prepareTrees(year).
+#Calculate Cross Sections: Gets cross-sections for signals using xsecs(year).
+#Process Signals: For each signal, creates dataframes for both passed and failed events using createDataframe().
+#Return: Returns dictionaries with signal dataframes (d_df_sig and d_df_sig_failed).
 
 # Merge WplusH125 and WminusH125
 def skim_df(year, doubleDiff):
@@ -615,7 +641,7 @@ if(opt.AC or opt.AC_ONLYACC):
     signals = signals_AC
 elif opt.INTER:
     signals_original = ['VBFH1', 'ggH1', 'WminusH1', 'WplusH1', 'ZH1']
-    signals = ['ggH1', 'VBFH1', 'WH1', 'ZH1']
+    signals = ['ggH1', 'VBFH1', 'WH1', 'ZH1'] #why here ggH and VBF are inverted?
     signals_original = [root+opt.HYP for root in signals_original]
     signals = [root+opt.HYP for root in signals]
 else:

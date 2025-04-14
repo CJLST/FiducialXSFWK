@@ -1,10 +1,9 @@
 ### ------- lxplus -------
 path = {
-'eos_path_sig': '/eos/user/m/mmanoni/HZZ_FIDUCIAL/',
+'eos_path_sig': '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/',
 'eos_path': '/eos/user/m/mmanoni/',
-'eos_path_FR': '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/'
+'eos_path_FR': '/eos/user/m/mmanoni/HZZ_FIDUCIAL/',
 }
-
 
 ### ------- polui UL -------
 ## To get ReReco path, remove MC_samples_UL
