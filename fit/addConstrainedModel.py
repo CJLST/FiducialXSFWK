@@ -44,7 +44,8 @@ sys.path.append('../inputs')
 obsName = opt.OBSNAME
 
 #_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins','acc','eff','err_eff','outinratio','err_outinratio','inc_wrongfrac','binfrac_wrongfrac'], -1)
-_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins','acc','eff','err_eff','outinratio','err_outinratio','inc_wrongfrac','binfrac_wrongfrac'], 0) # spencer 
+_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins','acc','eff','err_eff','outinratio','err_outinratio','inc_wrongfrac','binfrac_wrongfrac'], 0)
+
 observableBins = _temp.observableBins
 if not opt.DOUBLEDIFF: lenObsBins = len(observableBins)-1
 elif opt.DOUBLEDIFF: lenObsBins = len(observableBins)
@@ -62,7 +63,8 @@ binfrac_wrongfrac = _temp.binfrac_wrongfrac
 # _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs4l_br','higgs_xs'], -1)
 #_temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
 _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], 0) # spencer    
-if('2022' in opt.YEAR):
+
+if('2022' in opt.YEAR or '2023' in opt.YEAR):
     higgs_xs = _temp.higgs_xs_136TeV
 else:
     higgs_xs = _temp.higgs_xs
@@ -116,6 +118,8 @@ for fState in fStates:
             ZHxs = higgs_xs['ZH_125.38']*higgs4l_br['125.38_'+fState]*acc['ZH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]
             ttHxs = higgs_xs['ttH_125.38']*higgs4l_br['125.38_'+fState]*acc['ttH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]
 
+            
+            
             effsm = ggHxs/(ggHxs+VBFxs+WHxs+ZHxs+ttHxs)*max(eff['ggH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(recobin)],0.0)
             #effsm = ggHxs/(ggHxs+VBFxs+WHxs+ZHxs+ttHxs)*max(eff['ggH_HRes_125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(recobin)],0.0)
             effsm += VBFxs/(ggHxs+VBFxs+WHxs+ZHxs+ttHxs)*max(eff['VBFH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(recobin)],0.0)
