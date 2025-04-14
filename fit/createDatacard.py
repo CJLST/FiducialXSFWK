@@ -45,7 +45,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     if 'zzfloating' in obsName: zzfloating = True
     else: zzfloating = False
 
-    if '_' in obsName and not 'floating' in obsName and not 'kL' in obsName and not obsName == 'njets_pt30_eta4p7': #it means it is a double differential measurement
+    if '_' in obsName and not 'floating' in obsName and not 'kL' in obsName and not obsName == 'Nj': #it means it is a double differential measurement
         _recobin = str(observableBins[obsBin][0]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[obsBin][1]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[obsBin][2]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[obsBin][3]).replace('.', 'p').replace('-','m')
     else:
         _recobin = str(observableBins[obsBin]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[obsBin+1]).replace('.', 'p').replace('-','m')
@@ -53,7 +53,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
             _recobin = 'GT'+str(int(observableBins[obsBin]))
 
     if physicalModel == 'v3':
-        _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'njets_pt30_eta4p7': 'NJ'}
+        _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
         if obsName not in _obsName:
             _obsName[obsName] = obsName
         binName = 'hzz_' + _obsName[obsName] + '_' + _recobin + '_cat' + channel
@@ -103,10 +103,12 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
         lumi['2016'] = '1.026'
         lumi['2017'] = '1.025'
         lumi['2018'] = '1.023'
+
+        # RUN III: https://twiki.cern.ch/twiki/bin/viewauth/CMS/LumiRecommendationsRun3
         lumi['2022'] = '1.014'
         lumi['2022EE'] = '1.014'
-        lumi['2023preBPix'] = '1.014'
-        lumi['2023postBPix'] = '1.014'
+        lumi['2023preBPix'] = '1.013'
+        lumi['2023postBPix'] = '1.013'
 
     # Lepton efficiency
     # Values taken from:
@@ -204,7 +206,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     file.write('process ')
     if physicalModel == 'v3':
         for i in range(nBins):
-            if '_' in obsName and not 'floating' in obsName and not 'kL' in obsName and not obsName == 'njets_pt30_eta4p7':
+            if '_' in obsName and not 'floating' in obsName and not 'kL' in obsName and not obsName == 'Nj':
                 file.write(processName+'_'+str(observableBins[i][0]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[i][1]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[i][2]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[i][3]).replace('.', 'p').replace('-','m')+' ')
             elif observableBins[i+1] > 1000:
                 file.write(processName+'_GT'+str(int(observableBins[i]))+' ')
@@ -230,6 +232,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     if zzfloating:
         file.write('1 1 '+str(expected_yield[year,'ZX',channel])+'\n')
     else:
+        print(year)
         print(expected_yield[year,'qqzz',channel])
         file.write(str(expected_yield[year,'qqzz',channel])+' '+str(expected_yield[year,'ggzz',channel])+' '+str(expected_yield[year,'ZX',channel])+'\n')
     file.write('------------ \n')
@@ -244,7 +247,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
             else:
                 min_range = expected_yield['ZZ_'+channel]-100
             file.write('zz_norm_'+str(obsBin)+'_'+channel+' rateParam '+binName+' bkg_*zz '+str(expected_yield['ZZ_'+channel])+' ['+str(min_range)+','+str(expected_yield['ZZ_'+channel]+100)+']\n')
-
+    print(yearSetting)
     if yearSetting == 'Full':
         if zzfloating:
             # lumi_uncorrelated
@@ -403,7 +406,7 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     if int(observableBins[obsBin+1]) > 1000:
         _recobin = 'GT'+str(int(observableBins[obsBin]))
 
-    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'njets_pt30_eta2p5': 'NJ'}
+    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
     binName = 'hzz_' + _obsName[obsName] + '_' + _recobin + '_cat' + channel
     # Root of the name of the process (signal from genBin)
     # processName = 'smH'+channel+'Bin'
@@ -532,7 +535,7 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
         file.write(binName+' ')
     file.write('\n')
     file.write('process ')
-    if '_' in obsName and not 'floating' in obsName and not 'kL' in obsName and not obsName == 'njets_pt30_eta4p7':
+    if '_' in obsName and not 'floating' in obsName and not 'kL' in obsName and not obsName == 'Nj':
         for i in range(nBins):
             file.write(processName+'_'+str(observableBins[i][0]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[i][1]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[i][2]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[i][3]).replace('.', 'p').replace('-','m')+' ')
         for i in range(nBins):

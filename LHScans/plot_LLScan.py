@@ -188,7 +188,7 @@ v4_flag = opt.V4
 doubleDiff = False
 if(obsName == 'mass4l'): label = 'm_{4l}'
 elif(obsName == 'mass4l_zzfloating'): label = 'm_{4l}'
-elif(obsName == 'njets_pt30_eta4p7'): label = 'N_{jet}, pT>30 GeV, |#eta|<4.7'
+elif(obsName == 'Nj'): label = 'N_{jet}, pT>30 GeV, |#eta|<4.7'
 elif(obsName == 'pT4l'): label = 'p_{T}^{H} (GeV)'
 elif(obsName == 'pT4l_kL'): label = '#kappa_{#lambda}'
 elif(obsName == 'rapidity4l'): label = '|y_{H}|'
@@ -253,7 +253,7 @@ elif(obsName == 'TCjmax vs pT4l'):
     doubleDiff = True
 
 # _poi    = 'SigmaBin'
-_obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'njets_pt30_eta4p7': 'NJ'}
+_obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
 if obsName not in _obsName:
     _obsName[obsName] = obsName
 # _poi    = 'r_smH_'+_obsName[obsName]+'_'
@@ -815,7 +815,7 @@ for i in range(nBins):
 
     Text = TPaveText(0.58, 0.88,0.93,0.95,'brNDC')
     #Text.SetNDC()
-    Text.SetTextAlign(31);
+    Text.SetTextAlign(31); #31
     Text.SetTextSize(0.5*c.GetTopMargin())
     leftText = "CMS"
     re = "#bf{%s fb^{-1} (13.6 TeV)}" %(_lumi)

@@ -1131,7 +1131,7 @@ def plotXS(obsName, obs_bins, obs_bins_boundaries = False):
         elif (obsName=="massZ1"): offset=20.0
         elif (obsName=="rapidity4l"): offset=20.0
         elif (obsName=="pTj1"): offset=30.0
-        elif (obsName=="njets_pt30_eta4p7"): offset=999.0
+        elif (obsName=="Nj"): offset=999.0
         else: offset = 20.0
         a_observable  = array('d',[0.5*(float(obs_bins[i])+float(obs_bins[i+1])) for i in range(len(obs_bins)-1)])
         v_observable  = TVectorD(len(a_observable),a_observable)
@@ -1382,7 +1382,7 @@ def plotXS(obsName, obs_bins, obs_bins_boundaries = False):
                 g_ggH_ACbisBorder.SetMarkerColor(color_2nd)
 
 
-        if ("jet" in obsName and (not obsName.startswith("njets"))) :
+        if ("jet" in obsName and (not obsName.startswith("Nj"))) :
             h_ggH_powheg = TH1D("h_ggH_powheg","h_ggH_powheg",nBins-2, array('d',[float(obs_bins[i]) for i in range(1,len(obs_bins))]) )
             for i in range(1,nBins-1):
                 h_ggH_powheg.SetBinContent(i,v_ggH_powheg[i])
@@ -1488,7 +1488,7 @@ def plotXS(obsName, obs_bins, obs_bins_boundaries = False):
     g_ggH_aMCBorder.SetMarkerColor(ROOT.kPink+5)
 
     if (not obsName.startswith("mass4l") and not doubleDiff):
-        if ("jet" in obsName and (not obsName.startswith("njets"))):
+        if ("jet" in obsName and (not obsName.startswith("Nj"))):
             h_ggH_minloHJ = TH1D("h_ggH_minloHJ","h_ggH_minloHJ",nBins-2, array('d',[float(obs_bins[i]) for i in range(1,len(obs_bins))]) )
             h_ggH_aMC = TH1D("h_ggH_aMC","h_ggH_aMC",nBins-2, array('d',[float(obs_bins[i]) for i in range(1,len(obs_bins))]) )
             for i in range(1,nBins-1):
@@ -1712,7 +1712,7 @@ def plotXS(obsName, obs_bins, obs_bins_boundaries = False):
         g_ratio_powhegBorder.SetLineColor(ROOT.kAzure+2)
         g_ratio_powhegBorder.SetMarkerColor(ROOT.kAzure+2)
 
-        if ("jet" in obsName and (not obsName.startswith("njets"))):
+        if ("jet" in obsName and (not obsName.startswith("Nj"))):
             h_ratio_powheg = TH1D("h_ratio_powheg","h_ratio_powheg",nBins-2, array('d',[float(obs_bins[i]) for i in range(1,len(obs_bins))]) )
             for i in range(1,nBins-1):
                 h_ratio_powheg.SetBinContent(i,v_ratio_powheg[i])
@@ -1843,7 +1843,7 @@ def plotXS(obsName, obs_bins, obs_bins_boundaries = False):
             g_ratioBis_minloHJBorder.SetLineColor(color_2nd)
             g_ratioBis_minloHJBorder.SetMarkerColor(color_2nd)
 
-        if ("jet" in obsName and (not obsName.startswith("njets"))):
+        if ("jet" in obsName and (not obsName.startswith("Nj"))):
             h_ratio_minloHJ = TH1D("h_ratio_minloHJ","h_ratio_minloHJ",nBins-2, array('d',[float(obs_bins[i]) for i in range(1,len(obs_bins))]) )
             for i in range(1,nBins-1):
                 h_ratio_minloHJ.SetBinContent(i,v_ratio_AC[i])
@@ -1869,7 +1869,7 @@ def plotXS(obsName, obs_bins, obs_bins_boundaries = False):
         g_ratio_minloHJBorder.SetLineColor(ROOT.kOrange+2)
         g_ratio_minloHJBorder.SetMarkerColor(ROOT.kOrange+2)
 
-        if ("jet" in obsName and (not obsName.startswith("njets"))):
+        if ("jet" in obsName and (not obsName.startswith("Nj"))):
             h_ratio_minloHJ = TH1D("h_ratio_minloHJ","h_ratio_minloHJ",nBins-2, array('d',[float(obs_bins[i]) for i in range(1,len(obs_bins))]) )
             for i in range(1,nBins-1):
                 h_ratio_minloHJ.SetBinContent(i,v_ratio_minloHJ[i])
@@ -1891,7 +1891,7 @@ def plotXS(obsName, obs_bins, obs_bins_boundaries = False):
         g_ratio_aMCBorder.SetLineColor(ROOT.kPink+5)
         g_ratio_aMCBorder.SetMarkerColor(ROOT.kPink+5)
 
-        if ("jet" in obsName and (not obsName.startswith("njets"))):
+        if ("jet" in obsName and (not obsName.startswith("Nj"))):
             h_ratio_aMC = TH1D("h_ratio_aMC","h_ratio_aMC",nBins-2, array('d',[float(obs_bins[i]) for i in range(1,len(obs_bins))]) )
             for i in range(1,nBins-1):
                 h_ratio_aMC.SetBinContent(i,v_ratio_minloHJ[i])
@@ -1942,7 +1942,7 @@ def plotXS(obsName, obs_bins, obs_bins_boundaries = False):
     elif (obsName=="massZ1"):
         label = "m_{Z1}"
         unit = "GeV"
-    elif (obsName=="njets_pt30_eta4p7"):
+    elif (obsName=="Nj"):
         label = "N_{jets}"
         unit = ""
     elif (obsName=="pTj1"):
@@ -2094,7 +2094,7 @@ def plotXS(obsName, obs_bins, obs_bins_boundaries = False):
         for i in range(nBins-1):
             h_XH.SetBinContent(i+1,a_XH[i])
     else:
-        if ("jet" in obsName and (not obsName.startswith("njets"))):
+        if ("jet" in obsName and (not obsName.startswith("Nj"))):
             dummy = TH1D("dummy","dummy", int(float(obs_bins[nBins-1])-float(obs_bins[1])), float(obs_bins[1]), float(obs_bins[nBins-1]))
             for i in range(int(float(obs_bins[nBins-1])-float(obs_bins[1]))):
                 dummy.SetBinContent(i,2.5*max(a_ggH_powheg))
@@ -2123,7 +2123,7 @@ def plotXS(obsName, obs_bins, obs_bins_boundaries = False):
         elif (obsName=="DL1"): dummy.SetMaximum(1100*max(max(a_data),(max(a_ggH_powheg))))
         elif (obsName=="DL1Zg"): dummy.SetMaximum(1100*max(max(a_data),(max(a_ggH_powheg))))
         elif obsName=="TCjmax" or obs_name == 'TBjmax': dummy.SetMaximum(100*max(max(a_data),(max(a_ggH_powheg))))
-        elif obsName.startswith('njets') or obsName.startswith('pTj1'): dummy.SetMaximum(200.0*max(max(a_data),(max(a_ggH_powheg))))
+        elif obsName.startswith('Nj') or obsName.startswith('pTj1'): dummy.SetMaximum(200.0*max(max(a_data),(max(a_ggH_powheg))))
         elif (obsName=="pT4l"): dummy.SetMaximum(50)
         else: dummy.SetMaximum(55.0*max(max(a_data),(max(a_ggH_powheg))))
     else:
@@ -2150,11 +2150,11 @@ def plotXS(obsName, obs_bins, obs_bins_boundaries = False):
     dummy.SetMarkerSize(0)
     dummy.GetXaxis().SetLabelSize(0.0)
     dummy.GetYaxis().SetLabelSize(0.035)
-    if (opt.SETLOG and (obsName.startswith('njets') or obsName.startswith('pTj1')) and not doubleDiff):
+    if (opt.SETLOG and (obsName.startswith('Nj') or obsName.startswith('pTj1')) and not doubleDiff):
         dummy.GetXaxis().SetTitle("")
     else:
         dummy.GetXaxis().SetTitle("")
-    if (obsName.startswith('njets') and not doubleDiff):
+    if (obsName.startswith('Nj') and not doubleDiff):
         dummy.GetXaxis().SetTitle('')
         dummy.GetXaxis().SetLabelSize(0.0)
         dummy.GetXaxis().SetBinLabel(1,'')
@@ -2192,7 +2192,7 @@ def plotXS(obsName, obs_bins, obs_bins_boundaries = False):
         dummy.GetYaxis().SetTitle("d#sigma_{fid }/d"+label+" (fb)")
     else:
         dummy.GetYaxis().SetTitle("d#sigma_{fid }/d"+label+" (fb/"+unit+")")
-    if (obsName.startswith('njets') and not doubleDiff):
+    if (obsName.startswith('Nj') and not doubleDiff):
         dummy.GetYaxis().SetTitle("#sigma_{fid} (fb)")
 
     if doubleDiff:
@@ -2304,7 +2304,7 @@ def plotXS(obsName, obs_bins, obs_bins_boundaries = False):
     if(opt.YEAR=='2018'):
         latex2.DrawLatex(0.92, 0.94,"59.7 fb^{-1} (13 TeV)")
     if(opt.YEAR=='Run3'):
-        latex2.DrawLatex(0.92, 0.94,"34.7 fb^{-1} (13.6 TeV)")
+        latex2.DrawLatex(0.92, 0.94,"62 fb^{-1} (13.6 TeV)")
         #latex2.DrawLatex(0.92, 0.94,"67 fb^{-1} (13.6 TeV)") 
     if(opt.YEAR=='Full'):
         latex2.DrawLatex(0.92, 0.94,"138 fb^{-1} (13 TeV)")
@@ -2542,7 +2542,7 @@ def plotXS(obsName, obs_bins, obs_bins_boundaries = False):
                 # dummy2.GetXaxis().SetBinLabel(4,'3')
                 # dummy2.GetXaxis().SetBinLabel(5,'4')
     else:
-        if ("jet" in obsName and (not obsName.startswith("njets"))):
+        if ("jet" in obsName and (not obsName.startswith("Nj"))):
             dummy2 = TH1D("dummy2","dummy2", int(float(obs_bins[nBins-1])-float(obs_bins[1])), float(obs_bins[1]), float(obs_bins[nBins-1]))
             for i in range(int(float(obs_bins[nBins-1])-float(obs_bins[1]))):
                 dummy2.SetBinContent(i,1.02)
@@ -2559,7 +2559,7 @@ def plotXS(obsName, obs_bins, obs_bins_boundaries = False):
     dummy2.SetMarkerColor(0)
     dummy2.SetLineWidth(0)
     dummy2.SetMarkerSize(0)
-    if (obsName.startswith('njets') and not doubleDiff):
+    if (obsName.startswith('Nj') and not doubleDiff):
         dummy2.GetXaxis().SetTitle(label)
         dummy2.GetXaxis().SetLabelSize(0.08)
         dummy2.GetXaxis().SetBinLabel(1,'0')
@@ -2982,7 +2982,7 @@ if not doubleDiff:
         obs_bins[len(obs_bins)-1]=str(upLim)
     elif float(obs_bins[len(obs_bins)-1])>300.0:
         obs_bins[len(obs_bins)-1]='250.0'
-    if (opt.OBSNAME=="nJets" or opt.OBSNAME.startswith("njets")):
+    if (opt.OBSNAME=="Nj" or opt.OBSNAME.startswith("njets")):
         obs_bins[len(obs_bins)-1]='5'
 else:
     obs_bins_boundaries = obs_bins
@@ -2991,7 +2991,7 @@ else:
     obs_bins = [i for i in range(len(obs_bins)+1)]
 
 pvalues = {
-'njets_pt30_eta4p7': '0.48',
+'Nj': '0.48',
 'pT4l': '0.30',
 'rapidity4l': '0.85',
 'costhetaZ1': '0.24',

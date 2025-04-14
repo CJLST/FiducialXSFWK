@@ -45,6 +45,7 @@ decimal = {
 'DL1Zg': True,
 'rapidity4l_pT4l': True,
 'njets_pt30_eta4p7_pT4l': False,
+'Nj': False,
 'pTj1_pTj2': False,
 'pT4l_pTHj': False,
 'massZ1_massZ2': False,
@@ -148,7 +149,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
         if int(observableBins[obsBin+1]) > 1000:
             _recobin = 'GT'+str(int(observableBins[obsBin]))
 
-    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'njets_pt30_eta4p7': 'NJ'}
+    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
     if obsName not in _obsName:
         _obsName[obsName] = obsName
 

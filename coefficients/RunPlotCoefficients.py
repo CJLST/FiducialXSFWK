@@ -278,6 +278,8 @@ if (opt.YEAR == '2022EE'): years = ["2022EE"]
 if (opt.YEAR == '2023preBPix'): years = ["2023preBPix"]
 if (opt.YEAR == '2023postBPix'): years = ["2023postBPix"]
 
+if (opt.YEAR == 'Run3'): years = [2022, "2022EE", "2023preBPix", "2023postBPix"]
+
 # obs_bins = {0:(opt.OBSBINS.split("|")[1:(len(opt.OBSBINS.split("|"))-1)]),1:['0','inf']}[opt.OBSBINS=='inclusive']
 # obs_bins = [float(i) for i in obs_bins] #Convert a list of str to a list of float
 obs_name = opt.OBSNAME

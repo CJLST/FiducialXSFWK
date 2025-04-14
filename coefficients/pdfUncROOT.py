@@ -95,7 +95,7 @@ def getunc(channel, List, m4l_bins, m4l_low, m4l_high, obs_reco, obs_gen, obs_bi
         if (not Sample in Tree): continue
         if (not Tree[Sample]): continue
         print(Tree[Sample].GetName())
-        if (obs_reco.startswith("njets")):
+        if (obs_reco.startswith("Nj")):
             cutobs_gen = "("+obs_gen+">="+str(obs_gen_low)+")"
         else:
             cutobs_gen = "("+obs_gen+">="+str(obs_gen_low)+" && "+obs_gen+"<"+str(obs_gen_high)+")"

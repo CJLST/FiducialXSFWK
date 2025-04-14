@@ -391,7 +391,7 @@ def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, g
             datafr = d_sig_tot[year][signal]
             genweight = 'weight_gen'
             recoweight = 'weight_reco'
-        elif type=='full' or type=='ACggH' or type=='run3':
+        elif type=='full' or type=='ACggH' or type=='run3' or type=='2022full':
             datafr = d_sig_full[signal]
             genweight = 'weight_gen'
             recoweight = 'weight_reco'
@@ -563,7 +563,7 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
                 f.write('lambdajesup = '+str(lambdajesup)+' \n')
                 f.write('lambdajesdn = '+str(lambdajesup))
 
-    elif type=='full' or type=='fullNNLOPS' or type=='ACggH' or type=='run3':
+    elif type=='full' or type=='fullNNLOPS' or type=='ACggH' or type=='run3' or type=='2022full':
         for chan in chans:
             for recobin in range(nBins):
                 for genbin in range(nBins):
@@ -572,16 +572,17 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
         # Write dictionaries
         if doubleDiff: obs_name_dic = obs_name+'_'+obs_name_2nd
         else: obs_name_dic = obs_name
-        if type=='full' or type=='ACggH' or type=='run3':
+        if type=='full' or type=='ACggH' or type=='run3' or type=='2022full':
             year_label = 'Full'
             if type=='run3': year_label = 'Run3'
+            if type=='2022full': year_label = '2022full'
             if (os.path.exists('../inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+year_label+'_ORIG.py')):
                 os.system('rm ../inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+year_label+'_ORIG.py')
             with open('../inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+year_label+'.py', 'w') as f:
                 f.write('observableBins = '+str(obs_bins)+';\n')
                 f.write('acc = '+str(acceptance)+' \n')
                 f.write('err_acc = '+str(err_acceptance)+' \n')
-                if type=='full' or type=='run3':
+                if type=='full' or type=='run3' or type=='2022full':
                     f.write('eff = '+str(effrecotofid)+' \n')
                     f.write('err_eff = '+str(err_effrecotofid)+' \n')
                     f.write('outinratio = '+str(outinratio)+' \n')
@@ -714,26 +715,20 @@ if not opt.AC_ONLYACC:
     lambdajesdn = {}
     numberFake = {}
     if doubleDiff:
-        doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'std', obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
-    else:
-        doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'std')
-
         if (opt.YEAR == 'Run3'):
-            print('Coeff run3')
-            wrongfrac = {}
-            binfrac_wrongfrac = {}
-            binfrac_outfrac = {}
-            outinratio = {}
-            effrecotofid = {}
-            err_effrecotofid = {}
-            acceptance = {}
-            err_acceptance = {}
-            numberFake = {}
-            lambdajesup = {}
-            lambdajesdn = {}
+            doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'run3',  obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
+        elif (opt.YEAR == '2022full'):
+            doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, '2022full', obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
+        else:
+            doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'std', obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
+    else:
+        if (opt.YEAR == 'Run3'):
             doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'run3')
-
-
+        elif (opt.YEAR == '2022full'):
+            doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, '2022full') 
+        else :
+            doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'std')
+        
     if (opt.YEAR == 'Full'):
         print('Coeff full')
         wrongfrac = {}
