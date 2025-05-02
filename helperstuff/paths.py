@@ -4,9 +4,9 @@ path = {
  #'eos_path': '/eos/user/a/atarabin/',
  #'eos_path_FR': '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIILegacy/200205_CutBased/'
 
- 'eos_path_sig': '/eos/home-s/sellissp/HZZ/SAMPLES/032025/',
+ 'eos_path_sig': '/eos/home-s/sellissp/HZZ/SAMPLES/042025/',
  'eos_path': '/eos/user/s/sellissp',
- 'eos_path_FR': '/eos/home-s/sellissp/HZZ/SAMPLES/032025/',
+ 'eos_path_FR': '/eos/home-s/sellissp/HZZ/SAMPLES/042025/',
 
  #'eos_path_sig': '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/',
  #'eos_path': '/eos/user/s/sellissp',

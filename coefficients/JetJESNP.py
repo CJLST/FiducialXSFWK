@@ -15,7 +15,8 @@ ROOT.gStyle.SetOptTitle(0)
 
 sys.path.append('../inputs/')
 from observables import observables
-_temp = __import__('observables', globals(), locals(), ['observables'], -1)
+#_temp = __import__('observables', globals(), locals(), ['observables'], -1)
+_temp = __import__('observables', globals(), locals(), ['observables'], 0)
 observables = _temp.observables
 sys.path.remove('../inputs/')
 
@@ -37,9 +38,9 @@ def parseOptions():
     global opt, args
     (opt, args) = parser.parse_args()
 
-    if (opt.OBSBINS=='' and opt.OBSNAME!='inclusive'):
-        parser.error('Bin boundaries not specified for differential measurement. Exiting...')
-        sys.exit()
+    #if (opt.OBSBINS=='' and opt.OBSNAME!='inclusive'):
+    #    parser.error('Bin boundaries not specified for differential measurement. Exiting...')
+    #    sys.exit()
 
 
 # parse the arguments and options
@@ -48,11 +49,8 @@ parseOptions()
 
 def computeJES(obsname, obs_bins, year, fState, m4l_low, m4l_high, doubleDiff, obsname_out):
 
-	sel_m4l = (d_sig[year].ZZMass > m4l_low) and (d_sig[year].ZZMass < m4l_high)
-
-	
-
-
+    sel_m4l = (d_sig[year].ZZMass > m4l_low) and (d_sig[year].ZZMass < m4l_high)
+    
     edges = numpy.asarray(obs_bins)
     NBINS = int(len(edges) - 1)
 
@@ -141,7 +139,8 @@ def computeJES(obsname, obs_bins, year, fState, m4l_low, m4l_high, doubleDiff, o
 
 
 ## ---------------------------- Main ----------------------------
-indir = '/eos/user/a/atarabin/MC_samples/'
+#indir = '/eos/user/a/atarabin/MC_samples/'
+indir = '/eos/home-s/sellissp/HZZ/SAMPLES/032025/'
 # pmodes = ['ggH125', 'VBFH125', 'ttH125', 'WminusH125', 'WplusH125', 'ZH125']
 
 obsname = opt.OBSNAME
@@ -165,10 +164,15 @@ if (opt.YEAR == '2017'): years = [2017]
 if (opt.YEAR == '2018'): years = [2018]
 if (opt.YEAR == 'Full'): years = [2016,2017,2018]
 
+if (opt.YEAR == '2022'): years = ['2022']
+if (opt.YEAR == '2022EE'): years = ['2022EE']
+
+
+
 m4l_low = opt.LOWER_BOUND
 m4l_high = opt.UPPER_BOUND
 
-obs_bins, doubleDiff = binning(opt.OBSBINS)
+obs_bins, doubleDiff = binning(opt.OBSNAME)
 
 
 # if not doubleDiff: #It is not a double-differential analysis
@@ -189,15 +193,17 @@ obs_bins, doubleDiff = binning(opt.OBSBINS)
 #         obs_bins = obs_bins_2nd[1]
       
 
-print obsname, year, m4l_low, m4l_high, obsname_out
+print(obsname, year, m4l_low, m4l_high, obsname_out)
 
 # Generate dataframes
 d_sig = {}
 for year in years:
-    if doubleDiff: sig = skim_df(year, doubleDiff, obs_reco, obs_reco_2nd)
-    else: sig = skim_df(year, doubleDiff, obs_reco)
+    if doubleDiff:
+        sig = skim_df(year, doubleDiff, obs_reco, obs_reco_2nd)
+    else:
+        sig = skim_df(year, doubleDiff, obs_reco)
     d_sig[year] = sig
-	d_sig[year] = pd.concat([d_sig[year]['ggH125'], d_sig[year]['VBFH125'], d_sig[year]['WH125'], d_sig[year]['ZH125'], d_sig[year]['ttH125']])
+    d_sig[year] = pd.concat([d_sig[year]['ggH125'], d_sig[year]['VBFH125'], d_sig[year]['WH125'], d_sig[year]['ZH125'], d_sig[year]['ttH125']])
 
 print(d_sig)
 

@@ -164,7 +164,7 @@ def dataframes(year, year_mc):
     gen_bkg = generators(year_mc)
     xsec_bkg = xsecs(year_mc)
     for bkg in bkgs:
-        b_bkg = ['ZZMass', 'ZZy', 'ZZPt', 'Z1Flav', 'Z2Flav', 'Z1Mass', 'Z2Mass', 'overallEventWeight', 'dataMCWeight', 'pTj1', 'pTj2', 'Nj', 'mjj', 'absdetajj', 'dphijj'] # spencer
+        b_bkg = ['ZZMass', 'ZZy', 'ZZPt', 'Z1Flav', 'Z2Flav', 'Z1Mass', 'Z2Mass', 'overallEventWeight', 'dataMCWeight', 'pTj1', 'pTj2', 'Nj', 'mjj', 'absdetajj', 'dphijj', 'pTHj', 'pTHjj', 'mHj'] # spencer
         gen = gen_bkg[bkg]
         xsec = xsec_bkg[bkg]
         df_b = d_bkg[bkg].arrays(b_bkg, library="np")
@@ -345,11 +345,15 @@ def doZX(year, year_mc):
     #else: data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/2022/Data/AllData_2022.root' # SPENCER FIX THIS
     
     #if (year=="2022"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2022_Data/Data_eraCD_preEE_SKIMMED.root'
-    if (year=="2022"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/032025/2022_Data/Data_eraCD_preEE_SKIMMED.root'
-    if (year=="2022EE"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2022_Data/Data_eraEFG_postEE_SKIMMED.root'
+    #if (year=="2022EE"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2022_Data/Data_eraEFG_postEE_SKIMMED.root'
     if (year=="2023preBPix"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2023_Data/Data_eraC_preBPix_SKIMMED.root'
     if (year=="2023postBPix"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2023_Data/Data_eraD_postBPix_SKIMMED.root'
 
+    if (year=="2022"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/042025/PROD_samplesNano_2022_Data_e32a8483/Data_eraCD_preEE_SKIMMED.root'
+    if (year=="2022EE"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/042025/PROD_samplesNano_2022_Data_e32a8483/Data_eraEFG_postEE_SKIMMED.root'
+    #if (year=="2023preBPix"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/032025/2023_Data/Data_eraC_preBPix_SKIMMED.root'
+    #if (year=="2023postBPix"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/032025/2023_Data/Data_eraD_postBPix_SKIMMED.root'
+    
     ttreeZX = uproot.open(data)[keyZX]
     ttreeZX = ttreeZX.arrays(branches_ZX, library="np")
     dfZX = pd.DataFrame(columns=branches_ZX)
@@ -403,6 +407,7 @@ def doTemplates(df_irr, df_red, binning, var, var_string, var_2nd='None'):
                         bin_high = binning[i][1]
                         bin_low_2nd = binning[i][2]
                         bin_high_2nd = binning[i][3]
+                    print(bkg, f)
                     sel_bin_low = df_irr[year][bkg][var] >= bin_low
                     sel_bin_high = df_irr[year][bkg][var] < bin_high
                     if doubleDiff:
@@ -669,7 +674,7 @@ if (opt.YEAR == '2023full'):
     d_bkg['2023postBPix'] = d_bkg_tmp['2023postBPix']
     
 # Generate pandas for ZX
-branches_ZX = ['ZZMass', 'Z1Flav', 'Z2Flav', 'LepLepId', 'LepEta', 'LepPt', 'Z2Mass', 'Z1Mass', 'ZZPt', 'ZZy', 'pTj1', 'pTj2', 'Nj', 'absdetajj', 'mjj', 'dphijj']
+branches_ZX = ['ZZMass', 'Z1Flav', 'Z2Flav', 'LepLepId', 'LepEta', 'LepPt', 'Z2Mass', 'Z1Mass', 'ZZPt', 'ZZy', 'pTj1', 'pTj2', 'Nj', 'absdetajj', 'mjj', 'dphijj', 'pTHj', 'pTHjj', 'mHj']
 
 dfZX={}
 for year, year_mc in zip(years, years_MC):

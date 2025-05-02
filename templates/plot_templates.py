@@ -6,7 +6,7 @@ from binning import binning
 
 sPlotsStore = 'plots'
 
-print 'Welcome in plot_templates!'
+print('Welcome in plot_templates!')
 
 # Considering or not decimals in bin boundaries
 decimal = {
@@ -154,7 +154,7 @@ bkgName=['qqzz','ggzz','ZJetsCR']
 if opt.YEAR == 'Full':
     year=['2016', '2017', '2018']
 elif opt.YEAR == 'Run3':
-    year=['2022', '2022EE']
+    year=['2022', '2022EE', '2023preBPix', '2023postBPix']
 else:
     year=[opt.YEAR]
 print(year)

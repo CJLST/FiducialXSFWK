@@ -70,14 +70,19 @@ def makeCR(_df, _flag):
                                                    .Define('KFactor_QCD_ggZZ_Nominal', '1') ## Dummy
                                                    .Define('xsec', '1') ## Dummy
                # spencer
-               .Define('ZZPt', "ZLLCand_pt[ZLLbest"+_flag+"Idx]")
-               .Define('ZZy', "ZLLCand_rapidity[ZLLbest"+_flag+"Idx]")
-               .Define('pTj1', "Jet_pt[JetLeadingIdx]")
-               .Define('pTj2',  "Jet_pt[JetSubleadingIdx]")
-               .Define('Nj', "nCleanedJetsPt30")
-               .Define('mjj', "nCleanedJetsPt30 > 1 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).M() : -1")
-               .Define('absdetajj', "nCleanedJetsPt30 > 1 ? TMath::Abs(Jet_eta[JetLeadingIdx] - Jet_eta[JetSubleadingIdx]) : -1")
-               .Define('dphijj', "nCleanedJetsPt30 > 1 ? deltaphi(ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])) : -1")
+                .Define('ZZPt', "ZLLCand_pt[ZLLbest"+_flag+"Idx]")
+                .Define('ZZy', "ZLLCand_rapidity[ZLLbest"+_flag+"Idx]")
+                .Define('pTj1', "JetLeadingIdx >= 0 ? Jet_pt[JetLeadingIdx]: -99")
+                .Define('pTj2',  "JetSubleadingIdx >= 0 ? Jet_pt[JetSubleadingIdx]: -99")
+                .Define('Nj', "nCleanedJetsPt30")
+                .Define('mjj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).M() : -99")
+                .Define('absdetajj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 ? TMath::Abs(Jet_eta[JetLeadingIdx] - Jet_eta[JetSubleadingIdx]) : -99")
+                .Define('dphijj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 ? deltaphi(ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])) : -99")
+                .Define('pTHj', "JetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[ZLLbest"+_flag+"Idx], ZZCand_eta[ZLLbest"+_flag+"Idx], ZZCand_phi[ZLLbest"+_flag+"Idx], ZZCand_mass[ZLLbest"+_flag+"Idx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx])).Pt() : -99")
+                .Define('pTHjj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[ZLLbest"+_flag+"Idx], ZZCand_eta[ZLLbest"+_flag+"Idx], ZZCand_phi[ZLLbest"+_flag+"Idx], ZZCand_mass[ZLLbest"+_flag+"Idx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).Pt() : -99")
+                .Define('mHj', "JetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[ZLLbest"+_flag+"Idx], ZZCand_eta[ZLLbest"+_flag+"Idx], ZZCand_phi[ZLLbest"+_flag+"Idx], ZZCand_mass[ZLLbest"+_flag+"Idx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx])).M() : -99")
+                .Define('Nj_JESUP', 'nCleanedJetsPt30_jesUp')
+                .Define('Nj_JESDOWN', 'nCleanedJetsPt30_jesDn')
                # spencer
               )
     return df_out
@@ -248,6 +253,11 @@ vars = {'RunNumber',
         'mjj',
         'absdetajj',
         'dphijj',
+        'pTHj',
+        'pTHjj',
+        'mHj',
+        'Nj_JESUP',
+        'Nj_JESDOWN',
         # spencer
         }
 if MC:
@@ -320,12 +330,17 @@ df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]
           # spencer                                                                                                                                                                                                                                                                                                                                                              
           .Define('ZZPt', "ZZCand_pt[bestCandIdx]")
           .Define('ZZy', "ZZCand_rapidity[bestCandIdx]")
-          .Define('pTj1', "Jet_pt[JetLeadingIdx]")
-          .Define('pTj2',  "Jet_pt[JetSubleadingIdx]")
+          .Define('pTj1', "JetLeadingIdx >= 0 ? Jet_pt[JetLeadingIdx]: -99")
+          .Define('pTj2',  "JetSubleadingIdx >= 0 ? Jet_pt[JetSubleadingIdx]: -99")
           .Define('Nj', "nCleanedJetsPt30")
-          .Define('mjj', "nCleanedJetsPt30 > 1 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).M() : -1")
-          .Define('absdetajj', "nCleanedJetsPt30 > 1 ? TMath::Abs(Jet_eta[JetLeadingIdx] - Jet_eta[JetSubleadingIdx]) : -1")
-          .Define('dphijj', "nCleanedJetsPt30 > 1 ? deltaphi(ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])) : -1")
+          .Define('mjj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).M() : -99")
+          .Define('absdetajj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 ? TMath::Abs(Jet_eta[JetLeadingIdx] - Jet_eta[JetSubleadingIdx]) : -99")
+          .Define('dphijj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 ? deltaphi(ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])) : -99")
+          .Define('pTHj', "JetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx])).Pt() : -99")
+          .Define('pTHjj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).Pt() : -99")
+          .Define('mHj', "JetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx])).M() : -99")
+          .Define('Nj_JESUP', 'nCleanedJetsPt30_jesUp')
+          .Define('Nj_JESDOWN', 'nCleanedJetsPt30_jesDn')
           # spencer           
          )
 
@@ -376,16 +391,21 @@ if not opt.SKIPZL:
                                            .Define('KFactor_QCD_qqZZ_M', "1") ## Dummy
                                            .Define('KFactor_QCD_ggZZ_Nominal', '1') ## Dummy
                                            .Define('xsec', '1') ## Dummy
-          # spencer
-	  .Define('ZZPt', "0")
-	  .Define('ZZy', "0")
-          .Define('pTj1', "Jet_pt[JetLeadingIdx]")
-          .Define('pTj2',  "Jet_pt[JetSubleadingIdx]")
-          .Define('Nj', "nCleanedJetsPt30")
-          .Define('mjj', "nCleanedJetsPt30 > 1 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).M() : -1")
-          .Define('absdetajj', "nCleanedJetsPt30 > 1 ? TMath::Abs(Jet_eta[JetLeadingIdx] - Jet_eta[JetSubleadingIdx]) : -1")
-          .Define('dphijj', "nCleanedJetsPt30 > 1 ? deltaphi(ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])) : -1")
-          # spencer    
+        # spencer
+        .Define('ZZPt', "0")
+        .Define('ZZy', "0")
+        .Define('pTj1', "JetLeadingIdx >= 0 ? Jet_pt[JetLeadingIdx]: -99")
+        .Define('pTj2',  "JetSubleadingIdx >= 0 ? Jet_pt[JetSubleadingIdx]: -99")
+        .Define('Nj', "nCleanedJetsPt30")
+        .Define('mjj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).M() : -99")
+        .Define('absdetajj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 ? TMath::Abs(Jet_eta[JetLeadingIdx] - Jet_eta[JetSubleadingIdx]) : -99")
+        .Define('dphijj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 ? deltaphi(ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])) : -99")
+        .Define('pTHj', "JetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx])).Pt() : -99")
+        .Define('pTHjj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).Pt() : -99")
+        .Define('mHj', "JetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx])).M() : -99")
+        .Define('Nj_JESUP', 'nCleanedJetsPt30_jesUp')
+        .Define('Nj_JESDOWN',	'nCleanedJetsPt30_jesDn')
+        # spencer    
         )
 
     opts.fMode = 'UPDATE'
