@@ -138,8 +138,13 @@ def RunCombineCorrelation():
             # cmds.append(cmd)
 
 
+<<<<<<< HEAD
         elif physicalModel == 'v3': #Fit using inclusive or differential bins per observable
             _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'njets_pt30_eta4p7': 'NJ'}
+=======
+        elif physicalModel == 'v3':
+            _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
+>>>>>>> origin_spencer/VBF
             if obsName not in _obsName:
                 _obsName[obsName] = obsName
             fitName = _obsName[obsName]

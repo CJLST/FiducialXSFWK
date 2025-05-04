@@ -78,7 +78,7 @@ def PlotCorrelation():
         else:
             # pois += ['CMS_eff_e']
             # pois_plot += ['eff_e']
-            _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'njets_pt30_eta4p7': 'NJ'}
+            _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
             if obsName not in _obsName:
                 _obsName[obsName] = obsName
             for obsBin in range(nBins):

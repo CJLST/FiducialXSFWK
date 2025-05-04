@@ -273,6 +273,9 @@ if (opt.YEAR == '2018' or opt.YEAR == 'Full'):
     d_bkg[2018] = d_bkg_tmp['2018']
     d_sig[2018] = d_sig_tmp['2018']
 
+if (opt.YEAR == '2022'):
+    d_bkg[2022]= d_bkg_tmp['2022']
+    
 d_ZX = {}
 if doubleDiff:
     d_ZX = zx(obs_reco, obs_reco_2nd)

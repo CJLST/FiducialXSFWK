@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import uproot3 as uproot
+import uproot #3 as uproot
 from math import sqrt, log
 import sys,os
 import optparse
@@ -9,12 +9,15 @@ import math
 import json
 import ROOT
 
+from paths import path
+
 jesNames = ['Total', 'Abs', 'Abs_year', 'BBEC1', 'BBEC1_year', 'EC2', 'EC2_year', 'FlavQCD', 'HF', 'HF_year', 'RelBal', 'RelSample_year']
 signals_original = ['ggH125', 'VBFH125', 'ttH125', 'WminusH125', 'WplusH125', 'ZH125']
 bkgs = ['ZZTo4l', 'ggTo2e2mu_Contin_MCFM701', 'ggTo2e2tau_Contin_MCFM701', 'ggTo2mu2tau_Contin_MCFM701',
         'ggTo4e_Contin_MCFM701', 'ggTo4mu_Contin_MCFM701', 'ggTo4tau_Contin_MCFM701']
-eos_path_sig = '/grid_mnt/data__data.polcms/cms/tarabini/HZZ4l/'
-key = 'candTree'
+
+#key = 'ZZTree/candTree'
+key = 'Events'
 
 
 # ------------------------------- FUNCTIONS TO GENERATE DATAFRAMES ----------------------------------------------------
@@ -50,9 +53,10 @@ def prepareTrees(year):
     d_bkg = {}
 
     for bkg in bkgs:
-        fname = eos_path_sig + 'MC_samples_UL/%s_MELA' %year
-        fname += '/'+bkg+'/'+bkg+'_reducedTree_MC_'+str(year)+'.root'
-        print fname
+        #fname = eos_path_sig + 'MC_samples_UL/%s_MELA' %year
+        #fname += '/'+bkg+'/'+bkg+'_reducedTree_MC_'+str(year)+'.root'
+        fname = path['eos_path_sig']+year+"/"+bkg+"/ZZ4lAnalysis.root"
+        print(fname)
 #         fname = eos_path_sig + '%i_MELA' %year
 # #         if year == 2016:
 # #             fname += '_CorrectBTag'
@@ -65,15 +69,16 @@ def prepareTrees(year):
     if year!='2016pre':
         for signal in signals_original:
             # if(opt.AC==False):
-            fname = eos_path_sig + 'MC_samples_UL/%s_MELA' %year
+            #fname = eos_path_sig + 'MC_samples_UL/%s_MELA' %year
             # else:
     	        # fname = eos_path_sig + 'AC%i' %year
             # if (year == 2017) & (signal == 'VBFH125'):
             #     fname += '/'+signal+'ext/'+signal+'ext_reducedTree_MC_'+str(year)+'.root'
             # else:
             #     fname += '/'+signal+'/'+signal+'_reducedTree_MC_'+str(year)+'.root'
-            fname += '/'+signal+'/'+signal+'_reducedTree_MC_'+str(year)+'.root'
-            print fname
+            #fname += '/'+signal+'/'+signal+'_reducedTree_MC_'+str(year)+'.root'
+            fname = path['eos_path_sig']+year+"/"+signal+"/ZZ4lAnalysis.root"
+            print(fname)
             d_sig[signal] = uproot.open(fname)[key]
 
 
@@ -132,29 +137,26 @@ def generators(year):
     gen_bkg = {}
 
     for bkg in bkgs:
-        fname = eos_path_sig + 'MC_samples_UL/%s_MELA' %year
-        fname += '/'+bkg+'/'+bkg+'_reducedTree_MC_'+str(year)+'.root'
-        input_file = ROOT.TFile(fname)
-        hCounters = input_file.Get("Counters")
-        gen_bkg[bkg] = hCounters.GetBinContent(40)
-        input_file.Close()
+        #fname = eos_path_sig + 'MC_samples_UL/%s_MELA' %year
+        #fname += '/'+bkg+'/'+bkg+'_reducedTree_MC_'+str(year)+'.root'
 
+        fname = path['eos_path_sig']+year+"/"+bkg+"/ZZ4lAnalysis_SKIMMED.root"
+        gen_bkg[bkg] = uproot.open(fname)["Counters"].values()[39] # spencer
+        
     if year!='2016pre':
         for signal in signals_original:
             # if(opt.AC==False):
-            fname = eos_path_sig + 'MC_samples_UL/%s_MELA' %year
+            #fname = eos_path_sig + 'MC_samples_UL/%s_MELA' %year
             # else:
     	        # fname = eos_path_sig + 'AC%i' %year
             # if (year == 2017) & (signal == 'VBFH125'):
             #     fname += '/'+signal+'ext/'+signal+'ext_reducedTree_MC_'+str(year)+'.root'
             # else:
             #     fname += '/'+signal+'/'+signal+'_reducedTree_MC_'+str(year)+'.root'
-            fname += '/'+signal+'/'+signal+'_reducedTree_MC_'+str(year)+'.root'
-            print fname
-            input_file = ROOT.TFile(fname)
-            hCounters = input_file.Get("Counters")
-            gen_sig[signal] = hCounters.GetBinContent(40)
-            input_file.Close()
+            #fname += '/'+signal+'/'+signal+'_reducedTree_MC_'+str(year)+'.root'
+
+            fname = path['eos_path_sig']+year+"/"+signal+"/ZZ4lAnalysis_SKIMMED.root"
+            gen_sig[signal] = uproot.open(fname)["Counters"].values()[39] # spencer 
 
     return gen_sig, gen_bkg
 
@@ -250,14 +252,18 @@ def createDataframe(dataFrame,isBkg,gen,xsec,signal,lumi,obs_reco,obs_reco_2nd='
     elif 'gg' in signal:
         b_sig.append('KFactor_QCD_ggZZ_Nominal')
     for i in jesNames:
-        b_sig.extend(['JetPt_JESUp_'+i,'JetPt_JESDown_'+i])
+        #b_sig.extend(['JetPt_JESUp_'+i,'JetPt_JESDown_'+i])
+        b_sig.extend(['nCleanedJetsPt30_jesUp'+i,'nCleanedJetsPt30_jesDown'+i])
     if obs_reco != 'pTj1' and obs_reco != 'pTj2': b_sig.append(obs_reco)
     if (obs_reco_2nd!='None' and obs_reco_2nd != 'pTj1' and obs_reco_2nd != 'pTj2'): b_sig.append(obs_reco_2nd)
 
-    df = dataFrame.pandas.df(b_sig, flatten = False)#, entrystop=500)
+    df = dataFrame.arrays(library="pd")
+
     df['gen'] = gen
     df['xsec'] = xsec
+    print(df.columns)
     df['FinState_reco'] = [add_fin_state_reco(i, j) for i,j in zip(df.Z1Flav, df.Z2Flav)]
+
     # print df[['JetPt','JetPt_JESUp_Total', 'JetPt_JESDown_Total']]
     # Leading jets
     for i in jesNames:
@@ -339,6 +345,10 @@ def dataframes(year, doubleDiff, obs_reco, obs_reco_2nd):
     elif year == '2018':
         lumi_sig = 59.7
         lumi_bkg = 59.7
+    elif year == '2022':
+        lumi_sig = 7.9804
+        lumi_bkg = 7.9804
+        
     d_df_sig = {}
     d_df_bkg = {}
     d_sig, d_bkg = prepareTrees(year)
