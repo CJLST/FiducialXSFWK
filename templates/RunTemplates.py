@@ -28,8 +28,8 @@ def parseOptions():
     parser = optparse.OptionParser(usage)
 
     # input options
-    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='pT4l',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
-    parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='|0|30|80|200|10000|',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
+    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='mass4l',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
+    parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='|105|160|',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
     parser.add_option('',   '--year',  dest='YEAR',  type='string',default='2022',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--m4lLower',  dest='LOWER_BOUND',  type='int',default=105,   help='Lower bound for m4l')
     parser.add_option('',   '--m4lUpper',  dest='UPPER_BOUND',  type='int',default=160,   help='Upper bound for m4l')
@@ -345,7 +345,7 @@ def doZX(year, year_mc):
     #else: data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/2022/Data/AllData_2022.root' # SPENCER FIX THIS
     
     #if (year=="2022"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2022_Data/Data_eraCD_preEE_SKIMMED.root'
-    if (year=="2022"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/032025/2022_Data/Data_eraCD_preEE_SKIMMED.root'
+    if (year=="2022"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2022_Data/Data_eraCD_preEE_SKIMMED.root' #/eos/home-s/sellissp/HZZ/SAMPLES/032025/2022_Data/
     if (year=="2022EE"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2022_Data/Data_eraEFG_postEE_SKIMMED.root'
     if (year=="2023preBPix"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2023_Data/Data_eraC_preBPix_SKIMMED.root'
     if (year=="2023postBPix"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2023_Data/Data_eraD_postBPix_SKIMMED.root'

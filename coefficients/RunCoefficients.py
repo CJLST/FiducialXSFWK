@@ -30,8 +30,8 @@ def parseOptions():
     parser = optparse.OptionParser(usage)
 
     # input options
-    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='pT4l',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
-    parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='|0|30|80|200|10000|',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
+    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='mass4l',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')#pT4l
+    parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='|105|160|',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')#|0|30|80|200|10000|
     parser.add_option('',   '--year',  dest='YEAR',  type='string', default='2022',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--verbose', action='store_true', dest='VERBOSE', default=True, help='print values')
     parser.add_option('',   '--AC', action='store_true', dest='AC', default=False, help='AC samples')
@@ -41,8 +41,8 @@ def parseOptions():
     parser.add_option('',   '--AC_onlyAcc', action='store_true', dest='AC_ONLYACC', default=False, help='Flag in case we are interested in only the acceptance')
     parser.add_option('',   '--AC_hypothesis', dest='AC_HYP',  type='string',default='',   help='Name of the AC hypothesis, e.g. 0M, 0PM')
     # The following option are used in case of interpolation to calculate acceptance at 125.38 GeV
-    parser.add_option('',   '--interpolation', action='store_true', dest='INTER', default=True, help='Calculate acceptances at 124 and 126 GeV')
-    parser.add_option('',   '--hypothesis', dest='HYP',  type='string',default='26', help='specify mass value: 24(124) or 26(126)')
+    parser.add_option('',   '--interpolation', action='store_true', dest='INTER', default=False, help='Calculate acceptances at 124 and 126 GeV')
+    parser.add_option('',   '--hypothesis', dest='HYP',  type='string',default='24', help='specify mass value: 24(124) or 26(126)')
     # store options and arguments as global variables
     global opt, args
     (opt, args) = parser.parse_args()

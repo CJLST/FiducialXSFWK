@@ -21,7 +21,7 @@ from observables import observables # spencer
 from binning import binning # spencer
 
 #sys.path.append('/eos/user/m/mbonanom/run3_trees/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/FiducialXSFWK/inputs')
-sys.path.append('/eos/home-s/sellissp/HZZ/RUNIII/CMSSW_14_1_0_pre4/src/FiducialXSFWK_HZZRun3/inputs') # spencer
+sys.path.append('../inputs/')
 
 # spencer
 def parseOptions(): 
@@ -32,8 +32,8 @@ def parseOptions():
              + '%prog -h for help')
     parser = optparse.OptionParser(usage)
 
-    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
-    parser.add_option('',   '--year',  dest='YEAR',  type='string', default='Full',   help='Year -> 2016 or 2017 or 2018 or Full')
+    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='pT4l',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
+    parser.add_option('',   '--year',  dest='YEAR',  type='string', default='2022',   help='Year -> 2016 or 2017 or 2018 or Full')
 
     global opt, args
     (opt, args) = parser.parse_args()
