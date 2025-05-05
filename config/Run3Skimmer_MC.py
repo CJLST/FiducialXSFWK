@@ -1,6 +1,7 @@
-## python2 Run3Skimmer.py --input ZZ4lAnalysis.root --output SKIMMED.root --mc
+## python2 Run3Skimmer.py --input ZZ4lAnalysis.root --output ZZ4lAnalysis_SKIMMED.root --mc
 ## Drop `--mc` option when running on Data
 ## Latest files: /eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/
+##  /eos/user/m/mmanoni/HZZ_prod_300425_angles/MC/PROD_samplesNano_2022EE_MC_7cebd27b/ggH125/ZZ4lAnalysis.root
 
 import ROOT
 import os,sys
@@ -338,7 +339,12 @@ vars = {'RunNumber',
         'Jet_pt_smearDn',
         'Jet_mass_smearUp',
         'Jet_mass_smearDn',
-        # spencer
+        # Addition of angluar variables by Martina
+        'costheta1',
+        'costheta2',
+        'Phi',
+        'costhetastar',
+        'Phi1',
         }
 if MC:
     vars.add('overallEventWeight')
@@ -371,16 +377,22 @@ if MC:
         vars.add('lep_genindex')
         vars.add('passedFiducial')
         # spencer
-        vars.add('GENpTj1')
-        vars.add('GENpTj2')
-        vars.add('GENNj')
-        vars.add('GENmjj')
-        vars.add('GENabsdetajj')
-        vars.add('GENdphijj')
-        vars.add('GENpTHj')
-        vars.add('GENpTHjj')
-        vars.add('GENmHj') 
-        # spencer
+        #vars.add('GENpTj1')
+        #vars.add('GENpTj2')
+        #vars.add('GENNj')
+        #vars.add('GENmjj')
+        #vars.add('GENabsdetajj')
+        #vars.add('GENdphijj')
+        #vars.add('GENpTHj')
+        #vars.add('GENpTHjj')
+        #vars.add('GENmHj')
+        # Addition of angluar varaibles by Martina
+        vars.add('GENcostheta1')
+        vars.add('GENcostheta2')
+        vars.add('GENPhi')
+        vars.add('GENcosthetastar')
+        vars.add('GENPhi1')
+
     vars.add('passedFullSelection')
     vars.add('genHEPMCweight')
     
@@ -451,7 +463,12 @@ df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]
     .Define('Jet_pt_smearDn', 'Jet_smearDn_pt')
     .Define('Jet_mass_smearUp', 'Jet_smearUp_mass')
     .Define('Jet_mass_smearDn', 'Jet_smearDn_mass')
-    # spencer                 
+    # Addition of angluar variables by Martina
+    .Define('costheta1', 'ZZCand_costheta1')
+    .Define('costheta2', 'ZZCand_costheta2')
+    .Define('Phi', 'ZZCand_Phi')
+    .Define('costhetastar', 'ZZCand_costhetastar')
+    .Define('Phi1', 'ZZCand_Phi1')
     )
 
 if MC:
@@ -485,16 +502,21 @@ if "H12" in inFileName:
                   .Define('GENlep_Hindex', "getGENHindex(FidZZ_Z1l1Idx, FidZZ_Z1l2Idx, FidZZ_Z2l1Idx, FidZZ_Z2l2Idx)")
                   .Define('lep_genindex', "getLepGENindex(LepPt, LepEta, LepPhi, GENlep_id, LepLepId, GENlep_pt, GENlep_eta, GENlep_phi)")
              # spencer
-             .Define('GENpTj1', "GenJetLeadingIdx >= 0 ? GenJet_pt[GenJetLeadingIdx] : -99")
-             .Define('GENpTj2', "GenJetSubleadingIdx >= 0 ? GenJet_pt[GenJetSubleadingIdx] : -99")
-             .Define('GENNj', "nCleanedGenJetsPt30")
-             .Define('GENmjj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])).M() : -99")
-             .Define('GENabsdetajj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0  ? TMath::Abs(GenJet_eta[GenJetLeadingIdx] - GenJet_eta[GenJetSubleadingIdx]) : -99")
-             .Define('GENdphijj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0  ? deltaphi(ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])) : -99")
-             .Define('GENpTHj', "GenJetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx])).Pt() : -99")
-             .Define('GENpTHjj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])).Pt() : -99")
-             .Define('GENmHj', "GenJetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx])).M() : -99")
-             # spencer
+             #.Define('GENpTj1', "GenJetLeadingIdx >= 0 ? GenJet_pt[GenJetLeadingIdx] : -99")
+             #.Define('GENpTj2', "GenJetSubleadingIdx >= 0 ? GenJet_pt[GenJetSubleadingIdx] : -99")
+             #.Define('GENNj', "nCleanedGenJetsPt30")
+             #.Define('GENmjj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])).M() : -99")
+             #.Define('GENabsdetajj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0  ? TMath::Abs(GenJet_eta[GenJetLeadingIdx] - GenJet_eta[GenJetSubleadingIdx]) : -99")
+             #.Define('GENdphijj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0  ? deltaphi(ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])) : -99")
+             #.Define('GENpTHj', "GenJetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx])).Pt() : -99")
+             #.Define('GENpTHjj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])).Pt() : -99")
+             #.Define('GENmHj', "GenJetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx])).M() : -99")
+             # Addition of angluar variables by Martina
+             .Define('GENcostheta1', 'FidZZ_costheta1')
+             .Define('GENcostheta2', 'FidZZ_costheta2')
+             .Define('GENPhi', 'FidZZ_Phi')
+             .Define('GENcosthetastar', 'FidZZ_costhetastar')
+             .Define('GENPhi1', 'FidZZ_Phi1')
             )
     
     df_filter = df_all.Filter("isNotInEvents(event)")
@@ -524,15 +546,20 @@ if "H12" in inFileName:
     'LHEScaleWeight_', # spencer
     'genHEPMCweight',
     'PUWeight',
-    'GENpTj1', # spencer
-    'GENpTj2', # spencer
-    'GENNj', # spencer
-    'GENmjj', # spencer
-    'GENabsdetajj', # spencer
-    'GENdphijj', # spencer
-    'GENpTHj', # spencer
-    'GENpTHjj', # spencer
-    'GENmHj'} # spencer
+    #'GENpTj1', # spencer
+    #'GENpTj2', # spencer
+    #'GENNj', # spencer
+    #'GENmjj', # spencer
+    #'GENabsdetajj', # spencer
+    #'GENdphijj', # spencer
+    #'GENpTHj', # spencer
+    #'GENpTHjj', # spencer
+    #'GENmHj', # spencer
+    'GENcostheta1', # Martina
+    'GENcostheta2',
+    'GENPhi',
+    'GENcosthetastar',
+    'GENPhi1',}
 
     df_fail = (df_filter.Define('GENlep_pt', "getGENlep_vector(FidDressedLeps_pt)")
                         .Define('GENlep_eta', "getGENlep_vector(FidDressedLeps_eta)")
@@ -559,16 +586,21 @@ if "H12" in inFileName:
                .Define('LHEPdfWeight_', "LHEPdfWeight") # spencer
                .Define('LHEScaleWeight_', "LHEScaleWeight") # spencer    
             # spencer
-             .Define('GENpTj1', "GenJetLeadingIdx >= 0 ? GenJet_pt[GenJetLeadingIdx] : -99")
-             .Define('GENpTj2', "GenJetSubleadingIdx >= 0 ? GenJet_pt[GenJetSubleadingIdx] : -99")
-             .Define('GENNj', "nCleanedGenJetsPt30")
-             .Define('GENmjj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])).M() : -99")
-             .Define('GENabsdetajj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0  ? TMath::Abs(GenJet_eta[GenJetLeadingIdx] - GenJet_eta[GenJetSubleadingIdx]) : -99")
-             .Define('GENdphijj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0  ? deltaphi(ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])) : -99")
-             .Define('GENpTHj', "GenJetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx])).Pt() : -99")
-             .Define('GENpTHjj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])).Pt() : -99")
-             .Define('GENmHj', "GenJetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx])).M() : -99")
-            # spencer
+             #.Define('GENpTj1', "GenJetLeadingIdx >= 0 ? GenJet_pt[GenJetLeadingIdx] : -99")
+             #.Define('GENpTj2', "GenJetSubleadingIdx >= 0 ? GenJet_pt[GenJetSubleadingIdx] : -99")
+             #.Define('GENNj', "nCleanedGenJetsPt30")
+             #.Define('GENmjj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])).M() : -99")
+             #.Define('GENabsdetajj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0  ? TMath::Abs(GenJet_eta[GenJetLeadingIdx] - GenJet_eta[GenJetSubleadingIdx]) : -99")
+             #.Define('GENdphijj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0  ? deltaphi(ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])) : -99")
+             #.Define('GENpTHj', "GenJetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx])).Pt() : -99")
+             #.Define('GENpTHjj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])).Pt() : -99")
+             #.Define('GENmHj', "GenJetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx])).M() : -99")
+             # Addition of angluar variables by Martina
+             .Define('GENcostheta1', 'FidZZ_costheta1')
+             .Define('GENcostheta2', 'FidZZ_costheta2')
+             .Define('GENPhi', 'FidZZ_Phi')
+             .Define('GENcosthetastar', 'FidZZ_costhetastar')
+             .Define('GENPhi1', 'FidZZ_Phi1')
     )
 
     if 'ggH' in inFileName:

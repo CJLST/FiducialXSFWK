@@ -83,7 +83,12 @@ def makeCR(_df, _flag):
                 .Define('mHj', "JetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[ZLLbest"+_flag+"Idx], ZZCand_eta[ZLLbest"+_flag+"Idx], ZZCand_phi[ZLLbest"+_flag+"Idx], ZZCand_mass[ZLLbest"+_flag+"Idx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx])).M() : -99")
                 .Define('Nj_JESUP', 'nCleanedJetsPt30_jesUp')
                 .Define('Nj_JESDOWN', 'nCleanedJetsPt30_jesDn')
-               # spencer
+                # Addition of angluar variables by Martina, only Reco angles for Data
+                .Define('costheta1', 'ZLLCand_costheta1')
+                .Define('costheta2', 'ZLLCand_costheta2')
+                .Define('Phi', 'ZLLCand_Phi')
+                .Define('costhetastar', 'ZLLCand_costhetastar')
+                .Define('Phi1', 'ZLLCand_Phi1')
               )
     return df_out
 
@@ -258,7 +263,12 @@ vars = {'RunNumber',
         'mHj',
         'Nj_JESUP',
         'Nj_JESDOWN',
-        # spencer
+        # Addition of angluar variables by Martina
+        'costheta1',
+        'costheta2',
+        'Phi',
+        'costhetastar',
+        'Phi1',
         }
 if MC:
     vars.add('overallEventWeight')
@@ -341,7 +351,12 @@ df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]
           .Define('mHj', "JetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx])).M() : -99")
           .Define('Nj_JESUP', 'nCleanedJetsPt30_jesUp')
           .Define('Nj_JESDOWN', 'nCleanedJetsPt30_jesDn')
-          # spencer           
+          # Addition of angluar variables by Martina, only Reco angles for Data
+          .Define('costheta1', 'ZZCand_costheta1')
+          .Define('costheta2', 'ZZCand_costheta2')
+          .Define('Phi', 'ZZCand_Phi')
+          .Define('costhetastar', 'ZZCand_costhetastar')
+          .Define('Phi1', 'ZZCand_Phi1')
          )
 
 opts.fMode = 'UPDATE'
@@ -405,7 +420,12 @@ if not opt.SKIPZL:
         .Define('mHj', "JetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx])).M() : -99")
         .Define('Nj_JESUP', 'nCleanedJetsPt30_jesUp')
         .Define('Nj_JESDOWN',	'nCleanedJetsPt30_jesDn')
-        # spencer    
+        # Addition of angluar variables by Martina, only Reco angles for Data
+        .Define('costheta1', '0') #Dummy
+        .Define('costheta2', '0') #Dummy
+        .Define('Phi', '0') #Dummy
+        .Define('costhetastar', '0') #Dummy
+        .Define('Phi1', '0') #Dummy
         )
 
     opts.fMode = 'UPDATE'
