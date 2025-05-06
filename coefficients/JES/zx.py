@@ -213,7 +213,7 @@ def ZXYield(df, year, g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE, lenBrZX):
 
 def doZX(year, g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE, obs_reco,obs_reco_2nd):
     branches_ZX = ['ZZMass', 'Z1Flav', 'Z2Flav', 'LepLepId', 'LepEta', 'LepPt', 'Z1Mass', 'Z2Mass', 'ZZPt', 'ZZEta',
-                   'helcosthetaZ1','helcosthetaZ2', 'helphi', 'costhetastar', 'phistarZ1', 'ZZPhi',
+                   'costheta1','costheta2', 'Phi', 'costhetastar', 'Phi1', 'ZZPhi',
                    'pTj1', 'pTj2', 'absdetajj',
                    'JetEta','JetPhi','JetMass',
                    'pTHj', 'pTHjj', 'mHj', 'mHjj', 'detajj', 'dphijj', 'mjj', 'njets_pt30_eta4p7', 'ZZy',

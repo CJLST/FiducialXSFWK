@@ -22,8 +22,8 @@ def parseOptions():
     parser = optparse.OptionParser(usage)
 
     # input options
-    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='pT4l',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
-    parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='|0|30|80|200|10000|',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
+    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='costhetaZ1',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
+    parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='|-1.0|-0.75|-0.50|-0.25|0.0|0.25|0.50|0.75|1.0|',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
     parser.add_option('',   '--year',  dest='YEAR',  type='string',default='2022',   help='Year -> 2016 or 2017 or 2018 or Full')
     # store options and arguments as global variables
     global opt, args
@@ -96,7 +96,8 @@ def matrix(obs_bins, obs_name, label):
                 print(eps)
 
                 # The following two lines set white color for bin with zero efficiency
-                my_cmap = copy.copy(matplotlib.cm.get_cmap("rainbow"))
+                #my_cmap = copy.copy(matplotlib.cm.get_cmap("rainbow"))
+                my_cmap = copy.copy(matplotlib.colormaps.get_cmap("rainbow"))
                 my_cmap.set_under('w')
 
                 # Define pcolormesh
@@ -204,7 +205,8 @@ def nonFid(obs_bins, obs_name, label):
             print(eps)
 
             # The following two lines set white color for bin with zero efficiency
-            my_cmap = copy.copy(matplotlib.cm.get_cmap("rainbow"))
+            #my_cmap = copy.copy(matplotlib.cm.get_cmap("rainbow"))
+            my_cmap = copy.copy(matplotlib.colormaps.get_cmap("rainbow"))
             my_cmap.set_under('w')
 
             plt.pcolormesh(obs_bins_label_x, obs_bins_label_y, eps, cmap = my_cmap, alpha=0.6)
@@ -318,6 +320,8 @@ elif(obs_name == 'mass4l'):
     label = 'm$_4/ell$ (GeV)'
 elif(obs_name == 'mass4l_zzfloating'):
     label = 'm$_4/ell$ (GeV)'
+elif(obs_name == 'costhetaZ1'):
+    label = 'costhetaZ1'
 if(obs_name == 'rapidity4l_pT4l'):
     label = '|y$_H$| vs. p$_T^H$ (GeV)'
 else:

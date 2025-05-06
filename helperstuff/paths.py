@@ -1,9 +1,17 @@
 ### ------- lxplus -------
 path = {
-'eos_path_sig': '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/',
+'eos_path_sig': '/eos/user/m/mmanoni/HZZ_prod_300425_angles/',
 'eos_path': '/eos/user/m/mmanoni/',
 'eos_path_FR': '/eos/user/m/mmanoni/HZZ_FIDUCIAL/',
 }
+
+#path = {
+#'eos_path_sig': '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/',
+#'eos_path': '/eos/user/m/mmanoni/',
+#'eos_path_FR': '/eos/user/m/mmanoni/HZZ_FIDUCIAL/',
+#}
+
+#/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data
 
 ### ------- polui UL -------
 ## To get ReReco path, remove MC_samples_UL
