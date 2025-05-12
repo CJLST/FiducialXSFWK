@@ -3,7 +3,7 @@ import optparse
 import ROOT
 from tdrStyle import *
 from binning import binning
-
+ROOT.gROOT.SetBatch(True)
 sPlotsStore = 'plots'
 
 print('Welcome in plot_templates!')
@@ -19,8 +19,8 @@ decimal = {
 'costhetaZ1': True,
 'costhetaZ2': True,
 'phi': True,
-'phistar': True,
-'costhetastar': True,
+'phi1': True,
+'costhetastarZZ': True,
 'massZ1': False,
 'massZ2': False,
 'pTj1': False,

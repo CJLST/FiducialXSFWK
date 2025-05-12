@@ -322,7 +322,15 @@ elif(obs_name == 'mass4l_zzfloating'):
     label = 'm$_4/ell$ (GeV)'
 elif(obs_name == 'costhetaZ1'):
     label = 'costhetaZ1'
-if(obs_name == 'rapidity4l_pT4l'):
+elif(obs_name == 'costhetaZ2'):
+    label = 'costhetaZ2'
+elif(obs_name == 'costhetastarZZ'):
+    label = 'costhetastarZZ'
+elif(obs_name == 'phi'):
+    label = 'phi'
+elif(obs_name == 'phi1'):
+    label = 'phi1'
+elif(obs_name == 'rapidity4l_pT4l'):
     label = '|y$_H$| vs. p$_T^H$ (GeV)'
 else:
     label = ''

@@ -21,17 +21,17 @@ observables = {
     {'obs_reco': 'costheta1',
     'obs_gen': 'GENcostheta1'},
 'costhetaZ2':
-    {'obs_reco': 'helcosthetaZ2',
-    'obs_gen': 'GENcosTheta2'},
+    {'obs_reco': 'costheta2',
+    'obs_gen': 'GENcostheta2'},
 'phi':
-    {'obs_reco': 'helphi',
+    {'obs_reco': 'Phi',
     'obs_gen': 'GENPhi'},
-'phistar':
-    {'obs_reco': 'phistarZ1',
+'phi1':
+    {'obs_reco': 'Phi1',
     'obs_gen': 'GENPhi1'},
-'costhetastar':
+'costhetastarZZ':
     {'obs_reco': 'costhetastar',
-    'obs_gen': 'GENcosThetaStar'},
+    'obs_gen': 'GENcosthetastar'},
 'massZ1':
     {'obs_reco': 'Z1Mass',
     'obs_gen': 'GENmassZ1'},

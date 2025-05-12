@@ -6,6 +6,7 @@ import plotting as plot
 import json
 import argparse, optparse
 import os.path, sys
+ROOT.gROOT.SetBatch(True)
 
 NAMECOUNTER = 0
 
@@ -27,7 +28,7 @@ def parseOptions():
     parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
     parser.add_option('',   '--year',  dest='YEAR',  type='string',default='',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--unblind', action='store_true', dest='UNBLIND', default=False, help='Use real data')
-    parser.add_option('',   '--v4', action='store_true', dest='V4', default=False, help='Print NLL scans for v4 physics model')
+    parser.add_option('',   '--v4', action='store_true', dest='V4', default= True, help='Print NLL scans for v4 physics model')
 
     # store options and arguments as global variables
     global opt, args
@@ -63,7 +64,6 @@ def BuildScan(scan, param, files, color, yvals, ycut):
     pyfunc = partial(Eval, spline)
     func = TF1('splinefn'+str(NAMECOUNTER), pyfunc, graph.GetX()[0], graph.GetX()[graph.GetN() - 1], 1)
     bestfit = func.GetMinimumX() #AT
-    print(bestfit)
     NAMECOUNTER += 1
     func.SetLineColor(color)
     func.SetLineWidth(3)
@@ -95,7 +95,6 @@ def BuildScan(scan, param, files, color, yvals, ycut):
     else:
         val_2sig = (0., 0., 0.)
         cross_2sig = cross_1sig
-    print(val)
     return {
         "graph"     : graph,
         "spline"    : spline,
@@ -264,7 +263,6 @@ _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['ob
 obs_bins = _temp.observableBins
 _temp = __import__('xsec_'+obsName, globals(), locals(), ['xsec']) # , -1)
 xsec = _temp.xsec
-print(xsec)
 sys.path.remove('../inputs')
 
 nBins = len(obs_bins)
@@ -297,14 +295,14 @@ for i in range(nBins):
 
     if v4_flag:
         if (_bin % 2) == 0:
-            _obs_bin = 'r2e2muBin'+str(i/2)
+            _obs_bin = 'r2e2muBin'+str(i//2)
+            print("v4_flag - _obs_bin",_obs_bin,str(i//2), str(i))
         else:
-            _obs_bin = 'r4lBin'+str((i-1)/2)
+            _obs_bin = 'r4lBin'+str((i-1)//2)
 
     if 'kL' in obsName:
             _obs_bin = 'kappa_lambda'
 
-    print(_obs_bin)
 
     graphs = []
     grapherrs = []
@@ -313,11 +311,9 @@ for i in range(nBins):
     for ifile in range(len(fileList)):
         rfile = fileList[ifile].replace('OBS', _obs_bin)
         rfile = rfile.replace('BIN', obsName)
-        print(rfile)
         graphs.append(TGraph())
         fname = inputPath+rfile
         inF = TFile.Open(fname,"READ")
-        print(fname)
         tree = inF.Get("limit")
 
         if tree.GetBranch('r_smH_'+_obsName[obsName]+'_'+str(_bin)):
