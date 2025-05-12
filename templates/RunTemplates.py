@@ -229,8 +229,15 @@ def GetFakeRate(lep_Pt, lep_eta, lep_ID):
 # Open Fake Rates files
 def openFR(year):
     
-    if ( year == "2022" or year == "2022EE" ): fnameFR = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII/FRfiles/FakeRates_SS_%s.root" %year
-    else: fnameFR = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII/FRfiles/FakeRates_SS_2022.root" # SPENCER FIX THIS
+    if (year == "2022" or year == "2022EE" or year == "2023preBPix" or year == "2023postBPix"):
+        fnameFR = "/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/FAKERATES/%s/FakeRates_SS_%s.root" % (year, year)
+    else:
+        raise ValueError(f"ERROR: Unsupported year")
+    #fnameFR = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII/FRfiles/FakeRates_SS_%s.root" %year
+    #else: fnameFR = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII/FRfiles/FakeRates_SS_2022.root" # SPENCER FIX THIS
+
+    if not os.path.exists(fnameFR):
+        raise FileNotFoundError(f"Fake rate file not found: {fnameFR}")
 
     file = uproot.open(fnameFR)
     # Retrieve FR from TGraphErrors
@@ -271,17 +278,31 @@ def comb(year):
         ])
     elif year == "2022":
         cb_SS = np.array([
-            1.239, # 4e
-            1.093, # 4mu
+            1.140, # 4e
+            1.097, # 4mu
             1.057, # 2e2mu
-            1.254, # 2mu2e
+            1.155, # 2mu2e
         ])
-    else:
+    elif year == "2022EE":
         cb_SS = np.array([
             1.067, # 4e
-            1.015, # 4mu
-            1.049, # 2e2mu
-            0.905, # 2mu2e
+            1.016, # 4mu
+            1.063, # 2e2mu
+            0.902, # 2mu2e
+        ])
+    elif year == "2023preBPix":
+        cb_SS = np.array([
+            1.116, # 4e
+            1.036, # 4mu
+            0.989, # 2e2mu
+            1.141, # 2mu2e
+        ])
+    elif year == "2023postBPix":
+        cb_SS = np.array([
+            0.781, # 4e
+            1.025, # 4mu
+            1.074, # 2e2mu
+            1.138, # 2mu2e
         ])
     return cb_SS
 
@@ -310,17 +331,31 @@ def ratio(year):
             ])
     elif year == "2022":
         fs_ROS_SS = np.array([
-            1.030,   # 4e
-            1.165,  # 4mu
-            1.057,   # 2e2mu
-            1.254,  # 2mu2e
+            1.023,   # 4e
+            1.141,  # 4mu
+            0.955,   # 2e2mu
+            1.036,  # 2mu2e
             ])
-    else:
+    elif year == "2022EE":
         fs_ROS_SS = np.array([
-            0.990,   # 4e
-            0.997,  # 4mu
-            1.039,   # 2e2mu
-            1.016,  # 2mu2e
+            0.989,   # 4e
+            1.007,  # 4mu
+            1.037,   # 2e2mu
+            1.018,  # 2mu2e
+            ])
+    elif year == "2023preBPix":
+        fs_ROS_SS = np.array([
+            0.992,   # 4e
+            1.024,  # 4mu
+            1.102,   # 2e2mu
+            1.024,  # 2mu2e
+            ])
+    elif year == "2023postBPix":
+        fs_ROS_SS = np.array([
+            1.006,   # 4e
+            1.040,  # 4mu
+            1.078,   # 2e2mu
+            1.025,  # 2mu2e
             ])
     return fs_ROS_SS
 
@@ -411,8 +446,8 @@ def doTemplates(df_irr, df_red, binning, var, var_string, var_2nd='None'):
                         bin_low_2nd = binning[i][2]
                         bin_high_2nd = binning[i][3]
                     print(bkg, f)
-                    print("Available columns in df_irr['2022']['qqzz']:", df_irr["2022"]["qqzz"].columns.tolist())
-                    print(f"Trying to access variable: {var}")
+                    #print("Available columns in df_irr['2022']['qqzz']:", df_irr["2022"]["qqzz"].columns.tolist())
+                    #print(f"Trying to access variable: {var}")
                     sel_bin_low = df_irr[year][bkg][var] >= bin_low
                     sel_bin_high = df_irr[year][bkg][var] < bin_high
                     if doubleDiff:
