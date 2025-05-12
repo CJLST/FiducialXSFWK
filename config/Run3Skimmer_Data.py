@@ -1,20 +1,21 @@
 ## python3 NanoConverter.py
+#python3 Run3Skimmer_Data.py --input /eos/user/m/mmanoni/HZZ_prod_300425_angles/Data/2022/Data_eraEFG_postEE.root --output /eos/user/m/mmanoni/HZZ_prod_300425_angles/Data/2022/Data_eraEFG_postEE_SKIMMED.root
 import ROOT
 import os,sys
 import optparse
-from ZZAnalysis.NanoAnalysis.tools import get_genEventSumw
+#from ZZAnalysis.NanoAnalysis.tools import get_genEventSumw
 
 usage = ('usage: %prog [options]\n'
              + '%prog -h for help')
 parser = optparse.OptionParser(usage)
-parser.add_option('',   '--mc', action='store_true', dest='MC', default=False, help='MC samples')
+parser.add_option('',   '--mc', action='store_true', dest='Data', default=False, help='MC samples')
 parser.add_option('',   '--input',dest='INPUT',type='string',default='', help='Name and path to the input file')
 parser.add_option('',   '--output',dest='OUTPUT',type='string',default='', help='Name and path to the output file')
 parser.add_option('',   '--skipZL', action='store_true', dest='SKIPZL', default=False, help='Skip the ZL tree (e.g., necessary for ZZto4l samples)')
 (opt, args) = parser.parse_args()
 
 def makeCR(_df, _flag):
-
+    print("making ZZ control region")
     # CRZLLss 21 --> 2097152
     # CRZLLos_2P2F 22 --> 4194304
     # CRZLLos_3P1F 23 --> 8388608
@@ -84,11 +85,11 @@ def makeCR(_df, _flag):
                 .Define('Nj_JESUP', 'nCleanedJetsPt30_jesUp')
                 .Define('Nj_JESDOWN', 'nCleanedJetsPt30_jesDn')
                 # Addition of angluar variables by Martina, only Reco angles for Data
-                .Define('costheta1', 'ZLLCand_costheta1')
-                .Define('costheta2', 'ZLLCand_costheta2')
-                .Define('Phi', 'ZLLCand_Phi')
-                .Define('costhetastar', 'ZLLCand_costhetastar')
-                .Define('Phi1', 'ZLLCand_Phi1')
+                .Define('costheta1', "ZLLCand_costheta1[ZLLbest"+_flag+"Idx]")
+                .Define('costheta2', "ZLLCand_costheta2[ZLLbest"+_flag+"Idx]")
+                .Define('Phi', "ZLLCand_Phi[ZLLbest"+_flag+"Idx]")
+                .Define('costhetastar', "ZLLCand_costhetastar[ZLLbest"+_flag+"Idx]")
+                .Define('Phi1', "ZLLCand_Phi1[ZLLbest"+_flag+"Idx]")
               )
     return df_out
 
@@ -214,7 +215,7 @@ float deltaphi (ROOT::Math::PtEtaPhiMVector tetra1, ROOT::Math::PtEtaPhiMVector 
 # spencer
 
 ##################################### MAIN #####################################
-MC = opt.MC
+#MC = opt.MC
 
 inFileName = opt.INPUT
 outFileName = opt.OUTPUT
@@ -222,9 +223,13 @@ outFileName = opt.OUTPUT
 df = ROOT.RDataFrame('Events', inFileName)
 
 df_3P1F = makeCR(df, "3P1F")
+print("Done 3P1F ZZ control region")
 df_2P2F = makeCR(df, "2P2F")
+print("Done 2P2F ZZ control region")
 df_2P2Lss = makeCR(df, "SS")
+print("Done SS ZZ control region")
 df_SIP = makeCR(df, "SIPCR")
+print("Done SIPCR ZZ control region")
 
 opts = ROOT.RDF.RSnapshotOptions()
 opts.fMode = 'RECREATE'
@@ -270,19 +275,19 @@ vars = {'RunNumber',
         'costhetastar',
         'Phi1',
         }
-if MC:
+'''if MC:
     vars.add('overallEventWeight')
     vars.add('xsec')
     vars.add('L1prefiringWeight')
     vars.add('KFactor_EW_qqZZ')
     vars.add('KFactor_QCD_qqZZ_M')
-    vars.add('KFactor_QCD_ggZZ_Nominal')
+    vars.add('KFactor_QCD_ggZZ_Nominal')'''
 
 df_3P1F.Snapshot('CRZLLTree/candTree', "test_3P1F.root", vars, opts)
 df_2P2F.Snapshot('CRZLLTree/candTree', "test_2P2F.root", vars, opts)
 df_2P2Lss.Snapshot('CRZLLTree/candTree', "test_2P2Lss.root", vars, opts)
 df_SIP.Snapshot('CRZLLTree/candTree', "test_SIP.root", vars, opts)
-
+print("Snapshots done")
 ## RooDataFrames cannot be concatenated.
 ## Solution: save each CR in a different tree and then merge them through another RooDataFrame
 ## Not fancy, but it works
@@ -297,6 +302,7 @@ if df_bis.Count().GetValue() != 0:
 os.system('rm test_*.root')
 
 ## SR
+print("Doing SR...")
 df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]") ## Dummy
                                      .Define("CRflag", "0") ## Dummy
                                      .Define("Z1Flav", "ZZCand_Z1flav[bestCandIdx]")
@@ -352,11 +358,11 @@ df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]
           .Define('Nj_JESUP', 'nCleanedJetsPt30_jesUp')
           .Define('Nj_JESDOWN', 'nCleanedJetsPt30_jesDn')
           # Addition of angluar variables by Martina, only Reco angles for Data
-          .Define('costheta1', 'ZZCand_costheta1')
-          .Define('costheta2', 'ZZCand_costheta2')
-          .Define('Phi', 'ZZCand_Phi')
-          .Define('costhetastar', 'ZZCand_costhetastar')
-          .Define('Phi1', 'ZZCand_Phi1')
+          .Define('costheta1', 'ZZCand_costheta1[bestCandIdx]')
+          .Define('costheta2', 'ZZCand_costheta2[bestCandIdx]')
+          .Define('Phi', 'ZZCand_Phi[bestCandIdx]')
+          .Define('costhetastar', 'ZZCand_costhetastar[bestCandIdx]')
+          .Define('Phi1', 'ZZCand_Phi1[bestCandIdx]')
          )
 
 opts.fMode = 'UPDATE'
@@ -365,6 +371,7 @@ df_SR.Snapshot('ZZTree/candTree', outFileName, vars, opts)
 
 
 ## ZL CR for the computation of fake rates
+print("Doing ZL CR for the computation of fake rates...")
 if not opt.SKIPZL:
     df_ZL = ( df.Filter('ZLCand_lepIdx>-1').Define("ZZMass", "0") ## Dummy
                                            .Define("CRflag", "0") ## Dummy
@@ -433,11 +440,11 @@ if not opt.SKIPZL:
 
 ## Add counter only with the 40th entry
 counters = ROOT.TH1F("Counters", "Counters", 50, 0, 100)
-if opt.MC:
+'''if opt.MC:
     root = ROOT.TFile.Open(inFileName)
     genEventSumw = get_genEventSumw(root)
     counters.SetBinContent(40, genEventSumw)
-    root.Close()
+    root.Close()'''
 
 root_file = ROOT.TFile(outFileName, "UPDATE")
 if not skip_ZLL:

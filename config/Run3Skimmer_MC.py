@@ -2,7 +2,7 @@
 ## Drop `--mc` option when running on Data
 ## Latest files: /eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/
 ##  /eos/user/m/mmanoni/HZZ_prod_300425_angles/MC/PROD_samplesNano_2022EE_MC_7cebd27b/ggH125/ZZ4lAnalysis.root
-
+#ciao
 import ROOT
 import os,sys
 import optparse
@@ -57,14 +57,14 @@ outFileName = opt.OUTPUT
 df = ROOT.RDataFrame('Events', inFileName)
 # df = df.Range(0, 100)
 
-print(f"df nEntries: {df.Count().GetValue()}")
+#print(f"df nEntries: {df.Count().GetValue()}")
 
 if "H12" in inFileName:
     df_all = ROOT.RDataFrame('AllEvents', inFileName)
     print(f"df_all nEntries: {df_all.Count().GetValue()}")
 
 opts = ROOT.RDF.RSnapshotOptions()
-opts.fMode = 'RECREATE'
+#opts.fMode = 'RECREATE'
 
 events = df.Take[df.GetColumnType('event')]('event')
 event_values = df.AsNumpy(["event"])["event"]
@@ -348,8 +348,6 @@ vars = {'RunNumber',
         }
 if MC:
     vars.add('overallEventWeight')
-    # vars.add('xsec')
-    # vars.add('L1prefiringWeight')
     vars.add('LHEPdfWeight_') # spencer
     vars.add('LHEScaleWeight_') # spencer
     vars.add('PUWeight')
@@ -464,11 +462,11 @@ df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]
     .Define('Jet_mass_smearUp', 'Jet_smearUp_mass')
     .Define('Jet_mass_smearDn', 'Jet_smearDn_mass')
     # Addition of angluar variables by Martina
-    .Define('costheta1', 'ZZCand_costheta1')
-    .Define('costheta2', 'ZZCand_costheta2')
-    .Define('Phi', 'ZZCand_Phi')
-    .Define('costhetastar', 'ZZCand_costhetastar')
-    .Define('Phi1', 'ZZCand_Phi1')
+    .Define('costheta1', 'ZZCand_costheta1[bestCandIdx]')
+    .Define('costheta2', 'ZZCand_costheta2[bestCandIdx]')
+    .Define('Phi', 'ZZCand_Phi[bestCandIdx]')
+    .Define('costhetastar', 'ZZCand_costhetastar[bestCandIdx]')
+    .Define('Phi1', 'ZZCand_Phi1[bestCandIdx]')
     )
 
 if MC:
@@ -606,12 +604,13 @@ if "H12" in inFileName:
     if 'ggH' in inFileName:
         vars_fail.add('ggH_NNLOPS_weight')
         df_fail = df_fail.Define('ggH_NNLOPS_weight', "ggH_NNLOPS_Weight")
-    
-opts.fMode = 'UPDATE'
+
+opts.fMode = 'RECREATE'
 print(f"df nEntries: {df_SR.Count().GetValue()}")
 
 df_SR.Snapshot('ZZTree/candTree', outFileName, vars, opts)
 if "H12" in inFileName:
+    opts.fMode = 'UPDATE'
     df_fail.Snapshot('ZZTree/candTree_failed', outFileName, vars_fail, opts)
 
 ## Add counter only with the 40th entry
