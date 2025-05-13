@@ -4,6 +4,7 @@ import matplotlib.ticker as ticker
 import numpy as np
 import pandas as pd
 import awkward
+import awkward as ak # spencer
 import uproot #3 as uproot
 from math import sqrt, log
 import sys,os
@@ -18,7 +19,7 @@ from observables import observables
 from binning import binning
 from paths import path
 
-print 'Welcome in RunCoefficients!'
+print('Welcome in RunCoefficients!')
 
 def parseOptions():
 
@@ -95,11 +96,12 @@ def prepareTrees(year):
     d_sig = {}
     d_sig_failed = {}
     for signal in signals_original:
-        if "ggH" in signal:
-            fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
-        else:
-            fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
-        print fname
+        #if "ggH" in signal:
+        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
+        #else:
+        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
+        fname = path['eos_path_sig']+year+"/"+signal+"/ZZ4lAnalysis_SKIMMED.root"
+        print(fname)
         d_sig[signal] = uproot.open(fname)[key]
         d_sig_failed[signal] = uproot.open(fname)[key_failed]
 
@@ -111,14 +113,24 @@ def xsecs(year):
     xsec_sig = {}
     d_sig, d_sig_failed = prepareTrees(year)
     for signal in signals_original:
-        total_weight = d_sig[signal].pandas.df('overallEventWeight').overallEventWeight
-        puweight = d_sig[signal].pandas.df('PUWeight').PUWeight
-        genweight = d_sig[signal].pandas.df('genHEPMCweight').genHEPMCweight
+        
+        #total_weight = d_sig[signal].pandas.df('overallEventWeight').overallEventWeight
+        #puweight = d_sig[signal].pandas.df('PUWeight').PUWeight
+        #genweight = d_sig[signal].pandas.df('genHEPMCweight').genHEPMCweight
+        if 'ggH' in signal:  df = d_sig[signal].arrays(['overallEventWeight', 'PUWeight', 'genHEPMCweight', 'ggH_NNLOPS_weight'], library="pd") # spencer
+        else: df = d_sig[signal].arrays(['overallEventWeight', 'PUWeight', 'genHEPMCweight'], library="pd") # spencer
+        total_weight = df['overallEventWeight'] # spencer
+        puweight = df['PUWeight'] # spencer
+        genweight = df['genHEPMCweight'] # spencer
+
         if 'ggH' in signal:
-            nnlops = d_sig[signal].pandas.df('ggH_NNLOPS_weight').ggH_NNLOPS_weight
+            #nnlops = d_sig[signal].pandas.df('ggH_NNLOPS_weight').ggH_NNLOPS_weight
+            nnlops = df['ggH_NNLOPS_weight'] # spencer
             xsec = total_weight/(puweight*genweight*nnlops)
+
         else:
             xsec = total_weight/(puweight*genweight)
+            
         xsec_sig[signal] = xsec[0]
     print(signal, xsec_sig[signal])
     return xsec_sig
@@ -200,11 +212,13 @@ def add_cuth4l_reco(Hindex,genIndex,momMomId,momId): #(Hindex, momMomId,momId):
 def generators(year):
     gen_sig = {}
     for signal in signals_original:
-        if "ggH" in signal:
-            fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
-        else:
-            fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
-        gen_sig[signal] = uproot.open(fname)["candTree/Counter"].array()[0]
+        #if "ggH" in signal:
+        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
+        #else:
+        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
+        fname = path['eos_path_sig']+year+"/"+signal+"/ZZ4lAnalysis_SKIMMED.root"
+        #gen_sig[signal] = uproot.open(fname)["candTree/Counter"].array()[0]
+        gen_sig[signal] = uproot.open(fname)["Counters"].values()[39] # spencer 
         print("Counters is: ", gen_sig[signal])
     return gen_sig
 
@@ -221,20 +235,36 @@ def createDataframe(d_sig,fail,gen,xsec,signal,lumi,obs_reco,obs_gen,obs_reco_2n
         # if not opt.AC_ONLYACC: b_sig.append('SFcorr') #AC samples are ReReco, there is no SFcorr for ReReco
         if (obs_reco!='ZZMass'): b_sig.append(obs_reco) #We need to include the if condition otherwise for mass4l ZZMass would be repeated twice
         if (obs_reco_2nd!='None'): b_sig.append(obs_reco_2nd)
+        
+    #df = d_sig.pandas.df(b_sig, flatten = False)
+    df = d_sig.arrays(b_sig, library="pd") # spencer
 
-    df = d_sig.pandas.df(b_sig, flatten = False)
+    if not fail: # spencer
+        df['ZZMass'] = ak.flatten(df['ZZMass'], axis=-1) # spencer
+        df['Z1Flav'] = ak.flatten(df['Z1Flav'], axis=-1) # spencer
+        df['Z2Flav'] = ak.flatten(df['Z2Flav'], axis=-1) # spencer
+        df['dataMCWeight'] = ak.flatten(df['dataMCWeight'], axis=-1) # spencer
+        df['overallEventWeight'] = ak.flatten(df['overallEventWeight'], axis=-1) # spencer
+        df['lep_genindex'] = df['lep_genindex'].tolist() # spencer
+        df['lep_Hindex'] = df['lep_Hindex'].tolist() # spencer
+        if (obs_reco != 'ZZMass'): df[obs_reco] = ak.flatten(df[obs_reco], axis=-1) # spencer
+        if (obs_reco_2nd!='None'): df[obs_reco_2nd] = ak.flatten(df[obs_reco_2nd], axis=-1) # spencer
+        
     if fail: #Negative branches for failed events (it is useful when creating fiducial pandas)
         df['ZZMass'] = -1
         df['Z1Flav'] = -1
         df['Z2Flav'] = -1
-        df['lep_genindex'] = -1
-        df['lep_Hindex'] = -1
-        df['overallEventWeight'] = -1
         df['dataMCWeight'] = -1
+        df['overallEventWeight'] = -1
+        #df['lep_genindex'] = -1 
+        df['lep_genindex'] = [[-1, -1, -1, -1]] * len(df) # spencer
+        #df['lep_Hindex'] = -1 
+        df['lep_Hindex'] = [[-1, -1, -1, -1]] * len(df)	# spencer
         # df['L1prefiringWeight'] = -1
         # df['trigEffWeight'] = -1
         if (obs_reco != 'ZZMass'): df[obs_reco] = -1
         if (obs_reco_2nd!='None'): df[obs_reco_2nd] = -1
+
     df['gen'] = gen
     df['xsec'] = xsec
     if opt.AC_ONLYACC:
@@ -243,14 +273,21 @@ def createDataframe(d_sig,fail,gen,xsec,signal,lumi,obs_reco,obs_gen,obs_reco_2n
         df['FinState_reco'] = [add_fin_state_reco(i, j) for i,j in zip(df.Z1Flav, df.Z2Flav)]
     elif fail:
         df['FinState_reco'] = 'fail'
-    df['FinState_gen'] = [add_fin_state_gen(row[0],row[1],row[2]) for row in df[['GENlep_id', 'GENlep_Hindex', 'EventNumber']].values]
+        
+    #df['FinState_gen'] = [add_fin_state_gen(row[0],row[1],row[2]) for row in df[['GENlep_id', 'GENlep_Hindex', 'EventNumber']].values]
+    df['FinState_gen'] = [add_fin_state_gen(list(row[0]), list(row[1]), row[2]) for row in zip(df['GENlep_id'], df['GENlep_Hindex'], df['EventNumber'])] # spencer
+    
     if not 'ZH' in signal:
         df['FinState_gen_out'] = [add_fin_state_gen_out(i,j) for i,j in zip(df.GENZ_DaughtersId,df.EventNumber)]
     else:
         df['FinState_gen_out'] = [add_fin_state_gen_out_ZH(i,j) for i,j in zip(df.GENZ_DaughtersId,df.GENZ_MomId)]
+        
     df['cuth4l_gen'] = [add_cuth4l_gen(i,j) for i,j in zip(df.GENlep_MomMomId,df.GENlep_Hindex)]
     if not fail:
-        df['cuth4l_reco'] = [add_cuth4l_reco(row[0],row[1],row[2],row[3]) for row in df[['lep_Hindex','lep_genindex','GENlep_MomMomId','GENlep_MomId']].values]
+
+        #df['cuth4l_reco'] = [add_cuth4l_reco(row[0],row[1],row[2],row[3]) for row in df[['lep_Hindex','lep_genindex','GENlep_MomMomId','GENlep_MomId']].values]
+        df['cuth4l_reco'] = [add_cuth4l_reco(list(row[0]), list(row[1]), list(row[2]), list(row[3])) for row in zip(df['lep_Hindex'], df['lep_genindex'], df['GENlep_MomMomId'], df['GENlep_MomId'])] # spencer
+        
     elif fail:
         df['cuth4l_reco'] = False
 
@@ -260,6 +297,7 @@ def createDataframe(d_sig,fail,gen,xsec,signal,lumi,obs_reco,obs_gen,obs_reco_2n
     else:
         df = weight(df, fail, xsec, gen, lumi, 'ggH')
         df = df.drop(columns=['ggH_NNLOPS_weight'])
+
     return df
 
 
@@ -275,23 +313,27 @@ def dataframes(year, doubleDiff):
         lumi = 26.6728
     elif year == '2022':
         lumi = 7.9804
+    elif year == '2023preBPix':
+        lumi = 17.794
+    elif year == '2023postBPix':
+        lumi = 9.451
     d_df_sig = {}
     d_df_sig_failed = {}
     d_sig, d_sig_failed = prepareTrees(year)
     gen_sig = generators(year)
     xsec_sig = xsecs(year)
     for signal in signals_original:
-        print 'Processing', signal, year
+        print('Processing', signal, year)
         if doubleDiff:
             d_df_sig[signal] = createDataframe(d_sig[signal],False,gen_sig[signal],xsec_sig[signal],signal,lumi,obs_reco,obs_gen,obs_reco_2nd,obs_gen_2nd)
         else:
             d_df_sig[signal] = createDataframe(d_sig[signal],False,gen_sig[signal],xsec_sig[signal],signal,lumi,obs_reco,obs_gen)
-        print 'Signal created'
+        print('Signal created')
         if doubleDiff:
             d_df_sig_failed[signal] = createDataframe(d_sig_failed[signal],True,gen_sig[signal],xsec_sig[signal],signal,lumi,obs_reco,obs_gen,obs_reco_2nd,obs_gen_2nd)
         else:
             d_df_sig_failed[signal] = createDataframe(d_sig_failed[signal],True,gen_sig[signal],xsec_sig[signal],signal,lumi,obs_reco,obs_gen)
-        print 'Signal failed created'
+        print('Signal failed created')
     return d_df_sig, d_df_sig_failed
 
 
@@ -314,7 +356,7 @@ def skim_df(year, doubleDiff):
         else:
             d_skim_sig_failed[signal] = d_df_sig_failed[signal]
     if frames: d_skim_sig_failed['WH1'+signal[len(signal)-2]+signal[len(signal)-1]] = pd.concat(frames)
-    print '%s SKIMMED df CREATED' %year
+    print('%s SKIMMED df CREATED' %year)
     return d_skim_sig, d_skim_sig_failed
 
 # ------------------------------- FUNCTIONS TO CALCULATE COEFFICIENTS ----------------------------------------------------
@@ -349,7 +391,7 @@ def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, g
             datafr = d_sig_tot[year][signal]
             genweight = 'weight_gen'
             recoweight = 'weight_reco'
-        elif type=='full' or type=='ACggH' or type=='run3':
+        elif type=='full' or type=='ACggH' or type=='run3' or type=='2022full':
             datafr = d_sig_full[signal]
             genweight = 'weight_gen'
             recoweight = 'weight_reco'
@@ -474,7 +516,7 @@ def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, g
         lambdajesdn[processBin] = 0.0
 
         if opt.VERBOSE:
-            print processBin,'acc',round(acceptance[processBin],4),'eff',round(effrecotofid[processBin],4),'outinratio',round(outinratio[processBin],4), '\n'
+            print(processBin,'acc',round(acceptance[processBin],4),'eff',round(effrecotofid[processBin],4),'outinratio',round(outinratio[processBin],4), '\n')
 
 
 def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None', obs_gen_2nd = 'None', obs_name_2nd = 'None',):
@@ -501,7 +543,7 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
             if doubleDiff: obs_name_dic = obs_name+'_'+obs_name_2nd
             else: obs_name_dic = obs_name
             #Fix 2016post to 2016
-            if 'post' in year:
+            if '2016post' in year:
                 year_label = '2016'
             else:
                 year_label = year
@@ -521,7 +563,7 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
                 f.write('lambdajesup = '+str(lambdajesup)+' \n')
                 f.write('lambdajesdn = '+str(lambdajesup))
 
-    elif type=='full' or type=='fullNNLOPS' or type=='ACggH' or type=='run3':
+    elif type=='full' or type=='fullNNLOPS' or type=='ACggH' or type=='run3' or type=='2022full':
         for chan in chans:
             for recobin in range(nBins):
                 for genbin in range(nBins):
@@ -530,16 +572,17 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
         # Write dictionaries
         if doubleDiff: obs_name_dic = obs_name+'_'+obs_name_2nd
         else: obs_name_dic = obs_name
-        if type=='full' or type=='ACggH' or type=='run3':
+        if type=='full' or type=='ACggH' or type=='run3' or type=='2022full':
             year_label = 'Full'
             if type=='run3': year_label = 'Run3'
+            if type=='2022full': year_label = '2022full'
             if (os.path.exists('../inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+year_label+'_ORIG.py')):
                 os.system('rm ../inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+year_label+'_ORIG.py')
             with open('../inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+year_label+'.py', 'w') as f:
                 f.write('observableBins = '+str(obs_bins)+';\n')
                 f.write('acc = '+str(acceptance)+' \n')
                 f.write('err_acc = '+str(err_acceptance)+' \n')
-                if type=='full' or type=='run3':
+                if type=='full' or type=='run3' or type=='2022full':
                     f.write('eff = '+str(effrecotofid)+' \n')
                     f.write('err_eff = '+str(err_effrecotofid)+' \n')
                     f.write('outinratio = '+str(outinratio)+' \n')
@@ -568,7 +611,7 @@ if(opt.AC or opt.AC_ONLYACC):
     if opt.AC_ONLYACC: signals_AC_bare = ['ggH'] #Currently we use only ggH (reweighted to the sum of all production modes) to plot AC predictions
     else: signals_AC_bare = ['VBF', 'WH', 'ggH', 'ZH', 'ttH']
     signals_AC = [root+opt.AC_HYP+'_M125' for root in signals_AC_bare]
-    print 'AC samples', signals_AC
+    print('AC samples', signals_AC)
     signals_original = signals_AC
     signals = signals_AC
 elif opt.INTER:
@@ -580,15 +623,24 @@ else:
     signals_original = ['ggH125', 'VBFH125', 'WminusH125', 'WplusH125', 'ZH125', "ttH125"]
     signals = ['ggH125', 'VBFH125', 'WH125', 'ZH125', 'ttH125']
 eos_path_sig = path['eos_path_sig']
-key = 'candTree'
-key_failed = 'candTree_failed'
+#key = 'candTree'
+#key_failed = 'candTree_failed'
+key = 'ZZTree/candTree' # spencer
+key_failed = 'ZZTree/candTree_failed' # spencer
 
 if (opt.YEAR == '2016'): years = ['2016post']
 if (opt.YEAR == '2017'): years = ['2017']
 if (opt.YEAR == '2018'): years = ['2018']
-if (opt.YEAR == 'Run3'): years = ['2022', '2022EE']
+if (opt.YEAR == 'Run3'): years = ['2022', '2022EE', '2023preBPix', '2023postBPix']
 if (opt.YEAR == 'Full'): years = ['2016post','2017','2018']
 
+if (opt.YEAR == '2022'): years = ['2022']
+if (opt.YEAR == '2022EE'): years = ['2022EE']
+if (opt.YEAR == '2023preBPix'): years = ['2023preBPix']
+if (opt.YEAR == '2023postBPix'): years = ['2023postBPix']
+
+if (opt.YEAR == '2022full'): years = ['2022', '2022EE']
+if (opt.YEAR == '2023full'): years = ['2023preBPix', '2023postBPix']
 
 obs_bins, doubleDiff = binning(opt.OBSNAME)
 if doubleDiff:
@@ -598,7 +650,9 @@ if doubleDiff:
 else:
     obs_name = opt.OBSNAME
 
-_temp = __import__('observables', globals(), locals(), ['observables'], -1)
+#_temp = __import__('observables', globals(), locals(), ['observables'], -1)
+_temp = __import__('observables', globals(), locals(), ['observables'], 0) # spencer
+
 observables = _temp.observables
 if doubleDiff:
     obs_reco = observables[obs_name_2d]['obs_reco']
@@ -609,11 +663,11 @@ else:
     obs_reco = observables[obs_name]['obs_reco']
     obs_gen = observables[obs_name]['obs_gen']
 
-print obs_reco
+print(obs_reco)
 
-print 'Following observables extracted from dictionary: RECO = ',obs_reco,' GEN = ',obs_gen
+print('Following observables extracted from dictionary: RECO = ',obs_reco,' GEN = ',obs_gen)
 if doubleDiff:
-    print 'It is a double-differential measurement: RECO_2nd = ',obs_reco_2nd,' GEN_2nd = ',obs_gen_2nd
+    print('It is a double-differential measurement: RECO_2nd = ',obs_reco_2nd,' GEN_2nd = ',obs_gen_2nd)
 
 # Generate dataframes
 d_sig = {}
@@ -628,13 +682,13 @@ d_sig_tot = {}
 for year in years:
     d_sup = {}
     for signal in signals:
-        print year, signal
-        d_sup[signal] = pd.concat([d_sig[year][signal], d_sig_failed[year][signal]], ignore_index=True, sort=True)
+        print(year, signal)
+
+        d_sup[signal] = pd.concat([d_sig[year][signal], d_sig_failed[year][signal]], ignore_index=True, sort=True)        
     d_sig_tot[year] = d_sup
 
-
 # Create dataframe FullRun2
-if((opt.YEAR == 'Full') or (opt.YEAR == 'Run3')):
+if((opt.YEAR == 'Full') or (opt.YEAR == 'Run3') or (opt.YEAR == '2022full') or (opt.YEAR == '2023full')):
     d_sig_full = {}
     for signal in signals:
         frame = [d_sig_tot[year][signal] for year in years]
@@ -644,10 +698,10 @@ else: # If I work with one year only, the FullRun2 df coincides with d_sig_tot (
         d_sig_full = d_sig_tot[opt.YEAR+'post']
     else:
         d_sig_full = d_sig_tot[opt.YEAR]
-print 'Dataframes created successfully'
+print('Dataframes created successfully')
 
 if not opt.AC_ONLYACC:
-    print 'Coeff std'
+    print('Coeff std')
     wrongfrac = {}
     binfrac_wrongfrac = {}
     binfrac_outfrac = {}
@@ -661,28 +715,22 @@ if not opt.AC_ONLYACC:
     lambdajesdn = {}
     numberFake = {}
     if doubleDiff:
-        doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'std', obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
-    else:
-        doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'std')
-
         if (opt.YEAR == 'Run3'):
-            print 'Coeff run3'
-            wrongfrac = {}
-            binfrac_wrongfrac = {}
-            binfrac_outfrac = {}
-            outinratio = {}
-            effrecotofid = {}
-            err_effrecotofid = {}
-            acceptance = {}
-            err_acceptance = {}
-            numberFake = {}
-            lambdajesup = {}
-            lambdajesdn = {}
+            doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'run3',  obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
+        elif (opt.YEAR == '2022full'):
+            doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, '2022full', obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
+        else:
+            doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'std', obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
+    else:
+        if (opt.YEAR == 'Run3'):
             doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'run3')
-
-
+        elif (opt.YEAR == '2022full'):
+            doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, '2022full') 
+        else :
+            doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'std')
+        
     if (opt.YEAR == 'Full'):
-        print 'Coeff full'
+        print('Coeff full')
         wrongfrac = {}
         binfrac_wrongfrac = {}
         binfrac_outfrac = {}
@@ -699,7 +747,7 @@ if not opt.AC_ONLYACC:
         else:
             doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'full')
 
-    print 'Coeff fullNNLOPS'
+    print('Coeff fullNNLOPS')
     acceptance = {}
     err_acceptance = {}
     # For AC there is no NNLOPS samples
@@ -709,7 +757,7 @@ if not opt.AC_ONLYACC:
         else:
             doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'fullNNLOPS')
 else:
-    print 'Coeff full AC ggH'
+    print('Coeff full AC ggH')
     acceptance = {}
     err_acceptance = {}
     if doubleDiff:

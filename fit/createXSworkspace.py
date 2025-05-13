@@ -45,6 +45,7 @@ decimal = {
 'DL1Zg': True,
 'rapidity4l_pT4l': True,
 'njets_pt30_eta4p7_pT4l': False,
+'Nj': False,
 'pTj1_pTj2': False,
 'pT4l_pTHj': False,
 'massZ1_massZ2': False,
@@ -69,8 +70,8 @@ sys.path.append('../../inputs/')
 sys.path.append('../../templates/')
 
 def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH, modelName, physicalModel, year, JES, doubleDiff, lowerBound, upperBound, rawObsName):
-    print '\n'
-    print 'Creating WorkSpace', year
+    print('\n')
+    print('Creating WorkSpace', year)
 
     if not doubleDiff:
         obsBin_low = observableBins[obsBin]
@@ -90,7 +91,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
 
     recobin = "recobin"+str(obsBin)
 
-    print recobin
+    print(recobin)
     JES = False
     doJES = False
 
@@ -103,7 +104,8 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.WARNING)
 
     # from inputs_sig imports some coefficients
-    _temp = __import__('inputs_sig_'+obsName+'_'+year, globals(), locals(), ['acc','eff','inc_wrongfrac','binfrac_wrongfrac','outinratio'], -1)
+    #_temp = __import__('inputs_sig_'+obsName+'_'+year, globals(), locals(), ['acc','eff','inc_wrongfrac','binfrac_wrongfrac','outinratio'], -1)
+    _temp = __import__('inputs_sig_'+obsName+'_'+year, globals(), locals(), ['acc','eff','inc_wrongfrac','binfrac_wrongfrac','outinratio'], 0) # spencer
     acc = _temp.acc
     eff = _temp.eff
     outinratio = _temp.outinratio
@@ -114,17 +116,20 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     #number_fake = _temp.number_fake
 
     # import h4l xs br
-    _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
+    #_temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
+    _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], 0) # spencer
     if('2022' in year):
         higgs_xs = _temp.higgs_xs_136TeV
     else:
         higgs_xs = _temp.higgs_xs
     higgs4l_br = _temp.higgs4l_br
 
-    _temp = __import__('inputs_bkg_'+obsName+'_'+year, globals(), locals(), ['fractionsBackground'], -1)
+    #_temp = __import__('inputs_bkg_'+obsName+'_'+year, globals(), locals(), ['fractionsBackground'], -1)
+    _temp = __import__('inputs_bkg_'+obsName+'_'+year, globals(), locals(), ['fractionsBackground'], 0) # spencer
     fractionsBackground = _temp.fractionsBackground
 
-    _temp = __import__('observables', globals(), locals(), ['observables'], -1)
+    #_temp = __import__('observables', globals(), locals(), ['observables'], -1)
+    _temp = __import__('observables', globals(), locals(), ['observables'], 0) # spencer
     observables = _temp.observables
 
     if (not obsName=="mass4l"):
@@ -144,7 +149,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
         if int(observableBins[obsBin+1]) > 1000:
             _recobin = 'GT'+str(int(observableBins[obsBin]))
 
-    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'njets_pt30_eta4p7': 'NJ'}
+    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
     if obsName not in _obsName:
         _obsName[obsName] = obsName
 
@@ -160,13 +165,15 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
         comb_name = 'fakeH'
         sig_name = 'trueH'
 
-    print os.getcwd()
-    if '2022' in year:
+    print(os.getcwd())
+    if '2023' in year:
         # TODO: Fix this, it's ugly!!!
-        massParaMap = readParam('/eos/user/m/mbonanom/run3_trees/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/FiducialXSFWK/fit/param/sim_massParam_ggH_105160_'+channel+'_'+year+'.txt')
+        #massParaMap = readParam('/eos/user/m/mbonanom/run3_trees/CMSSW_11_3_4/src/HiggsAnalysis/CombinedLimit/FiducialXSFWK/fit/param/sim_massParam_ggH_105160_'+channel+'_'+year+'.txt')
+        massParaMap = readParam('/afs/cern.ch/user/s/sellissp/public/HZZ/CMSSW_14_1_0_pre4/src/FiducialXSFWK/fit/param/sim_massParam_ggH_105160_'+channel+'_2022.txt') # spencer
     else:
-        massParaMap = readParam('/home/llr/cms/tarabini/CMSSW_10_2_13/src/HiggsAnalysis/FiducialXSFWK/fit/param/sim_massParam_ggH_105160_'+channel+'_'+year+'_update.txt')
-
+        #massParaMap = readParam('/home/llr/cms/tarabini/CMSSW_10_2_13/src/HiggsAnalysis/FiducialXSFWK/fit/param/sim_massParam_ggH_105160_'+channel+'_'+year+'_update.txt')
+        massParaMap = readParam('/afs/cern.ch/user/s/sellissp/public/HZZ/CMSSW_14_1_0_pre4/src/FiducialXSFWK/fit/param/sim_massParam_ggH_105160_'+channel+'_'+year+'.txt') # spencer
+                
     CMS_zz4l_mean_m_sig = ROOT.RooRealVar("CMS_zz4l_mean_m_sig","CMS_zz4l_mean_m_sig",-10,10)
     CMS_zz4l_mean_e_sig = ROOT.RooRealVar("CMS_zz4l_mean_e_sig","CMS_zz4l_mean_e_sig",-10,10)
     CMS_zz4l_sigma_m_sig = ROOT.RooRealVar("CMS_zz4l_sigma_m_sig","CMS_zz4l_sigma_m_sig",-10,10)
@@ -174,41 +181,44 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     CMS_zz4l_mean_m_err = ROOT.RooRealVar("CMS_zz4l_mean_m_err","CMS_zz4l_mean_m_err",0.0005,0.0005,0.0005)
     CMS_zz4l_mean_e_err = ROOT.RooRealVar("CMS_zz4l_mean_e_err","CMS_zz4l_mean_e_err",0.002,0.002,0.002)
 
-    if(year == '2022'):
-        lumi = ROOT.RooRealVar("lumi_132022","lumi_132022", 7.9804)
+    if(year == '2022' or year == '2023preBPix' or year == '2023postBPix'): # spencer
+        if(year == '2022'): lumi = ROOT.RooRealVar("lumi_132022","lumi_132022", 7.9804) 
+        if(year == '2023preBPix'): lumi = ROOT.RooRealVar("lumi_132022","lumi_132022", 17.794) # spencer
+        if(year == '2023postBPix'): lumi = ROOT.RooRealVar("lumi_132022","lumi_132022", 9.451) # spencer
+        year_ = '2022' # spencer
         if (channel=='2e2mu'):
             CMS_zz4l_n_sig_3_2022 = ROOT.RooRealVar("CMS_zz4l_n_sig_3_2022","CMS_zz4l_n_sig_3_2022",-10,10)
-            CMS_zz4l_mean_sig_3_centralValue_2e2murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_mean_sig_3_centralValue_2e2mu" + recobin + "2022","CMS_zz4l_mean_sig_3_centralValue_2e2mu" + recobin + "2022", "(%s) + (@0*@1*@3 + @0*@2*@4)/2" %(massParaMap["mean_"+channel+"_"+year]), ROOT.RooArgList(MH,CMS_zz4l_mean_m_sig,CMS_zz4l_mean_e_sig,CMS_zz4l_mean_m_err,CMS_zz4l_mean_e_err))
+            CMS_zz4l_mean_sig_3_centralValue_2e2murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_mean_sig_3_centralValue_2e2mu" + recobin + "2022","CMS_zz4l_mean_sig_3_centralValue_2e2mu" + recobin + "2022", "(%s) + (@0*@1*@3 + @0*@2*@4)/2" %(massParaMap["mean_"+channel+"_"+year_]), ROOT.RooArgList(MH,CMS_zz4l_mean_m_sig,CMS_zz4l_mean_e_sig,CMS_zz4l_mean_m_err,CMS_zz4l_mean_e_err))
             CMS_zz4l_mean_sig_NoConv_3_2e2murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_mean_sig_NoConv_3_2e2murecobin2022","CMS_zz4l_mean_sig_NoConv_3_2e2murecobin2022","@0",ROOT.RooArgList(CMS_zz4l_mean_sig_3_centralValue_2e2murecobin2022))
-            CMS_zz4l_sigma_sig_3_centralValue_2e2murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_sigma_sig_3_centralValue_2e2mu" + recobin + "2022","CMS_zz4l_sigma_sig_3_centralValue_2e2mu" + recobin + "2022", "(%s)*(TMath::Sqrt((1+@1)*(1+@2)))" %(massParaMap["sigma_"+channel+"_"+year]),ROOT.RooArgList(MH,CMS_zz4l_sigma_m_sig,CMS_zz4l_sigma_e_sig))
-            CMS_zz4l_alpha_3_centralValue_2e2murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_alpha_3_centralValue_2e2mu" + recobin + "2022","CMS_zz4l_alpha_3_centralValue_2e2mu" + recobin + "2022",massParaMap["a1_"+channel+"_"+year],ROOT.RooArgList(MH))
-            CMS_zz4l_n_3_centralValue_2e2murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_n_3_centralValue_2e2mu" + recobin + "2022","CMS_zz4l_n_3_centralValue_2e2mu" + recobin + "2022","%s*(1+@1)" %(massParaMap["n1_"+channel+"_"+year]),ROOT.RooArgList(MH,CMS_zz4l_n_sig_3_2022))
-            CMS_zz4l_alpha2_3_centralValue_2e2murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_alpha2_3_centralValue_2e2mu" + recobin + "2022","CMS_zz4l_alpha2_3_centralValue_2e2mu" + recobin + "2022",massParaMap["a2_"+channel+"_"+year],ROOT.RooArgList(MH))
-            CMS_zz4l_n2_3_centralValue_2e2murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_n2_3_centralValue_2e2mu" + recobin + "2022","CMS_zz4l_n2_3_centralValue_2e2mu" + recobin + "2022",massParaMap["n2_"+channel+"_"+year],ROOT.RooArgList(MH))
+            CMS_zz4l_sigma_sig_3_centralValue_2e2murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_sigma_sig_3_centralValue_2e2mu" + recobin + "2022","CMS_zz4l_sigma_sig_3_centralValue_2e2mu" + recobin + "2022", "(%s)*(TMath::Sqrt((1+@1)*(1+@2)))" %(massParaMap["sigma_"+channel+"_"+year_]),ROOT.RooArgList(MH,CMS_zz4l_sigma_m_sig,CMS_zz4l_sigma_e_sig))
+            CMS_zz4l_alpha_3_centralValue_2e2murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_alpha_3_centralValue_2e2mu" + recobin + "2022","CMS_zz4l_alpha_3_centralValue_2e2mu" + recobin + "2022",massParaMap["a1_"+channel+"_"+year_],ROOT.RooArgList(MH))
+            CMS_zz4l_n_3_centralValue_2e2murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_n_3_centralValue_2e2mu" + recobin + "2022","CMS_zz4l_n_3_centralValue_2e2mu" + recobin + "2022","%s*(1+@1)" %(massParaMap["n1_"+channel+"_"+year_]),ROOT.RooArgList(MH,CMS_zz4l_n_sig_3_2022))
+            CMS_zz4l_alpha2_3_centralValue_2e2murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_alpha2_3_centralValue_2e2mu" + recobin + "2022","CMS_zz4l_alpha2_3_centralValue_2e2mu" + recobin + "2022",massParaMap["a2_"+channel+"_"+year_],ROOT.RooArgList(MH))
+            CMS_zz4l_n2_3_centralValue_2e2murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_n2_3_centralValue_2e2mu" + recobin + "2022","CMS_zz4l_n2_3_centralValue_2e2mu" + recobin + "2022",massParaMap["n2_"+channel+"_"+year_],ROOT.RooArgList(MH))
             trueH = ROOT.RooDoubleCB(sig_name+'_' + _obsName[obsName], "DoubleCB", m, CMS_zz4l_mean_sig_3_centralValue_2e2murecobin2022, CMS_zz4l_sigma_sig_3_centralValue_2e2murecobin2022, CMS_zz4l_alpha_3_centralValue_2e2murecobin2022, CMS_zz4l_n_3_centralValue_2e2murecobin2022, CMS_zz4l_alpha2_3_centralValue_2e2murecobin2022, CMS_zz4l_n2_3_centralValue_2e2murecobin2022)
             ggH = ROOT.RooDoubleCB('ggH_' + _obsName[obsName], "DoubleCB", m, CMS_zz4l_mean_sig_3_centralValue_2e2murecobin2022, CMS_zz4l_sigma_sig_3_centralValue_2e2murecobin2022, CMS_zz4l_alpha_3_centralValue_2e2murecobin2022, CMS_zz4l_n_3_centralValue_2e2murecobin2022, CMS_zz4l_alpha2_3_centralValue_2e2murecobin2022, CMS_zz4l_n2_3_centralValue_2e2murecobin2022)
             xH = ROOT.RooDoubleCB('xH_' + _obsName[obsName], "DoubleCB", m, CMS_zz4l_mean_sig_3_centralValue_2e2murecobin2022, CMS_zz4l_sigma_sig_3_centralValue_2e2murecobin2022, CMS_zz4l_alpha_3_centralValue_2e2murecobin2022, CMS_zz4l_n_3_centralValue_2e2murecobin2022, CMS_zz4l_alpha2_3_centralValue_2e2murecobin2022, CMS_zz4l_n2_3_centralValue_2e2murecobin2022)
         if (channel=='4e'):
             CMS_zz4l_n_sig_2_2022 = ROOT.RooRealVar("CMS_zz4l_n_sig_2_2022","CMS_zz4l_n_sig_2_2022",-10,10)
-            CMS_zz4l_mean_sig_2_centralValue_4erecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_mean_sig_2_centralValue_4e" + recobin + "2022","CMS_zz4l_mean_sig_2_centralValue_4e" + recobin + "2022", "(%s) + @0*@1*@2" %(massParaMap["mean_"+channel+"_"+year]), ROOT.RooArgList(MH,CMS_zz4l_mean_e_sig,CMS_zz4l_mean_e_err))
+            CMS_zz4l_mean_sig_2_centralValue_4erecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_mean_sig_2_centralValue_4e" + recobin + "2022","CMS_zz4l_mean_sig_2_centralValue_4e" + recobin + "2022", "(%s) + @0*@1*@2" %(massParaMap["mean_"+channel+"_"+year_]), ROOT.RooArgList(MH,CMS_zz4l_mean_e_sig,CMS_zz4l_mean_e_err))
             CMS_zz4l_mean_sig_NoConv_2_4erecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_mean_sig_NoConv_2_4erecobin2022","CMS_zz4l_mean_sig_NoConv_2_4erecobin2022","@0",ROOT.RooArgList(CMS_zz4l_mean_sig_2_centralValue_4erecobin2022))
-            CMS_zz4l_sigma_sig_2_centralValue_4erecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_sigma_sig_2_centralValue_4e" + recobin + "2022","CMS_zz4l_sigma_sig_2_centralValue_4e" + recobin + "2022", "(%s)*(1+@1)" %(massParaMap["sigma_"+channel+"_"+year]),ROOT.RooArgList(MH,CMS_zz4l_sigma_e_sig))
-            CMS_zz4l_alpha_2_centralValue_4erecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_alpha_2_centralValue_4e" + recobin + "2022","CMS_zz4l_alpha_2_centralValue_4e" + recobin + "2022",massParaMap["a1_"+channel+"_"+year],ROOT.RooArgList(MH))
-            CMS_zz4l_n_2_centralValue_4erecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_n_2_centralValue_4e" + recobin + "2022","CMS_zz4l_n_2_centralValue_4e" + recobin + "2022","(%s)*(1+@1)" %(massParaMap["n1_"+channel+"_"+year]),ROOT.RooArgList(MH,CMS_zz4l_n_sig_2_2022))
-            CMS_zz4l_alpha2_2_centralValue_4erecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_alpha2_2_centralValue_4e" + recobin + "2022","CMS_zz4l_alpha2_2_centralValue_4e" + recobin + "2022",massParaMap["a2_"+channel+"_"+year],ROOT.RooArgList(MH))
-            CMS_zz4l_n2_2_centralValue_4erecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_n2_2_centralValue_4e" + recobin + "2022","CMS_zz4l_n2_2_centralValue_4e" + recobin + "2022",massParaMap["n2_"+channel+"_"+year],ROOT.RooArgList(MH))
+            CMS_zz4l_sigma_sig_2_centralValue_4erecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_sigma_sig_2_centralValue_4e" + recobin + "2022","CMS_zz4l_sigma_sig_2_centralValue_4e" + recobin + "2022", "(%s)*(1+@1)" %(massParaMap["sigma_"+channel+"_"+year_]),ROOT.RooArgList(MH,CMS_zz4l_sigma_e_sig))
+            CMS_zz4l_alpha_2_centralValue_4erecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_alpha_2_centralValue_4e" + recobin + "2022","CMS_zz4l_alpha_2_centralValue_4e" + recobin + "2022",massParaMap["a1_"+channel+"_"+year_],ROOT.RooArgList(MH))
+            CMS_zz4l_n_2_centralValue_4erecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_n_2_centralValue_4e" + recobin + "2022","CMS_zz4l_n_2_centralValue_4e" + recobin + "2022","(%s)*(1+@1)" %(massParaMap["n1_"+channel+"_"+year_]),ROOT.RooArgList(MH,CMS_zz4l_n_sig_2_2022))
+            CMS_zz4l_alpha2_2_centralValue_4erecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_alpha2_2_centralValue_4e" + recobin + "2022","CMS_zz4l_alpha2_2_centralValue_4e" + recobin + "2022",massParaMap["a2_"+channel+"_"+year_],ROOT.RooArgList(MH))
+            CMS_zz4l_n2_2_centralValue_4erecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_n2_2_centralValue_4e" + recobin + "2022","CMS_zz4l_n2_2_centralValue_4e" + recobin + "2022",massParaMap["n2_"+channel+"_"+year_],ROOT.RooArgList(MH))
             trueH = ROOT.RooDoubleCB(sig_name+'_' + _obsName[obsName], "DoubleCB", m, CMS_zz4l_mean_sig_2_centralValue_4erecobin2022, CMS_zz4l_sigma_sig_2_centralValue_4erecobin2022, CMS_zz4l_alpha_2_centralValue_4erecobin2022, CMS_zz4l_n_2_centralValue_4erecobin2022, CMS_zz4l_alpha2_2_centralValue_4erecobin2022, CMS_zz4l_n2_2_centralValue_4erecobin2022)
             ggH = ROOT.RooDoubleCB('ggH_' + _obsName[obsName], "DoubleCB", m, CMS_zz4l_mean_sig_2_centralValue_4erecobin2022, CMS_zz4l_sigma_sig_2_centralValue_4erecobin2022, CMS_zz4l_alpha_2_centralValue_4erecobin2022, CMS_zz4l_n_2_centralValue_4erecobin2022, CMS_zz4l_alpha2_2_centralValue_4erecobin2022, CMS_zz4l_n2_2_centralValue_4erecobin2022)
             xH = ROOT.RooDoubleCB('xH_' + _obsName[obsName], "DoubleCB", m, CMS_zz4l_mean_sig_2_centralValue_4erecobin2022, CMS_zz4l_sigma_sig_2_centralValue_4erecobin2022, CMS_zz4l_alpha_2_centralValue_4erecobin2022, CMS_zz4l_n_2_centralValue_4erecobin2022, CMS_zz4l_alpha2_2_centralValue_4erecobin2022, CMS_zz4l_n2_2_centralValue_4erecobin2022)
         if (channel=='4mu'):
             CMS_zz4l_n_sig_1_2022 = ROOT.RooRealVar("CMS_zz4l_n_sig_1_2022","CMS_zz4l_n_sig_1_2022",-10,10)
-            CMS_zz4l_mean_sig_1_centralValue_4murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_mean_sig_1_centralValue_4mu" + recobin + "2022","CMS_zz4l_mean_sig_1_centralValue_4mu" + recobin + "2022", "(%s) + @0*@1*@2" %(massParaMap["mean_"+channel+"_"+year]),ROOT.RooArgList(MH,CMS_zz4l_mean_m_sig,CMS_zz4l_mean_m_err))
+            CMS_zz4l_mean_sig_1_centralValue_4murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_mean_sig_1_centralValue_4mu" + recobin + "2022","CMS_zz4l_mean_sig_1_centralValue_4mu" + recobin + "2022", "(%s) + @0*@1*@2" %(massParaMap["mean_"+channel+"_"+year_]),ROOT.RooArgList(MH,CMS_zz4l_mean_m_sig,CMS_zz4l_mean_m_err))
             CMS_zz4l_mean_sig_NoConv_1_4murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_mean_sig_NoConv_1_4murecobin2022","CMS_zz4l_mean_sig_NoConv_1_4murecobin2022","@0",ROOT.RooArgList(CMS_zz4l_mean_sig_1_centralValue_4murecobin2022))
-            CMS_zz4l_sigma_sig_1_centralValue_4murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_sigma_sig_1_centralValue_4mu" + recobin + "2022","CMS_zz4l_sigma_sig_1_centralValue_4mu" + recobin + "2022", "(%s)*(1+@1)" %(massParaMap["sigma_"+channel+"_"+year]),ROOT.RooArgList(MH,CMS_zz4l_sigma_m_sig))
-            CMS_zz4l_alpha_1_centralValue_4murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_alpha_1_centralValue_4mu" + recobin + "2022","CMS_zz4l_alpha_1_centralValue_4mu" + recobin + "2022",massParaMap["a1_"+channel+"_"+year],ROOT.RooArgList(MH))
-            CMS_zz4l_n_1_centralValue_4murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_n_1_centralValue_4mu" + recobin + "2022","CMS_zz4l_n_1_centralValue_4mu" + recobin + "2022","(%s)*(1+@1)"%(massParaMap["n1_"+channel+"_"+year]),ROOT.RooArgList(MH,CMS_zz4l_n_sig_1_2022))
-            CMS_zz4l_alpha2_1_centralValue_4murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_alpha2_1_centralValue_4mu" + recobin + "2022","CMS_zz4l_alpha2_1_centralValue_4mu" + recobin + "2022",massParaMap["a2_"+channel+"_"+year],ROOT.RooArgList(MH))
-            CMS_zz4l_n2_1_centralValue_4murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_n2_1_centralValue_4mu" + recobin + "2022","CMS_zz4l_n2_1_centralValue_4mu" + recobin + "2022",massParaMap["n2_"+channel+"_"+year],ROOT.RooArgList(MH))
+            CMS_zz4l_sigma_sig_1_centralValue_4murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_sigma_sig_1_centralValue_4mu" + recobin + "2022","CMS_zz4l_sigma_sig_1_centralValue_4mu" + recobin + "2022", "(%s)*(1+@1)" %(massParaMap["sigma_"+channel+"_"+year_]),ROOT.RooArgList(MH,CMS_zz4l_sigma_m_sig))
+            CMS_zz4l_alpha_1_centralValue_4murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_alpha_1_centralValue_4mu" + recobin + "2022","CMS_zz4l_alpha_1_centralValue_4mu" + recobin + "2022",massParaMap["a1_"+channel+"_"+year_],ROOT.RooArgList(MH))
+            CMS_zz4l_n_1_centralValue_4murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_n_1_centralValue_4mu" + recobin + "2022","CMS_zz4l_n_1_centralValue_4mu" + recobin + "2022","(%s)*(1+@1)"%(massParaMap["n1_"+channel+"_"+year_]),ROOT.RooArgList(MH,CMS_zz4l_n_sig_1_2022))
+            CMS_zz4l_alpha2_1_centralValue_4murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_alpha2_1_centralValue_4mu" + recobin + "2022","CMS_zz4l_alpha2_1_centralValue_4mu" + recobin + "2022",massParaMap["a2_"+channel+"_"+year_],ROOT.RooArgList(MH))
+            CMS_zz4l_n2_1_centralValue_4murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_n2_1_centralValue_4mu" + recobin + "2022","CMS_zz4l_n2_1_centralValue_4mu" + recobin + "2022",massParaMap["n2_"+channel+"_"+year_],ROOT.RooArgList(MH))
             trueH = ROOT.RooDoubleCB(sig_name+'_' + _obsName[obsName], "DoubleCB", m, CMS_zz4l_mean_sig_1_centralValue_4murecobin2022, CMS_zz4l_sigma_sig_1_centralValue_4murecobin2022, CMS_zz4l_alpha_1_centralValue_4murecobin2022, CMS_zz4l_n_1_centralValue_4murecobin2022, CMS_zz4l_alpha2_1_centralValue_4murecobin2022, CMS_zz4l_n2_1_centralValue_4murecobin2022)
             ggH = ROOT.RooDoubleCB('ggH_' + _obsName[obsName], "DoubleCB", m, CMS_zz4l_mean_sig_1_centralValue_4murecobin2022, CMS_zz4l_sigma_sig_1_centralValue_4murecobin2022, CMS_zz4l_alpha_1_centralValue_4murecobin2022, CMS_zz4l_n_1_centralValue_4murecobin2022, CMS_zz4l_alpha2_1_centralValue_4murecobin2022, CMS_zz4l_n2_1_centralValue_4murecobin2022)
             xH = ROOT.RooDoubleCB('xH_' + _obsName[obsName], "DoubleCB", m, CMS_zz4l_mean_sig_1_centralValue_4murecobin2022, CMS_zz4l_sigma_sig_1_centralValue_4murecobin2022, CMS_zz4l_alpha_1_centralValue_4murecobin2022, CMS_zz4l_n_1_centralValue_4murecobin2022, CMS_zz4l_alpha2_1_centralValue_4murecobin2022, CMS_zz4l_n2_1_centralValue_4murecobin2022)
@@ -525,8 +535,8 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
             trueH_shape[genbin].SetName(processName)
 
         fideff[genbin] = eff[modelName+"_"+channel+"_"+obsName+"_genbin"+str(genbin)+"_"+recobin]
-        print "fideff[genbin]", fideff[genbin]
-        print "model name is ", modelName
+        print("fideff[genbin]", fideff[genbin])
+        print("model name is ", modelName)
 
         _effName = "eff_hzz_"+sig_name+"_"+_obsName[obsName]+"_13TeV_"+_binName
         _effName = _effName + '_hzz_' + _obsName[obsName] + '_' + _recobin + '_cat' + channel + '_' + year
@@ -816,7 +826,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     frac_zjets = fractionsBackground['ZJetsCR_'+channel+'_'+obsName+'_'+recobin]
     frac_zjets_var = ROOT.RooRealVar("frac_zjet_"+recobin+"_"+channel+"_"+year,"frac_zjet_"+recobin+"_"+channel+"_"+year, frac_zjets);
 
-    print obsBin,"frac_qqzz",frac_qqzz,"frac_ggzz",frac_ggzz,"frac_zjets",frac_zjets
+    print(obsBin,"frac_qqzz",frac_qqzz,"frac_ggzz",frac_ggzz,"frac_zjets",frac_zjets)
 
     os.chdir('../../templates/'+year+"/"+obsName+"/")
 
@@ -853,9 +863,9 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     elif doubleDiff: qqzzTemplate = qqzzTempFile.Get("m4l_"+obsName+"_"+str(trunc(obsBin_low))+"_"+str(trunc(obsBin_high))+"_"+str(trunc(obsBin_2nd_low))+"_"+str(trunc(obsBin_2nd_high)))
     if obsName == 'rapidity4l': qqzzTemplate = qqzzTempFile.Get("m4l_"+obsName+"_"+str(obsBin_low)+"_"+str(obsBin_high))
     # elif doubleDiff: qqzzTemplate = qqzzTempFile.Get("m4l_"+obsName+"_"+str(trunc(obsBin_low))+"_"+str(trunc(obsBin_high))+"_"+str(trunc(obsBin_2nd_low))+"_"+str(trunc(obsBin_2nd_high)))
-    print qqzzTempFile
-    print qqzzTemplate.GetName()
-    print 'qqZZ bins',qqzzTemplate.GetNbinsX(),qqzzTemplate.GetBinLowEdge(1),qqzzTemplate.GetBinLowEdge(qqzzTemplate.GetNbinsX()+1)
+    print(qqzzTempFile)
+    print(qqzzTemplate.GetName())
+    print('qqZZ bins',qqzzTemplate.GetNbinsX(),qqzzTemplate.GetBinLowEdge(1),qqzzTemplate.GetBinLowEdge(qqzzTemplate.GetNbinsX()+1))
 
     ggzzTempFile = ROOT.TFile(template_ggzzName,"READ")
     if decimal[obsName] and doubleDiff: ggzzTemplate = ggzzTempFile.Get("m4l_"+obsName+"_"+str(obsBin_low)+"_"+str(obsBin_high)+"_"+str(obsBin_2nd_low)+"_"+str(obsBin_2nd_high))
@@ -864,7 +874,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     elif doubleDiff: ggzzTemplate = ggzzTempFile.Get("m4l_"+obsName+"_"+str(trunc(obsBin_low))+"_"+str(trunc(obsBin_high))+"_"+str(trunc(obsBin_2nd_low))+"_"+str(trunc(obsBin_2nd_high)))
     if obsName == 'rapidity4l': ggzzTemplate = ggzzTempFile.Get("m4l_"+obsName+"_"+str(obsBin_low)+"_"+str(obsBin_high))
     # elif doubleDiff: ggzzTemplate = ggzzTempFile.Get("m4l_"+obsName+"_"+str(trunc(obsBin_low))+"_"+str(trunc(obsBin_high))+"_"+str(trunc(obsBin_2nd_low))+"_"+str(trunc(obsBin_2nd_high)))
-    print 'ggZZ bins',ggzzTemplate.GetNbinsX(),ggzzTemplate.GetBinLowEdge(1),ggzzTemplate.GetBinLowEdge(ggzzTemplate.GetNbinsX()+1)
+    print('ggZZ bins',ggzzTemplate.GetNbinsX(),ggzzTemplate.GetBinLowEdge(1),ggzzTemplate.GetBinLowEdge(ggzzTemplate.GetNbinsX()+1))
 
     zjetsTempFile = ROOT.TFile(template_zjetsName,"READ")
     if decimal[obsName] and doubleDiff: zjetsTemplate = zjetsTempFile.Get("m4l_"+obsName+"_"+str(obsBin_low)+"_"+str(obsBin_high)+"_"+str(obsBin_2nd_low)+"_"+str(obsBin_2nd_high))
@@ -873,7 +883,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     elif doubleDiff: zjetsTemplate = zjetsTempFile.Get("m4l_"+obsName+"_"+str(trunc(obsBin_low))+"_"+str(trunc(obsBin_high))+"_"+str(trunc(obsBin_2nd_low))+"_"+str(trunc(obsBin_2nd_high)))
     if obsName == 'rapidity4l': zjetsTemplate = zjetsTempFile.Get("m4l_"+obsName+"_"+str(obsBin_low)+"_"+str(obsBin_high))
     # elif doubleDiff: zjetsTemplate = zjetsTempFile.Get("m4l_"+obsName+"_"+str(trunc(obsBin_low))+"_"+str(trunc(obsBin_high))+"_"+str(trunc(obsBin_2nd_low))+"_"+str(trunc(obsBin_2nd_high)))
-    print 'zjets bins',zjetsTemplate.GetNbinsX(),zjetsTemplate.GetBinLowEdge(1),zjetsTemplate.GetBinLowEdge(zjetsTemplate.GetNbinsX()+1)
+    print('zjets bins',zjetsTemplate.GetNbinsX(),zjetsTemplate.GetBinLowEdge(1),zjetsTemplate.GetBinLowEdge(zjetsTemplate.GetNbinsX()+1))
 
     os.chdir('../../../datacard/datacard_'+year)
 
@@ -910,10 +920,16 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     zjets_norm = ROOT.RooFormulaVar("bkg_zjets_norm", "@0", ROOT.RooArgList(frac_zjets_var) )
 
     # Data Obs
-    data_obs_file = ROOT.TFile("/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/Data/reducedTree_AllData_"+year+".root")
-    data_obs_tree = data_obs_file.Get("SR")
+    #data_obs_file = ROOT.TFile("/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/Data/reducedTree_AllData_"+year+".root")
+    if (year=="2022"): data_obs_file =  ROOT.TFile("/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/2022/Data/Data_eraCD_preEE_SKIMMED.root") # spencer
+    if (year=="2022EE"): data_obs_file =  ROOT.TFile("/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/2022EE/Data/Data_eraEFG_postEE_SKIMMED.root") # spencer
+    if (year=="2023preBPix"): data_obs_file =  ROOT.TFile("/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/2023preBPix/Data/Data_eraC_preBPix_SKIMMED.root") # spencer
+    if (year=="2023postBPix"): data_obs_file =  ROOT.TFile("/eos/user/l/lurda/CMS/HZZ/XS_analysis/250226/2023postBPix/Data/Data_eraD_postBPix_SKIMMED.root") # spencer
+    #data_obs_tree = data_obs_file.Get("SR")
+    data_obs_tree = data_obs_file.Get("ZZTree/candTree")
 
-    print obsName,obsBin_low,obsBin_high
+    print(obsName,obsBin_low,obsBin_high)
+    print(channel)
     chan = ROOT.RooRealVar("chan", "chan", 0, 3)
     # if (obsName == "nJets"): obsName = "njets_reco_pt30_eta4p7"
     if (channel=='4mu'):
@@ -921,25 +937,25 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
         elif (obsName.startswith("rapidity4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>105.0 && CMS_zz4l_mass<160.0 && abs("+obsName_help+")>="+str(obsBin_low)+" && abs("+obsName_help+")<"+str(obsBin_high)+" && chan == 1)")
         elif not doubleDiff and not obsName.startswith("mass4l"): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && chan == 1)")
         elif doubleDiff: data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,observable_2nd,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && "+obsName_2nd_help+">="+str(obsBin_2nd_low)+" && "+obsName_2nd_help+"<"+str(obsBin_2nd_high)+" && chan == 1)")
-        print data_obs.numEntries()
+        print(data_obs.numEntries())
     if (channel=='4e'):
         if (obsName.startswith("mass4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && chan == 2)")
         elif (obsName.startswith("rapidity4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>105.0 && CMS_zz4l_mass<160.0 && abs("+obsName_help+")>="+str(obsBin_low)+" && abs("+obsName_help+")<"+str(obsBin_high)+" && chan == 2)")
         elif not doubleDiff and not obsName.startswith("mass4l"): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && chan == 2)")
         elif doubleDiff: data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,observable_2nd,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && "+obsName_2nd_help+">="+str(obsBin_2nd_low)+" && "+obsName_2nd_help+"<"+str(obsBin_2nd_high)+" && chan == 2)")
-        print data_obs.numEntries()
+        print(data_obs.numEntries())
     if (channel=='2e2mu'):
         if (obsName.startswith("mass4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && chan == 3)")
         elif (obsName.startswith("rapidity4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>105.0 && CMS_zz4l_mass<160.0 && abs("+obsName_help+")>="+str(obsBin_low)+" && abs("+obsName_help+")<"+str(obsBin_high)+" && chan == 3)")
         elif not doubleDiff and not obsName.startswith("mass4l"): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && chan == 3)")
         elif doubleDiff: data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,observable_2nd,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && "+obsName_2nd_help+">="+str(obsBin_2nd_low)+" && "+obsName_2nd_help+"<"+str(obsBin_2nd_high)+" && chan == 3)")
-        print data_obs.numEntries()
+        print(data_obs.numEntries())
     data_obs_file.Close()
 
     # Create workspace
     wout = ROOT.RooWorkspace("w","w")
     if (channel=='2e2mu'):
-        if (year == '2022'):
+        if (year == '2022' or year == '2023preBPix' or year == '2023postBPix'): # spencer
             getattr(wout,'import')(CMS_zz4l_mean_sig_3_centralValue_2e2murecobin2022,ROOT.RooFit.RecycleConflictNodes())
             getattr(wout,'import')(CMS_zz4l_mean_sig_NoConv_3_2e2murecobin2022,ROOT.RooFit.RecycleConflictNodes())
             getattr(wout,'import')(CMS_zz4l_sigma_sig_3_centralValue_2e2murecobin2022,ROOT.RooFit.RecycleConflictNodes())
@@ -990,7 +1006,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
             getattr(wout,'import')(CMS_zz4l_mean_m_err,ROOT.RooFit.RecycleConflictNodes())
             getattr(wout,'import')(CMS_zz4l_mean_e_err,ROOT.RooFit.RecycleConflictNodes())
     if (channel=='4e'):
-        if (year == '2022'):
+        if (year == '2022' or year == '2023preBPix' or year == '2023postBPix'): # spencer
             getattr(wout,'import')(CMS_zz4l_mean_sig_2_centralValue_4erecobin2022,ROOT.RooFit.RecycleConflictNodes())
             getattr(wout,'import')(CMS_zz4l_mean_sig_NoConv_2_4erecobin2022,ROOT.RooFit.RecycleConflictNodes())
             getattr(wout,'import')(CMS_zz4l_sigma_sig_2_centralValue_4erecobin2022,ROOT.RooFit.RecycleConflictNodes())
@@ -1037,7 +1053,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
             getattr(wout,'import')(CMS_zz4l_mean_e_err,ROOT.RooFit.RecycleConflictNodes())
 
     if (channel=='4mu'):
-        if (year == '2022'):
+        if (year == '2022' or year == '2023preBPix' or year == '2023postBPix'): # spencer
             getattr(wout,'import')(CMS_zz4l_mean_sig_1_centralValue_4murecobin2022,ROOT.RooFit.RecycleConflictNodes())
             getattr(wout,'import')(CMS_zz4l_mean_sig_NoConv_1_4murecobin2022,ROOT.RooFit.RecycleConflictNodes())
             getattr(wout,'import')(CMS_zz4l_sigma_sig_1_centralValue_4murecobin2022,ROOT.RooFit.RecycleConflictNodes())
@@ -1123,7 +1139,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     else:
         fout = ROOT.TFile('hzz4l_'+channel+'S_13TeV_xs_'+modelName+'_'+_obsName[obsName]+'_'+physicalModel+'.Databin'+str(obsBin)+'.NoFakeH.root','RECREATE')
 
-    print "write ws to fout"
+    print("write ws to fout")
     fout.WriteTObject(wout)
     fout.Close()
     os.chdir('../../fit')

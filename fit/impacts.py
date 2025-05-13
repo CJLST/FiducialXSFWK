@@ -1,5 +1,5 @@
 import ROOT
-import sys, os, pwd, commands
+import sys, os, pwd, subprocess
 from subprocess import *
 import optparse, shlex, re
 import math
@@ -50,31 +50,47 @@ parseOptions()
 def checkDir(folder_path):
     isdir = os.path.isdir(folder_path)
     if not isdir:
-        print('Directory {} does not exist. Creating it.' .format(folder_path))
+        #print(('Directory {} does not exist. Creating it.' .format(folder_path)))
         os.mkdir(folder_path)
 
 # Define function for processing of os command
+'''
 def processCmd(cmd, quiet = 0):
     output = '\n'
     p = Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT, bufsize=-1)
     for line in iter(p.stdout.readline, ''):
         output=output+str(line)
-        print line,
+        #print(line, end=' ')
     p.stdout.close()
     if p.wait() != 0:
         raise RuntimeError("%r failed, exit status: %d" % (cmd, p.returncode))
+    return output
+'''
+
+def processCmd(cmd, quiet=0):
+    output = ''
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=-1, text=True)
+    for line in iter(p.stdout.readline, ''):
+        output += line  # No need for str(line), as 'text=True' ensures it's a string
+        if not quiet:
+            print(line, end='')  # Print the output in real-time
+    p.stdout.close()
+    if p.wait() != 0:
+        raise RuntimeError(f"Command '{cmd}' failed with exit status: {p.returncode}")
     return output
 
 def impactPlots():
 
     sys.path.append('../inputs/')
-    _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins'], -1)
+    #_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins'], -1)
+    _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins'], 0) # spencer   
     observableBins = _temp.observableBins
     sys.path.remove('../inputs/')
     ## Run for the given observable
-    print 'NP impacts calculation - '+obsName+' - bin boundaries: ', observableBins, '\n'
+    #print('NP impacts calculation - '+obsName+' - bin boundaries: ', observableBins, '\n')
 
-    _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
+    #_temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
+    _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], 0) # spencer
     if(opt.YEAR=="Run3"):
         higgs_xs = _temp.higgs_xs_136TeV
     else:
@@ -82,7 +98,8 @@ def impactPlots():
     higgs4l_br = _temp.higgs4l_br
 
     sys.path.append('../inputs/')
-    _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['acc'], -1)
+    #_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['acc'], -1)
+    _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['acc'], 0) # spencer
     sys.path.remove('../inputs/')
     acc = _temp.acc
 
@@ -90,12 +107,12 @@ def impactPlots():
     # Impact plot
     checkDir('../impacts/')
     os.chdir('../impacts/')
-    print 'Current directory: impacts'
+    #print('Current directory: impacts')
     nBins = len(observableBins)
     if not doubleDiff: nBins = nBins-1 #in case of 1D measurement the number of bins is -1 the length of the list of bin boundaries
     # if '_' in obsName and obsName!='mass4l_zzfloating': nBins = len(observableBins)+1
 
-    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'njets_pt30_eta4p7': 'NJ'}
+    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
     if obsName in _obsName:
         obsName_poi = _obsName[obsName]
     else:
@@ -146,15 +163,15 @@ def impactPlots():
             K2 = frac4mu/frac4mu_sm * (1.0-frac4e_sm)/(1.0-frac4e)
 
             cmd_BR += 'K1Bin'+str(obsBin)+'='+str(K1)+',K2Bin'+str(obsBin)+'='+str(K2)+','
-        print(cmd_BR)
+        #print(cmd_BR)
 
         cmd_sigma = ''
         for obsBin in range(nBins):
             # cmd_sigma += 'SigmaBin'+str(obsBin)+','
             cmd_sigma += 'r_smH_' + obsName_poi + '_' + str(obsBin) + ','
         cmd_sigma = cmd_sigma[:-1]
-        print(cmd_sigma)
-
+        #print(cmd_sigma)
+    
     elif opt.PHYSICSMODEL=='v2': #This model is used only for mass4l
         for channel in ['4e','4mu','2e2mu']:
             fidxs_sm = 0
@@ -176,8 +193,8 @@ def impactPlots():
         cmd_XSEC = 'r2e2muBin0='+str(tmp_xs['2e2mu_genbin0'])+',r4muBin0='+str(tmp_xs['4mu_genbin0'])+',r4eBin0='+str(tmp_xs['4e_genbin0'])
 
         cmd_sigma = 'r2e2muBin0,r4eBin0,r4muBin0'
-        print(cmd_sigma)
-
+        #print(cmd_sigma)
+    
     elif opt.PHYSICSMODEL=='v4':
         cmd_XSEC =''
         for obsBin in range(nBins):
@@ -199,7 +216,7 @@ def impactPlots():
         for obsBin in range(nBins):
             cmd_sigma += 'r2e2muBin'+str(obsBin)+',r4lBin'+str(obsBin)+','
         cmd_sigma = cmd_sigma[:-1]
-        print(cmd_sigma)
+        #print(cmd_sigma)
 
     if (obsName.startswith("mass4l")): max_sigma = '5'
     # else: max_sigma = '2.5'
@@ -217,6 +234,7 @@ def impactPlots():
             cmd += 'r2e2muBin' + str(obsBin) + ',r4lBin' + str(obsBin) +','
     cmd = cmd[:-1]
     cmd += ' --setParameterRanges MH=125.38,125.38'
+
     for obsBin in range(nBins):
         if opt.PHYSICSMODEL=='v3':
             # cmd += ':SigmaBin' + str(obsBin) + '=0,'+max_sigma
@@ -232,10 +250,12 @@ def impactPlots():
             cmd = cmd + ' -t -1 --setParameters MH=125.38,' + cmd_XSEC
         elif opt.PHYSICSMODEL=='v4':
             cmd = cmd + ' -t -1 --setParameters MH=125.38,' + cmd_XSEC
-    print '---------------------------'
-    print cmd, '\n'
-    print '---------------------------'
+
+    print('---------------------------')
+    print(cmd, '\n')
+    print('---------------------------')
     cmds.append(cmd)
+    print(cmd)
     output = processCmd(cmd)
 
     ### Second step (Files from asimov and data have the same name)
@@ -265,9 +285,9 @@ def impactPlots():
             cmd = cmd + ' -t -1 --setParameters MH=125.38,' + cmd_XSEC
         elif opt.PHYSICSMODEL=='v4':
             cmd = cmd + ' -t -1 --setParameters MH=125.38,' + cmd_XSEC
-    print '---------------------------'
-    print cmd, '\n'
-    print '---------------------------'
+    print('---------------------------')
+    print(cmd, '\n')
+    print('---------------------------')
     cmds.append(cmd)
     output = processCmd(cmd)
 
@@ -277,36 +297,35 @@ def impactPlots():
         cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3.root -m 125.38 --setParameters MH=125.38,'+cmd_BR[:-1]+','+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
         #cmd += ' -o impacts_v3_'+obsName+'_'
         if (not opt.UNBLIND):
-            cmd += ' -t -1 -o impacts_v3_'+obsName+'_'
+            cmd += ' -t -1 -o impacts_'+opt.YEAR+'_v3_'+obsName+'_' # spencer
             cmd = cmd + 'asimov.json'
         elif (opt.UNBLIND):
-            cmd += ' -o impacts_v3_'+obsName+'_'
+            cmd += ' -o impacts_'+opt.YEAR+'_v3_'+obsName+'_' # spencer
             cmd = cmd + 'data.json'
-        print '---------------------------'
-        print cmd, '\n'
-        print '---------------------------'
+        print('---------------------------')
+        print(cmd, '\n')
+        print('---------------------------')
         cmds.append(cmd)
         output = processCmd(cmd)
         # plot
         for obsBin in range(nBins):
-            cmd = 'plotImpacts.py --blind -i impacts_v3_'+obsName+'_'
-            if (not opt.UNBLIND): cmd = cmd + 'asimov.json -o impacts_v3_'+obsName+'_r_smH_' + obsName_poi + '_' + str(obsBin) +'_asimov --POI r_smH_' + obsName_poi + '_' + str(obsBin)
-            elif (opt.UNBLIND): cmd = cmd + 'data.json -o impacts_v3_'+obsName+'_r_smH_' + obsName_poi + '_' + str(obsBin) +'_data --POI r_smH_' + obsName_poi + '_' + str(obsBin)
-            print '---------------------------'
-            print cmd, '\n'
-            print '---------------------------'
+            cmd = 'plotImpacts.py --blind -i impacts_'+opt.YEAR+'_v3_'+obsName+'_' # spencer
+            if (not opt.UNBLIND): cmd = cmd + 'asimov.json -o impacts_'+opt.YEAR+'_v3_'+obsName+'_r_smH_' + obsName_poi + '_' + str(obsBin) +'_asimov --POI r_smH_' + obsName_poi + '_' + str(obsBin)
+            elif (opt.UNBLIND): cmd = cmd + 'data.json -o impacts_'+opt.YEAR+'_v3_'+obsName+'_r_smH_' + obsName_poi + '_' + str(obsBin) +'_data --POI r_smH_' + obsName_poi + '_' + str(obsBin)
+            print('---------------------------')
+            print(cmd, '\n')
+            print('---------------------------')
             cmds.append(cmd)
             output = processCmd(cmd)
 
             cmd = 'plotImpacts_skimmed.py --blind -i impacts_v3_'+obsName+'_'
             if (not opt.UNBLIND): cmd = cmd + 'asimov.json -o impacts_skimmed_v3_'+obsName+'_r_smH_' + obsName_poi + '_' + str(obsBin) +'_asimov --POI r_smH_' + obsName_poi + '_' + str(obsBin)
             elif (opt.UNBLIND): cmd = cmd + 'data.json -o impacts_skimmed_v3_'+obsName+'_r_smH_' + obsName_poi + '_' + str(obsBin) +'_data --POI r_smH_' + obsName_poi + '_' + str(obsBin)
-            print '---------------------------'
-            print cmd, '\n'
-            print '---------------------------'
+            print('---------------------------')
+            print(cmd, '\n')
+            print('---------------------------')
             cmds.append(cmd)
-            output = processCmd(cmd)
-
+            # output = processCmd(cmd) # spencer
 
     elif opt.PHYSICSMODEL=='v2':
         # for obsBin in ['2e2muBin0','4eBin0','4muBin0']:
@@ -318,9 +337,9 @@ def impactPlots():
         elif (opt.UNBLIND):
             cmd += ' -o impacts_v2_'
             cmd = cmd + 'data.json'
-        print '---------------------------'
-        print cmd, '\n'
-        print '---------------------------'
+        print('---------------------------')
+        print(cmd, '\n')
+        print('---------------------------')
         cmds.append(cmd)
         output = processCmd(cmd)
         # plot
@@ -328,21 +347,20 @@ def impactPlots():
             cmd = 'plotImpacts.py --blind -i impacts_v2_'
             if (not opt.UNBLIND): cmd = cmd + 'asimov.json -o impacts_v2_'+obsName+'_r'+str(obsBin)+'_asimov --POI r'+str(obsBin)
             elif (opt.UNBLIND): cmd = cmd + 'data.json -o impacts_v2_'+obsName+'_r'+str(obsBin)+'_data --POI r'+str(obsBin)
-            print '---------------------------'
-            print cmd, '\n'
-            print '---------------------------'
+            print('---------------------------')
+            print(cmd, '\n')
+            print('---------------------------')
             cmds.append(cmd)
             output = processCmd(cmd)
 
             cmd = 'plotImpacts_skimmed.py --blind -i impacts_v2_'
             if (not opt.UNBLIND): cmd = cmd + 'asimov.json -o impacts_skimmed_v2_'+obsName+'_r'+str(obsBin)+'_asimov --POI r'+str(obsBin)
             elif (opt.UNBLIND): cmd = cmd + 'data.json -o impacts_skimmed_v2_'+obsName+'_r'+str(obsBin)+'_data --POI r'+str(obsBin)
-            print '---------------------------'
-            print cmd, '\n'
-            print '---------------------------'
+            print('---------------------------')
+            print(cmd, '\n')
+            print('---------------------------')
             cmds.append(cmd)
             output = processCmd(cmd)
-
 
     elif opt.PHYSICSMODEL=='v4':
         for nBin in range(nBins):
@@ -355,9 +373,9 @@ def impactPlots():
             elif (opt.UNBLIND):
                 cmd += ' -o impacts_v4_'
                 cmd = cmd + 'data.json'
-            print '---------------------------'
-            print cmd, '\n'
-            print '---------------------------'
+            print('---------------------------')
+            print(cmd, '\n')
+            print('---------------------------')
             cmds.append(cmd)
             output = processCmd(cmd)
             # plot
@@ -365,18 +383,18 @@ def impactPlots():
                 cmd = 'plotImpacts.py --blind -i impacts_v4_'
                 if (not opt.UNBLIND): cmd = cmd + 'asimov.json -o impacts_v4_'+obsName+'_r'+str(obsBin)+'_asimov --POI r'+str(obsBin)
                 elif (opt.UNBLIND): cmd = cmd + 'data.json -o impacts_v4_'+obsName+'_r'+str(obsBin)+'_data --POI r'+str(obsBin)
-                print '---------------------------'
-                print cmd, '\n'
-                print '---------------------------'
+                print('---------------------------')
+                print(cmd, '\n')
+                print('---------------------------')
                 cmds.append(cmd)
                 output = processCmd(cmd)
 
                 cmd = 'plotImpacts_skimmed.py --blind -i impacts_v4_'
                 if (not opt.UNBLIND): cmd = cmd + 'asimov.json -o impacts_skimmed_v4_'+obsName+'_r'+str(obsBin)+'_asimov --POI r'+str(obsBin)
                 elif (opt.UNBLIND): cmd = cmd + 'data.json -o impacts_skimmed_v4_'+obsName+'_r'+str(obsBin)+'_data --POI r'+str(obsBin)
-                print '---------------------------'
-                print cmd, '\n'
-                print '---------------------------'
+                print('---------------------------')
+                print(cmd, '\n')
+                print('---------------------------')
                 cmds.append(cmd)
                 output = processCmd(cmd)
 
@@ -398,4 +416,4 @@ with open('commands_impacts_'+obsName+'_'+opt.PHYSICSMODEL+'.py', 'w') as f:
         f.write(str(i)+' \n')
         f.write('\n')
 
-print "Impacts plots done."
+print("Impacts plots done.")

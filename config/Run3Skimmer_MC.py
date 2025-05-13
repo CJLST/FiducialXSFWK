@@ -1,11 +1,42 @@
-## python3 Run3Skimmer.py --input ZZ4lAnalysis.root --output SKIMMED.root --mc
+## python2 Run3Skimmer.py --input ZZ4lAnalysis.root --output SKIMMED.root --mc
 ## Drop `--mc` option when running on Data
 ## Latest files: /eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/
 
 import ROOT
 import os,sys
 import optparse
-from ZZAnalysis.NanoAnalysis.tools import get_genEventSumw
+
+#from ZZAnalysis.NanoAnalysis.tools import get_genEventSumw
+
+## spencer                                                                                                                                                                                           
+def get_genEventSumw(input_file, maxEntriesPerSample=None):
+
+    f = input_file
+
+    runs  = f.Runs
+    event = f.Events
+    nRuns = runs.GetEntries()
+    nEntries = event.GetEntries()
+
+    iRun = 0
+    genEventCount = 0
+    genEventSumw = 0.
+
+    while iRun < nRuns and runs.GetEntry(iRun) :
+        genEventCount += runs.genEventCount
+        genEventSumw += runs.genEventSumw
+        iRun +=1
+    print ("gen=", genEventCount, "sumw=", genEventSumw)
+
+    if maxEntriesPerSample is not None:
+        print(f"Scaling to {maxEntriesPerSample} entries")
+        if nEntries>maxEntriesPerSample :
+            genEventSumw = genEventSumw*maxEntriesPerSample/nEntries
+            nEntries=maxEntriesPerSample
+        print("    scaled to:", nEntries, "sumw=", genEventSumw)
+
+    return genEventSumw
+## spencer                
 
 usage = ('usage: %prog [options]\n'
              + '%prog -h for help')
@@ -16,6 +47,8 @@ parser.add_option('',   '--output',dest='OUTPUT',type='string',default='', help=
 (opt, args) = parser.parse_args()
 
 MC = opt.MC
+
+if MC: print("MC TRUE")
 
 inFileName = opt.INPUT
 outFileName = opt.OUTPUT
@@ -226,6 +259,42 @@ std::vector<int> getGENlep_int(ROOT::VecOps::RVec<int> GENlep_input){
 }
 """)
 
+# spencer
+ROOT.gInterpreter.Declare("""
+float deltaphi (ROOT::Math::PtEtaPhiMVector tetra1, ROOT::Math::PtEtaPhiMVector tetra2){ 
+
+  //Direction of the two jets - vectors in the lab frame
+  TVector3 j1dir(tetra1.X(), tetra1.Y(), tetra1.Z());
+  TVector3 j2dir(tetra2.X(), tetra2.Y(), tetra2.Z());
+
+  //Transverse component in the xy plane
+  TVector3 jt1(tetra1.X(), tetra1.Y(), 0);
+  TVector3 jt2(tetra2.X(), tetra2.Y(), 0);
+
+  //Unit vectors of the transverse components
+  TVector3 jt1_norm   = jt1 * (1/jt1.Mag());
+  TVector3 jt2_norm   = jt2 * (1/jt2.Mag());
+
+  //Unit vector of the z axis
+  TVector3 z(0,0,1);
+
+  //Cross product between transverse components
+  Double_t cross      = jt1_norm.Cross(jt2_norm) * z;
+  Double_t cross_norm = cross * (1 / abs(cross));
+
+  //Dot product between transverse components
+  Double_t dot         = jt1_norm * jt2_norm;
+
+  //Difference between the direction of the two jets
+  Double_t diff       = (j1dir - j2dir) * z;
+  Double_t diff_norm  = diff * (1 / abs(diff));
+
+  return acos(dot) * diff_norm * cross_norm;
+}
+""")
+# spencer
+
+
 ## Variables to store in the output root file
 vars = {'RunNumber',
         'EventNumber',
@@ -238,7 +307,7 @@ vars = {'RunNumber',
         'Z2Flav',
         'Z1Mass',
         'Z2Mass',
-        'dataMCWeight',
+        #'dataMCWeight',
         # 'PFMET',
         'LepPt',
         'LepEta',
@@ -249,16 +318,38 @@ vars = {'RunNumber',
         'LepSIP',
         'LepCombRelIsoPF',
         # 'LepMissingHit',
+        # spencer
+        'pTj1', 
+        'pTj2',
+        'Nj',
+        'mjj',
+        'absdetajj',
+        'dphijj',  
+        'pTHj',
+        'pTHjj',
+        'mHj', 
+        'Nj_JESUP',
+        'Nj_JESDOWN',
+        'Jet_pt_scaleUp',
+        'Jet_pt_scaleDn',
+        'Jet_mass_scaleUp',
+        'Jet_mass_scaleDn',
+        'Jet_pt_smearUp',
+        'Jet_pt_smearDn',
+        'Jet_mass_smearUp',
+        'Jet_mass_smearDn',
+        # spencer
         }
 if MC:
     vars.add('overallEventWeight')
     # vars.add('xsec')
     # vars.add('L1prefiringWeight')
-    # vars.add('LHEPdfWeight')
-    # vars.add('LHEScaleWeight')
+    vars.add('LHEPdfWeight_') # spencer
+    vars.add('LHEScaleWeight_') # spencer
     vars.add('PUWeight')
     # vars.add('LHEWeight_originalXWGTUP')
-    vars.add('lep_Hindex')
+    vars.add('lep_Hindex') # SHOULD THIS BE GENLEP_HINDEX ? - SPENCER
+    vars.add('dataMCWeight') # spencer
     if "H12" in inFileName:
         vars.add('GENlep_pt')
         vars.add('GENlep_eta')
@@ -279,8 +370,20 @@ if MC:
         # vars.add('GENlep_index')
         vars.add('lep_genindex')
         vars.add('passedFiducial')
+        # spencer
+        vars.add('GENpTj1')
+        vars.add('GENpTj2')
+        vars.add('GENNj')
+        vars.add('GENmjj')
+        vars.add('GENabsdetajj')
+        vars.add('GENdphijj')
+        vars.add('GENpTHj')
+        vars.add('GENpTHjj')
+        vars.add('GENmHj') 
+        # spencer
     vars.add('passedFullSelection')
     vars.add('genHEPMCweight')
+    
     if 'ggH' in inFileName:
         vars.add('ggH_NNLOPS_weight')
     if 'ZZTo' in inFileName:
@@ -288,7 +391,8 @@ if MC:
         vars.add('KFactor_QCD_qqZZ_M_Weight')
     if 'ggTo' in inFileName:
         vars.add('KFactor_QCD_ggZZ_Nominal_Weight')
-
+    
+        
 ## SR
 df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]") ## Dummy
                                      .Define("ZZPt", "ZZCand_pt[bestCandIdx]")
@@ -298,7 +402,7 @@ df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]
                                      .Define("Z2Flav", "ZZCand_Z2flav[bestCandIdx]") ## Dummy
                                      .Define("Z1Mass", "ZZCand_Z1mass[bestCandIdx]")
                                      .Define("Z2Mass", "ZZCand_Z2mass[bestCandIdx]") ## Dummy
-                                     .Define("dataMCWeight", "ZZCand_dataMCWeight[bestCandIdx]")
+                                     #.Define("dataMCWeight", "ZZCand_dataMCWeight[bestCandIdx]")
                                      .Define('RunNumber', "run")
                                      .Define('EventNumber', "event")
                                      .Define('LumiNumber', "luminosityBlock")
@@ -327,13 +431,41 @@ df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]
                                      # .Define('PFMET', "MET_pt")
                                      .Define('lep_Hindex', "getHindex(LepPt)")
                                      .Define('passedFullSelection', "1")
-                                     .Define('genHEPMCweight', "Generator_weight")
-                                     .Define('PUWeight', "puWeight")
-                                     )
+    # spencer
+    .Define('pTj1', "JetLeadingIdx >= 0 ? Jet_pt[JetLeadingIdx]: -99")
+    .Define('pTj2',  "JetSubleadingIdx >= 0 ? Jet_pt[JetSubleadingIdx]: -99")
+    .Define('Nj', "nCleanedJetsPt30")
+    .Define('mjj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).M() : -99")
+    .Define('absdetajj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 ? TMath::Abs(Jet_eta[JetLeadingIdx] - Jet_eta[JetSubleadingIdx]) : -99")
+    .Define('dphijj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 ? deltaphi(ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])) : -99")
+    .Define('pTHj', "JetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx])).Pt() : -99")
+    .Define('pTHjj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).Pt() : -99")
+    .Define('mHj', "JetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx])).M() : -99")
+    .Define('Nj_JESUP', 'nCleanedJetsPt30_jesUp')
+    .Define('Nj_JESDOWN', 'nCleanedJetsPt30_jesDn')
+    .Define('Jet_pt_scaleUp', 'Jet_scaleUp_pt')
+    .Define('Jet_pt_scaleDn', 'Jet_scaleDn_pt')
+    .Define('Jet_mass_scaleUp', 'Jet_scaleUp_mass')
+    .Define('Jet_mass_scaleDn', 'Jet_scaleDn_mass')
+    .Define('Jet_pt_smearUp', 'Jet_smearUp_pt')
+    .Define('Jet_pt_smearDn', 'Jet_smearDn_pt')
+    .Define('Jet_mass_smearUp', 'Jet_smearUp_mass')
+    .Define('Jet_mass_smearDn', 'Jet_smearDn_mass')
+    # spencer                 
+    )
 
-if 'ggH' in inFileName:
-    df_SR = df_SR.Define('ggH_NNLOPS_weight', "ggH_NNLOPS_Weight")
-            
+if MC:
+    df_SR = (df_SR.Define('LHEPdfWeight_', "LHEPdfWeight") # spencer
+         .Define('LHEScaleWeight_', "LHEScaleWeight") # spencer
+         .Define("dataMCWeight", "ZZCand_dataMCWeight[bestCandIdx]") # spencer
+         .Define('genHEPMCweight', "Generator_weight") # spencer
+         .Define('PUWeight', "puWeight")) # spencer
+
+    
+if 'ggH' in inFileName: df_SR = df_SR.Define('ggH_NNLOPS_weight', "ggH_NNLOPS_Weight")
+if 'ZZTo' in inFileName: df_SR = df_SR.Define('KFactor_QCD_qqZZ_M_weight', "KFactor_QCD_qqZZ_M_Weight") # spencer
+if 'ggTo' in inFileName: df_SR = df_SR.Define('KFactor_QCD_ggZZ_Nominal_weight', "KFactor_QCD_ggZZ_Nominal_Weight") # spencer
+
 if "H12" in inFileName:
     df_SR = (df_SR.Define('GENlep_pt', "getGENlep_vector(FidDressedLeps_pt)")
                   .Define('GENlep_eta', "getGENlep_vector(FidDressedLeps_eta)")
@@ -352,8 +484,19 @@ if "H12" in inFileName:
                   .Define('GENZ_MomId', "getGENlep_int(FidZ_MomPdgId)")
                   .Define('GENlep_Hindex', "getGENHindex(FidZZ_Z1l1Idx, FidZZ_Z1l2Idx, FidZZ_Z2l1Idx, FidZZ_Z2l2Idx)")
                   .Define('lep_genindex', "getLepGENindex(LepPt, LepEta, LepPhi, GENlep_id, LepLepId, GENlep_pt, GENlep_eta, GENlep_phi)")
+             # spencer
+             .Define('GENpTj1', "GenJetLeadingIdx >= 0 ? GenJet_pt[GenJetLeadingIdx] : -99")
+             .Define('GENpTj2', "GenJetSubleadingIdx >= 0 ? GenJet_pt[GenJetSubleadingIdx] : -99")
+             .Define('GENNj', "nCleanedGenJetsPt30")
+             .Define('GENmjj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])).M() : -99")
+             .Define('GENabsdetajj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0  ? TMath::Abs(GenJet_eta[GenJetLeadingIdx] - GenJet_eta[GenJetSubleadingIdx]) : -99")
+             .Define('GENdphijj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0  ? deltaphi(ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])) : -99")
+             .Define('GENpTHj', "GenJetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx])).Pt() : -99")
+             .Define('GENpTHjj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])).Pt() : -99")
+             .Define('GENmHj', "GenJetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx])).M() : -99")
+             # spencer
             )
-
+    
     df_filter = df_all.Filter("isNotInEvents(event)")
     print(f"df_filter nEntries: {df_filter.Count().GetValue()}")
     vars_fail = {'GENlep_pt',
@@ -377,11 +520,20 @@ if "H12" in inFileName:
     'LumiNumber',
     'passedFiducial',
     'passedFullSelection',
-    # 'LHEPdfWeight',
-    # 'LHEScaleWeight',
+    'LHEPdfWeight_', # spencer
+    'LHEScaleWeight_', # spencer
     'genHEPMCweight',
-    'PUWeight'
-    }
+    'PUWeight',
+    'GENpTj1', # spencer
+    'GENpTj2', # spencer
+    'GENNj', # spencer
+    'GENmjj', # spencer
+    'GENabsdetajj', # spencer
+    'GENdphijj', # spencer
+    'GENpTHj', # spencer
+    'GENpTHjj', # spencer
+    'GENmHj'} # spencer
+
     df_fail = (df_filter.Define('GENlep_pt', "getGENlep_vector(FidDressedLeps_pt)")
                         .Define('GENlep_eta', "getGENlep_vector(FidDressedLeps_eta)")
                         .Define('GENlep_phi', "getGENlep_vector(FidDressedLeps_phi)")
@@ -404,7 +556,21 @@ if "H12" in inFileName:
                         .Define('passedFullSelection', "0")
                         .Define('genHEPMCweight', "Generator_weight")  #LHEWeight_originalXWGTUP")
                         .Define('PUWeight', "puWeight")
-                )
+               .Define('LHEPdfWeight_', "LHEPdfWeight") # spencer
+               .Define('LHEScaleWeight_', "LHEScaleWeight") # spencer    
+            # spencer
+             .Define('GENpTj1', "GenJetLeadingIdx >= 0 ? GenJet_pt[GenJetLeadingIdx] : -99")
+             .Define('GENpTj2', "GenJetSubleadingIdx >= 0 ? GenJet_pt[GenJetSubleadingIdx] : -99")
+             .Define('GENNj', "nCleanedGenJetsPt30")
+             .Define('GENmjj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])).M() : -99")
+             .Define('GENabsdetajj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0  ? TMath::Abs(GenJet_eta[GenJetLeadingIdx] - GenJet_eta[GenJetSubleadingIdx]) : -99")
+             .Define('GENdphijj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0  ? deltaphi(ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])) : -99")
+             .Define('GENpTHj', "GenJetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx])).Pt() : -99")
+             .Define('GENpTHjj', "GenJetLeadingIdx >= 0 && GenJetSubleadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetSubleadingIdx], GenJet_eta[GenJetSubleadingIdx], GenJet_phi[GenJetSubleadingIdx], GenJet_mass[GenJetSubleadingIdx])).Pt() : -99")
+             .Define('GENmHj', "GenJetLeadingIdx >= 0 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[GenJetLeadingIdx], GenJet_eta[GenJetLeadingIdx], GenJet_phi[GenJetLeadingIdx], GenJet_mass[GenJetLeadingIdx])).M() : -99")
+            # spencer
+    )
+
     if 'ggH' in inFileName:
         vars_fail.add('ggH_NNLOPS_weight')
         df_fail = df_fail.Define('ggH_NNLOPS_weight', "ggH_NNLOPS_Weight")

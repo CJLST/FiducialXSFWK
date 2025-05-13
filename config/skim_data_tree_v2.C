@@ -102,12 +102,13 @@ vector<TString> jes_name{
 
 void add(TString newpath, TString year, TString tree_dir){
 
-  TFile *f = new TFile(Form("%s/reducedTree_AllData_%s.root", newpath.Data(), year.Data()),"UPDATE");
-  cout << Form("%s/reducedTree_AllData_%s.root", newpath.Data(), year.Data()) << endl;
+  //TFile *f = new TFile(Form("%s/reducedTree_AllData_%s.root", newpath.Data(), year.Data()),"UPDATE");
+  //cout << Form("%s/reducedTree_AllData_%s.root", newpath.Data(), year.Data()) << endl;
 
   // TFile *f = new TFile(Form("%s/%s/reducedTree.root", newpath.Data(), year.Data()),"UPDATE");
   // cout << Form("%s/%s/reducedTree.root", newpath.Data(), year.Data()) << endl;
 
+  TFile *f = new TFile("/eos/home-s/sellissp/HZZ/SAMPLES/032025/2022_Data/Data_eraCD_preEE_SKIMMED.root","UPDATE");
   TTree *T = (TTree*)f->Get(tree_dir);
   Short_t Z1Flav,Z2Flav;
   float ZZMass, ZZPt, ZZEta, ZZPhi;
@@ -160,27 +161,34 @@ void add(TString newpath, TString year, TString tree_dir){
 
 void skim_data_tree_v2 (TString year = "2022"){
 
-  TString path = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/"+year+"/Data";
-  auto oldFile = TFile::Open(Form("%s/AllData_%s.root", path.Data(), year.Data()));
-
-  TTree *oldtree = (TTree*) oldFile->Get("ZZTree/candTree");
-  TTree *oldtree_CR = (TTree*) oldFile->Get("CRZLLTree/candTree");
-
+  //TString path = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/"+year+"/Data";
+  //auto oldFile = TFile::Open(Form("%s/AllData_%s.root", path.Data(), year.Data()));
+  TString path = "/eos/home-s/sellissp/HZZ/SAMPLES/032025/2022_Data/";
+  auto oldFile = TFile::Open(Form("%s/Data_eraCD_preEE.root", path.Data())); 
+  
+  //TTree *oldtree = (TTree*) oldFile->Get("ZZTree/candTree");
+  //TTree *oldtree_CR = (TTree*) oldFile->Get("CRZLLTree/candTree");
+  TTree *oldtree = (TTree*) oldFile->Get("Events");
+  TTree *oldtree_CR = (TTree*) oldFile->Get("Events");
+  
   // Deactivate all branches
   oldtree->SetBranchStatus("*",0);
   // Activate some branches only: our skim
-  oldtree->SetBranchStatus("ZZMass",1);
-  oldtree->SetBranchStatus("ZZPhi",1);
-  oldtree->SetBranchStatus("Z1Flav",1);
-  oldtree->SetBranchStatus("Z2Flav",1);
-  oldtree->SetBranchStatus("ZZPt",1);
-  oldtree->SetBranchStatus("Z1Mass",1);
-  oldtree->SetBranchStatus("Z2Mass",1);
-  oldtree->SetBranchStatus("ZZEta",1);
+  oldtree->SetBranchStatus("ZLLCand_mass", 1); // oldtree->SetBranchStatus("ZZMass",1);
+  oldtree->SetBranchStatus("ZLLCand_phi", 1);// oldtree->SetBranchStatus("ZZPhi",1);
+  oldtree->SetBranchStatus("ZLLCand_Z1flav", 1); // oldtree->SetBranchStatus("Z1Flav",1);
+  oldtree->SetBranchStatus("ZLLCand_Z2flav", 1); // oldtree->SetBranchStatus("Z2Flav",1);
+  oldtree->SetBranchStatus("ZLLCand_pt", 1); // oldtree->SetBranchStatus("ZZPt",1);
+  oldtree->SetBranchStatus("ZLLCand_Z1mass", 1); // oldtree->SetBranchStatus("Z1Mass",1);
+  oldtree->SetBranchStatus("ZLLCand_Z2mass", 1); // oldtree->SetBranchStatus("Z2Mass",1);
+  oldtree->SetBranchStatus("ZLLCand_eta", 1); // oldtree->SetBranchStatus("ZZEta",1);
 
-  TString newpath = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/"+year+"/Data";
-  TFile *newfile = new TFile(Form("%s/reducedTree_AllData_%s.root", newpath.Data(), year.Data()),"RECREATE");
+  //TString newpath = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/"+year+"/Data";
+  //TFile *newfile = new TFile(Form("%s/reducedTree_AllData_%s.root", newpath.Data(), year.Data()),"RECREATE");
 
+  TString newpath = "/eos/home-s/sellissp/HZZ/SAMPLES/032025/2022_Data";
+  TFile *newfile = new TFile(Form("%s/Data_eraCD_preEE_SKIMMED.root", newpath.Data()), "RECREATE");
+  
   auto *newtree = oldtree->CloneTree(0);
   newtree->SetName("SR");
   newtree->CopyEntries(oldtree);
@@ -189,5 +197,5 @@ void skim_data_tree_v2 (TString year = "2022"){
 
   add(newpath, year, "SR");
 
-  return 0;
+  //return 0;
 }

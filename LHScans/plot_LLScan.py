@@ -161,8 +161,24 @@ elif year == '2017':
     _lumi = '41.48'
 elif year == '2018':
     _lumi = '59.83'
+
 elif year == 'Run3':
+    _lumi = '62'
+
+elif year == '2022':
+    _lumi = '7.98'
+elif year == '2022EE':
+    _lumi = '26.67'
+elif year == '2023preBPix':
+    _lumi = '17.79'
+elif year == '2023postBPix':
+    _lumi = '9.45'
+
+elif year == '2022full':
     _lumi = '34.7'
+elif year == '2023full':
+    _lumi = '27.3'
+    
 else:
     _lumi = '138'
 
@@ -172,7 +188,7 @@ v4_flag = opt.V4
 doubleDiff = False
 if(obsName == 'mass4l'): label = 'm_{4l}'
 elif(obsName == 'mass4l_zzfloating'): label = 'm_{4l}'
-elif(obsName == 'njets_pt30_eta4p7'): label = 'N_{jet}, pT>30 GeV, |#eta|<4.7'
+elif(obsName == 'Nj'): label = 'N_{jet}, pT>30 GeV, |#eta|<4.7'
 elif(obsName == 'pT4l'): label = 'p_{T}^{H} (GeV)'
 elif(obsName == 'pT4l_kL'): label = '#kappa_{#lambda}'
 elif(obsName == 'rapidity4l'): label = '|y_{H}|'
@@ -237,7 +253,7 @@ elif(obsName == 'TCjmax vs pT4l'):
     doubleDiff = True
 
 # _poi    = 'SigmaBin'
-_obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'njets_pt30_eta4p7': 'NJ'}
+_obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
 if obsName not in _obsName:
     _obsName[obsName] = obsName
 # _poi    = 'r_smH_'+_obsName[obsName]+'_'
@@ -799,10 +815,10 @@ for i in range(nBins):
 
     Text = TPaveText(0.58, 0.88,0.93,0.95,'brNDC')
     #Text.SetNDC()
-    Text.SetTextAlign(31);
+    Text.SetTextAlign(31); #31
     Text.SetTextSize(0.5*c.GetTopMargin())
     leftText = "CMS"
-    re = "#bf{%s fb^{-1} (13 TeV)}" %(_lumi)
+    re = "#bf{%s fb^{-1} (13.6 TeV)}" %(_lumi)
     Text.AddText(re)
     Text.SetFillStyle(0)
     Text.SetLineStyle(0)
@@ -1070,8 +1086,8 @@ for i in range(nBins):
         resultsXS_asimov['SM_125_'+obsName+'_genbin'+str(i)+'_statOnly'] = {"uncerDn": -1.0*abs(exp_nom_stat[2]), "uncerUp": exp_nom_stat[1], "central": exp_nom[0]}
 
     c.Update()
-    c.SaveAs("plots/lhscan_compare_"+obsName+"_"+poi+".pdf")
-    c.SaveAs("plots/lhscan_compare_"+obsName+"_"+poi+".png")
+    #c.SaveAs("plots/lhscan_compare_"+obsName+"_"+poi+".pdf")
+    c.SaveAs("plots/"+year+"_lhscan_compare_"+obsName+"_"+poi+".png")
 
 if v4_flag:
     if opt.UNBLIND:
