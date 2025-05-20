@@ -445,6 +445,8 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
         lumi = {}
         lumi['2022'] = '1.014'
         lumi['2022EE'] = '1.014'
+        lumi['2023preBPix'] = '1.013'
+        lumi['2023postBPix'] = '1.013'
     else:
         lumi = {}
         lumi['2016'] = '1.026'
@@ -452,8 +454,8 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
         lumi['2018'] = '1.023'
         lumi['2022'] = '1.014'
         lumi['2022EE'] = '1.014'
-        lumi['2023preBPix'] = '1.014'
-        lumi['2023postBPix'] = '1.014'
+        lumi['2023preBPix'] = '1.013'
+        lumi['2023postBPix'] = '1.013'
 
         
     # Lepton efficiency

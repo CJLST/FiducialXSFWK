@@ -203,9 +203,10 @@ def load_tree(fname):
     return tree_tot
 
 def get_th_xsec(process, obs_gen, suffix):
-    # TODO: Improve
-    # obs_name_dict = {"GENmass4l": "mass4l", "GENpT4l": "PTH", "GENrapidity4l": "YH"}
-    # obs_name = obs_name_dict[obs_gen]
+
+    # Angular variables added by Martina
+    obs_name_dict = {"GENmass4l": "mass4l", "GENpT4l": "PTH", "GENrapidity4l": "YH", "GENcostheta1": "costhetaZ1", "GENcostheta2": "costhetaZ2", "GENPhi": "phi", "GENPhi1": "phi1", "GENcosthetastar": "costhetastarZZ"}
+    obs_name = obs_name_dict[obs_gen]
     
     if (('ZH' not in process) and ('W' not in process)):
         th_xs = __import__(f'fidXS_{suffix}{obs_name}_{process.split("125")[0]}', globals(), locals(), vars)

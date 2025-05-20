@@ -76,7 +76,7 @@ def RunCombineCorrelation():
 
     for physicalModel in PhysicalModels:
         if physicalModel == 'v2': # In this case implemented for mass4l only (Mass-dependent fit using separate final states)
-            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v2.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --setParameterRanges r4eBin0=0.0,2.5:r4muBin0=0.0,2.5:r2e2muBin0=0.0,2.5 --redefineSignalPOI r4eBin0,r4muBin0,r2e2muBin0 --algo=singles --cminDefaultMinimizerStrategy 0 --saveInactivePOI=1 --robustHesse 1 --robustHesseSave 1'
+            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v2_'+str(opt.YEAR)'.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --setParameterRanges r4eBin0=0.0,2.5:r4muBin0=0.0,2.5:r2e2muBin0=0.0,2.5 --redefineSignalPOI r4eBin0,r4muBin0,r2e2muBin0 --algo=singles --cminDefaultMinimizerStrategy 0 --saveInactivePOI=1 --robustHesse 1 --robustHesseSave 1'
             if not opt.UNBLIND:
                 cmd += ' -t -1 --setParameters '
                 for channel in ['4e', '4mu', '2e2mu']:
@@ -94,7 +94,7 @@ def RunCombineCorrelation():
 
         if physicalModel == 'v4': #More granular 2e2mu and 4l bin-by-bin decomposition
             # ----- 2e2mu -----
-            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v4.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 --saveInactivePOI=1 --robustHesse 1 --robustHesseSave 1 --setParameterRanges '
+            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v4_'+str(opt.YEAR)'.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 --saveInactivePOI=1 --robustHesse 1 --robustHesseSave 1 --setParameterRanges '
 
             for obsBin in range(nBins):
                 cmd += 'r2e2muBin'+str(obsBin)+'=0.0,2.5:r4lBin'+str(obsBin)+'=0.0,2.5:'
@@ -149,7 +149,7 @@ def RunCombineCorrelation():
                 _obsName[obsName] = obsName
             fitName = _obsName[obsName]
 
-            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 --robustHesse 1 --robustHesseSave 1 --setParameterRanges '
+            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)'.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 --robustHesse 1 --robustHesseSave 1 --setParameterRanges '
             for obsBin in range(nBins):
                 cmd += 'r_smH_'+fitName+'_'+str(obsBin)+'=0.0,5.0:'
             cmd = cmd[:-1]

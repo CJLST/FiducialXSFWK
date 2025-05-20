@@ -223,7 +223,7 @@ def impactPlots():
     else: max_sigma = '5'
 
     ### First step (Files from asimov and data have the same name)
-    cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_'+opt.PHYSICSMODEL+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --doInitialFit --robustFit 1 --redefineSignalPOIs '
+    cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_'+opt.PHYSICSMODEL+'_'+str(opt.YEAR)+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --doInitialFit --robustFit 1 --redefineSignalPOIs '
     for obsBin in range(nBins):
         if opt.PHYSICSMODEL=='v3':
             # cmd += 'SigmaBin' + str(obsBin) + ','
@@ -259,7 +259,7 @@ def impactPlots():
     output = processCmd(cmd)
 
     ### Second step (Files from asimov and data have the same name)
-    cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_'+opt.PHYSICSMODEL+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --doFits --robustFit 1 --parallel 10 --redefineSignalPOIs '
+    cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_'+opt.PHYSICSMODEL+'_'+str(opt.YEAR)+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --doFits --robustFit 1 --parallel 10 --redefineSignalPOIs '
     for obsBin in range(nBins):
         if opt.PHYSICSMODEL=='v3':
             # cmd += 'SigmaBin' + str(obsBin) + ','
@@ -294,7 +294,7 @@ def impactPlots():
     ### Third step
     if opt.PHYSICSMODEL=='v3':
         # for obsBin in range(nBins-1):
-        cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3.root -m 125.38 --setParameters MH=125.38,'+cmd_BR[:-1]+','+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
+        cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)+'.root -m 125.38 --setParameters MH=125.38,'+cmd_BR[:-1]+','+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
         #cmd += ' -o impacts_v3_'+obsName+'_'
         if (not opt.UNBLIND):
             cmd += ' -t -1 -o impacts_'+opt.YEAR+'_v3_'+obsName+'_' # spencer
@@ -329,7 +329,7 @@ def impactPlots():
 
     elif opt.PHYSICSMODEL=='v2':
         # for obsBin in ['2e2muBin0','4eBin0','4muBin0']:
-        cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v2.root -m 125.38 --setParameters MH=125.38,'+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
+        cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v2_'+str(opt.YEAR)+'.root -m 125.38 --setParameters MH=125.38,'+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
         #cmd += ' -o impacts_v2_'
         if (not opt.UNBLIND):
             cmd += ' -t -1 -o impacts_v2_'
@@ -365,7 +365,7 @@ def impactPlots():
     elif opt.PHYSICSMODEL=='v4':
         for nBin in range(nBins):
             # for obsBin in ['2e2muBin'+str(nBin),'4lBin'+str(nBin)]:
-            cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v4.root -m 125.38 --cminDefaultMinimizerStrategy 0 --setParameters MH=125.38,'+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
+            cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v4_'+str(opt.YEAR)+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --setParameters MH=125.38,'+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
             #cmd += ' -o impacts_v4_'
             if (not opt.UNBLIND):
                 cmd += ' -t -1 o impacts_v4_'

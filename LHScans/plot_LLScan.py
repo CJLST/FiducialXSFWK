@@ -6,7 +6,9 @@ import plotting as plot
 import json
 import argparse, optparse
 import os.path, sys
-ROOT.gROOT.SetBatch(True)
+
+from ROOT import *
+gROOT.SetBatch(True)
 
 NAMECOUNTER = 0
 
@@ -28,7 +30,7 @@ def parseOptions():
     parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
     parser.add_option('',   '--year',  dest='YEAR',  type='string',default='',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--unblind', action='store_true', dest='UNBLIND', default=False, help='Use real data')
-    parser.add_option('',   '--v4', action='store_true', dest='V4', default= True, help='Print NLL scans for v4 physics model')
+    parser.add_option('',   '--v4', action='store_true', dest='V4', default= False, help='Print NLL scans for v4 physics model')
 
     # store options and arguments as global variables
     global opt, args
@@ -194,8 +196,9 @@ elif(obsName == 'rapidity4l'): label = '|y_{H}|'
 elif(obsName == 'costhetaZ1'): label = 'cos(#theta_{1})'
 elif(obsName == 'costhetaZ2'): label = 'cos(#theta_{2})'
 elif(obsName == 'phi'): label = '#Phi'
+elif(obsName == 'phi1'): label = '#Phi1'
 elif(obsName == 'phistar'): label = '#Phi^{#star}'
-elif(obsName == 'costhetastar'): label = 'cos(#theta^{*})'
+elif(obsName == 'costhetastarZZ'): label = 'cos(#theta^{*})'
 elif(obsName == 'massZ1'): label = 'm_{Z1} (GeV)'
 elif(obsName == 'massZ2'): label = 'm_{Z2} (GeV)'
 elif(obsName == 'pTj1'): label = 'p_{T}^{(j1, 4.7)} (GeV)'

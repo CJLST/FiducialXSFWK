@@ -156,6 +156,10 @@ c1.GetPad(0).SetBottomMargin(0.15)
 bkgName=['qqzz','ggzz','ZJetsCR']
 if opt.YEAR == 'Full':
     year=['2016', '2017', '2018']
+elif opt.YEAR == '2022full':
+    year=['2022', '2022EE']
+elif opt.YEAR == '2023full':
+    year=['2023preBPix', '2023postBPix']
 elif opt.YEAR == 'Run3':
     year=['2022', '2022EE', '2023preBPix', '2023postBPix']
 else:
