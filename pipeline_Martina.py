@@ -87,6 +87,8 @@ def pipeline():
         runFidCmd += ' --unblind'
     processCmd(runFidCmd)
 
+    processCmd(f'python3 -u impacts.py --obsName "{obsName}" --year "{year}"')
+
     print('=== PLOTTING ===')
     safe_chdir('../LHScans')
     llScanCmd = f'python3 -u plot_LLScan.py --obsName "{obsName}" --obsBins "{obsBins}" --year "{year}"'

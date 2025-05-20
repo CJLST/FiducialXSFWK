@@ -73,6 +73,15 @@ else
   cp LHScans/plots/${year}_lhscan_compare_${observable}_r* $path/${observable}/LHScans_${year}/.
 fi
 
+mkdir $path/${observable}/impacts_${year}
+cp $path/index.php $path/${observable}/impacts_${year}
+cp impacts/impacts_${year}_*_${observable}*  $path/${observable}/impacts_${year}/.
+
+mkdir $path/${observable}/combine_files_${year}
+cp $path/index.php $path/${observable}/combine_files_${year}
+cp combine_files/higgsCombine_${observable}* $path/${observable}/combine_files_${year}/.
+cp combine_files/SM_125_all_13TeV_xs_${observable}_*_${year}*  $path/${observable}/combine_files_${year}/.
+
 #cp plots/${1}/asimov/${1}_unfoldwith* $path/${1}/.
 #cp plots/${1}/asimov/corr_${1}_*.png $path/${1}/.
 #cp plots/${1}/asimov/model/* $path/${1}/.
