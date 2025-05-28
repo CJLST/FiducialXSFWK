@@ -128,6 +128,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     eff_mu['2022EE_2e2mu'] = '0.986/1.007'
     eff_mu['2022EE_4mu'] = '0.981/1.009'
 
+    #TODO: Update 2023 eff_mu values. The values for 2023 preBPix/postBPix are copy-pasted from 2022 at the moment
     eff_mu['2023preBPix_2e2mu'] = '0.986/1.008' #spencer
     eff_mu['2023preBPix_4mu'] = '0.981/1.01' #spencer
     eff_mu['2023postBPix_2e2mu'] = '0.986/1.008' # spencer
@@ -147,6 +148,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     eff_e['2022EE_4e'] =  '0.897/1.088'
     eff_e['2022EE_2e2mu'] = '0.938/1.059'
 
+    #TODO: Update 2023 eff_e values. The values for 2023 preBPix/postBPix are copy-pasted from 2022 at the moment
     eff_e['2023preBPix_2e2mu'] = '0.927/1.069' # spencer
     eff_e['2023preBPix_4e'] = '0.884/1.103' # spencer
     eff_e['2023postBPix_2e2mu'] = '0.927/1.069' # spencer
@@ -171,6 +173,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     ZX['2022EE_4e'] = '0.575/1.398'
     ZX['2022EE_4mu'] = '0.690/1.310'
 
+    #TODO: Update 2023 ZX values. The values for 2023 preBPix/postBPix are copy-pasted from 2022 at the moment 
     ZX['2023preBPix_2e2mu'] = '0.724/1.263' # spencer
     ZX['2023preBPix_4e'] = '0.575/1.398' # spencer
     ZX['2023preBPix_4mu'] = '0.677/1.321' # spencer
@@ -285,34 +288,42 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
                 file.write('-\n') # ZX
     elif yearSetting == 'Run3':
         if zzfloating:
-            # lumi
-            file.write('lumi_13TeV_2022 lnN ')
-            #file.write('lumi_13p6TeV_2022 lnN ') # spencer
+            # lumi 2022
+            file.write('lumi_13p6TeV_2022 lnN ')
             for i in range(nBins+2): # signals + out + fake
                 file.write(lumi['2022']+' ')
             file.write('- - -\n') # qqzz + ggzz + ZX
+            # lumi 2023
+            file.write('lumi_13p6TeV_2023preBPix lnN ')
+            for i in range(nBins+2): # signals + out + fake
+                file.write(lumi['2023preBPix']+' ')
+            file.write('- - -\n') # qqzz + ggzz + ZX
         else:
-            # lumi
-            file.write('lumi_13TeV_2022 lnN ')
-            #file.write('lumi_13p6TeV_2022 lnN ') # spencer
+            # lumi 2022
+            file.write('lumi_13p6TeV_2022 lnN ')
             for i in range(nBins+4): # All except ZX
                 file.write(lumi['2022']+' ')
+            file.write('-\n') # ZX
+            # lumi 2023
+            file.write('lumi_13p6TeV_2023preBPix lnN ')
+            for i in range(nBins+4): # All except ZX
+                file.write(lumi['2023preBPix']+' ')
             file.write('-\n') # ZX
     else:
         if zzfloating:
-            # lumi
-            file.write('lumi_13TeV_'+year+' lnN ')
-            #file.write('lumi_13p6TeV_2022 lnN ') # spencer
-            for i in range(nBins+2): # signals + out + fake
-                file.write(lumi[year]+' ')
-            file.write('- - -\n') # qqzz + ggzz + ZX
+            # determine correct lumi key based on year
+            lumi_key = '2022' if '2022' in year else '2023preBPix' if '2023' in year else year
+            file.write(f'lumi_13p6TeV_{lumi_key} lnN ')
+            for i in range(nBins+2):  # signals + out + fake
+                file.write(lumi[lumi_key] + ' ')
+            file.write('- - -\n')  # qqzz + ggzz + ZX
         else:
-            # lumi
-            file.write('lumi_13TeV_'+year+' lnN ')
-            #file.write('lumi_13p6TeV_2022 lnN ') # spencer
-            for i in range(nBins+4): # All except ZX
-                file.write(lumi[year]+' ')
-            file.write('-\n') # ZX
+            # determine correct lumi key based on year
+            lumi_key = '2022' if '2022' in year else '2023preBPix' if '2023' in year else year
+            file.write(f'lumi_13p6TeV_{lumi_key} lnN ')
+            for i in range(nBins+4):  # All except ZX
+                file.write(lumi[lumi_key] + ' ')
+            file.write('-\n')  # ZX
 
             
     # Lepton efficiency
@@ -471,6 +482,7 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     eff_mu['2018_2e2mu'] = '0.986/1.006'
     eff_mu['2018_4mu'] = '0.981/1.008'
 
+    #TODO: Update 2023 eff_mu values. The values for 2023 preBPix/postBPix are copy-pasted from 2022 at the moment
     eff_mu['2023preBPix_2e2mu'] = '0.986/1.008' #spencer
     eff_mu['2023preBPix_4mu'] = '0.981/1.01' #spencer
     eff_mu['2023postBPix_2e2mu'] = '0.986/1.008' # spencer
@@ -484,6 +496,7 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     eff_e['2018_2e2mu'] = '0.95/1.052'
     eff_e['2018_4e'] = '0.905/1.077'
 
+    #TODO: Update 2023 eff_e values. The values for 2023 preBPix/postBPix are copy-pasted from 2022 at the moment
     eff_e['2023preBPix_2e2mu'] = '0.927/1.069' # spencer
     eff_e['2023preBPix_4e'] = '0.884/1.103' # spencer
     eff_e['2023postBPix_2e2mu'] = '0.927/1.069' # spencer
@@ -505,6 +518,7 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     ZX['2018_4e'] = '0.650486/1.35893'
     ZX['2018_4mu'] = '0.69554/1.30465'
 
+    #TODO: Update 2023 ZX values. The values for 2023 preBPix/postBPix are copy-pasted from 2022 at the moment
     ZX['2023preBPix_2e2mu'] = '0.724/1.263' # spencer
     ZX['2023preBPix_4e'] = '0.575/1.398' # spencer
     ZX['2023preBPix_4mu'] = '0.677/1.321' # spencer
