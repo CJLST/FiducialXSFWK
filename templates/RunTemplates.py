@@ -67,8 +67,7 @@ def prepareTrees(year):
     for bkg in bkgs:
         #fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+bkg+"/"+bkg+"_reducedTree_MC_"+year+"_skimmed.root"
         fname = path['eos_path_sig']+"MC/"+year+"/"+bkg+"/ZZ4lAnalysis_SKIMMED.root" # Marti
-        #d_bkg[bkg] = uproot.open(fname)[key]
-        d_bkg[bkg] = uproot.open(fname)["ZZTree/candTree"]
+        d_bkg[bkg] = uproot.open(fname)[key]
 
     return d_bkg
 
@@ -253,6 +252,7 @@ def findFSZX(df):
     df['FinState'] = [FindFinalState(x,y) for x,y in zip(df['Z1Flav'], df['Z2Flav'])]
     return df
 
+# The most recent fake rate calculations for 2022 and 2023 were presented here: https://indico.cern.ch/event/1495544/contributions/6534734/attachments/3074182/5445467/HZZFakeRates.pdf
 # Define combination coefficients
 def comb(year):
     if year == "2016":
