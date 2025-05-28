@@ -103,10 +103,6 @@ def prepareTrees(year):
     d_sig = {}
     d_sig_failed = {}
     for signal in signals_original:
-        #if "ggH" in signal:
-        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
-        #else:
-        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
         fname = path['eos_path_sig']+"MC/"+year+"/"+signal+"/ZZ4lAnalysis_SKIMMED.root"
         print(fname)
         d_sig[signal] = uproot.open(fname)[key]
@@ -226,10 +222,6 @@ def add_cuth4l_reco(Hindex,genIndex,momMomId,momId): #(Hindex, momMomId,momId):
 def generators(year):
     gen_sig = {}
     for signal in signals_original:
-        #if "ggH" in signal:
-        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
-        #else:
-        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
         fname = path['eos_path_sig']+"MC/"+year+"/"+signal+"/ZZ4lAnalysis_SKIMMED.root"
         #gen_sig[signal] = uproot.open(fname)["candTree/Counter"].array()[0]
         gen_sig[signal] = uproot.open(fname)["Counters"].values()[39] # spencer 
@@ -642,8 +634,8 @@ if(opt.AC or opt.AC_ONLYACC):
     signals_original = signals_AC
     signals = signals_AC
 elif opt.INTER:
-    signals_original = ['VBFH1', 'ggH1', 'WminusH1', 'WplusH1', 'ZH1']
-    signals = ['ggH1', 'VBFH1', 'WH1', 'ZH1'] #why here ggH and VBF are inverted?
+    signals_original = ['ggH1', 'VBFH1', 'WminusH1', 'WplusH1', 'ZH1']
+    signals = ['ggH1', 'VBFH1', 'WH1', 'ZH1']
     signals_original = [root+opt.HYP for root in signals_original]
     signals = [root+opt.HYP for root in signals]
 else:
