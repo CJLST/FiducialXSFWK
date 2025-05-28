@@ -7,7 +7,6 @@ import json
 import argparse, optparse
 import os.path, sys
 
-from ROOT import *
 gROOT.SetBatch(True)
 
 NAMECOUNTER = 0
@@ -165,7 +164,6 @@ elif year == '2018':
 
 elif year == 'Run3':
     _lumi = '62'
-
 elif year == '2022':
     _lumi = '7.98'
 elif year == '2022EE':
@@ -174,12 +172,10 @@ elif year == '2023preBPix':
     _lumi = '17.79'
 elif year == '2023postBPix':
     _lumi = '9.45'
-
 elif year == '2022full':
     _lumi = '34.7'
 elif year == '2023full':
     _lumi = '27.3'
-    
 else:
     _lumi = '138'
 
