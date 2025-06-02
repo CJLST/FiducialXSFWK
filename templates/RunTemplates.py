@@ -253,6 +253,7 @@ def findFSZX(df):
     return df
 
 # The most recent fake rate calculations for 2022 and 2023 were presented here: https://indico.cern.ch/event/1495544/contributions/6534734/attachments/3074182/5445467/HZZFakeRates.pdf
+# Using latest values for 2023. For 2022 we stick to the values used in HIG-24-013
 # Define combination coefficients
 def comb(year):
     if year == "2016":
@@ -278,17 +279,17 @@ def comb(year):
         ])
     elif year == "2022":
         cb_SS = np.array([
-            1.140, # 4e
-            1.097, # 4mu
+            1.239, # 4e
+            1.093, # 4mu
             1.057, # 2e2mu
-            1.155, # 2mu2e
+            1.254, # 2mu2e
         ])
     elif year == "2022EE":
         cb_SS = np.array([
             1.067, # 4e
-            1.016, # 4mu
-            1.063, # 2e2mu
-            0.902, # 2mu2e
+            1.015, # 4mu
+            1.049, # 2e2mu
+            0.905, # 2mu2e
         ])
     elif year == "2023preBPix":
         cb_SS = np.array([
@@ -331,17 +332,17 @@ def ratio(year):
             ])
     elif year == "2022":
         fs_ROS_SS = np.array([
-            1.023,   # 4e
-            1.141,  # 4mu
-            0.955,   # 2e2mu
-            1.036,  # 2mu2e
+            1.030,   # 4e
+            1.165,  # 4mu
+            1.057,   # 2e2mu
+            1.254,  # 2mu2e
             ])
     elif year == "2022EE":
         fs_ROS_SS = np.array([
-            0.989,   # 4e
-            1.007,  # 4mu
-            1.037,   # 2e2mu
-            1.018,  # 2mu2e
+            0.990,   # 4e
+            0.997,  # 4mu
+            1.039,   # 2e2mu
+            1.016,  # 2mu2e
             ])
     elif year == "2023preBPix":
         fs_ROS_SS = np.array([
