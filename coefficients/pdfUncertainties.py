@@ -194,10 +194,8 @@ def get_scale_unc(process, channel, tree, scale, observable, nnlops = False):
 
 def load_tree(fname):
     with uproot.open(f'{fname}') as f:
-        #tree = f['ZZTree/candTree'].arrays()
-        tree = f['candTree'].arrays() # spencer
-        #tree_failed = f['ZZTree/candTree_failed'].arrays()
-        tree_failed = f['candTree_failed'].arrays() # spencer
+        tree = f['ZZTree/candTree'].arrays()
+        tree_failed = f['ZZTree/candTree_failed'].arrays()
         
     tree_tot = ak.concatenate([tree, tree_failed])
     return tree_tot
