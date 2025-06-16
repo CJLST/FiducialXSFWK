@@ -89,9 +89,9 @@ More in detail, to define a new measurement (or to understand what is used in a 
 
 ## Pipeline Submission
 
-The full analysis pipeline can be executed in batch mode using HTCondor with the provided submission script `sub_pipeline.sub`.
+The full analysis pipeline can be executed in batch mode using HTCondor with the provided submission script `sub_pipeline_22_23.sub`.
 
-This submission script runs `pipeline_Martina.py`, which performs the complete workflow including template and coefficient generation, datacard creation, fitting, plotting, and optional upload to a web area. Input options such as observable name, binning, and year are specified in a separate `input_args.txt` file, avoiding hardcoded arguments in the scripts.
+This submission script runs `run_pipeline_22_23.py`, which performs the complete workflow including template and coefficient generation, datacard creation, fitting, plotting, and optional upload to a web area. Input options such as observable name, binning, and year are specified in a separate `input_args.txt` file, avoiding hardcoded arguments in the scripts.
 
 ### Environment Setup
 

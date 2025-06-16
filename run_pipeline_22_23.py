@@ -80,7 +80,7 @@ def pipeline():
     else:
         safe_chdir('./fit')
 
-    processCmd(f'python3 -u addConstrainedModel.py --obsName "{obsName}" --year "{year}"')
+    #processCmd(f'python3 -u addConstrainedModel.py --obsName "{obsName}" --year "{year}"')
 
     runFidCmd = f'python3 -u RunFiducialXS.py --obsName "{obsName}" --obsBins "{obsBins}" --year "{year}"'
     if unblind:

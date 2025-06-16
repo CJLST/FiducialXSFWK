@@ -9,6 +9,6 @@ cd FiducialXSFWK/coefficients/
 
 echo "[INFO] Environment set up."
 
-python3 -u RunCoefficients.py --obsName "$1" --obsBins "$2" --year "$3"
+python3 -u run_pipeline_22_23.py --obsName "$1" --obsBins "$2" --year "$3"
 
 

@@ -1,5 +1,5 @@
 universe   = vanilla
-executable = run_pipeline.sh
+executable = run_pipeline_22_23.sh
 arguments  = $(obsName) $(binning) $(year)
 output     = logs/$(ClusterId).$(Process).out
 error      = logs/$(ClusterId).$(Process).err
