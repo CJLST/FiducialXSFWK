@@ -252,8 +252,9 @@ def findFSZX(df):
     df['FinState'] = [FindFinalState(x,y) for x,y in zip(df['Z1Flav'], df['Z2Flav'])]
     return df
 
-# The most recent fake rate calculations for 2022 and 2023 were presented here: https://indico.cern.ch/event/1495544/contributions/6534734/attachments/3074182/5445467/HZZFakeRates.pdf
-# Using latest values for 2023. For 2022 we stick to the values used in HIG-24-013
+# Fake rates
+# For 2022 values are taken from https://indico.cern.ch/event/1360904/contributions/5896503/attachments/2832114/4948339/HZZmeeting_050424.pdf (slide 14) - same values used in HIG-24-013
+# For 2023 values are taken from https://indico.cern.ch/event/1495544/contributions/6534734/attachments/3074182/5445467/HZZFakeRates.pdf (slide 23-24)
 # Define combination coefficients
 def comb(year):
     if year == "2016":
@@ -377,17 +378,12 @@ def ZXYield(df, year, year_mc):
 def doZX(year, year_mc):
     keyZX = 'CRZLLTree/candTree'
 
-    #if ( year == "2022" or year == "2022EE" ): data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/'+year_mc+'/Data/AllData_'+year_mc+'.root'
-    #else: data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/2022/Data/AllData_2022.root' # SPENCER FIX THIS
-    
-    #if (year=="2022"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2022_Data/Data_eraCD_preEE_SKIMMED.root'
-    #if (year=="2022EE"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2022_Data/Data_eraEFG_postEE_SKIMMED.root'
-    #if (year=="2023preBPix"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2023_Data/Data_eraC_preBPix_SKIMMED.root'
-    #if (year=="2023postBPix"): data = '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/2023_Data/Data_eraD_postBPix_SKIMMED.root'
+    # /eos/home-s/sellissp/HZZ/SAMPLES/ production for only Jets related variables
     #if (year=="2022"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/042025/PROD_samplesNano_2022_Data_e32a8483/Data_eraCD_preEE_SKIMMED.root'
     #if (year=="2022EE"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/042025/PROD_samplesNano_2022_Data_e32a8483/Data_eraEFG_postEE_SKIMMED.root'
     #if (year=="2023preBPix"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/032025/2023_Data/Data_eraC_preBPix_SKIMMED.root'
     #if (year=="2023postBPix"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/032025/2023_Data/Data_eraD_postBPix_SKIMMED.root'
+    # /eos/user/m/mmanoni/HZZ_prod_300425_angles/ production for only angular variables
     if (year=="2023preBPix"): data = '/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data/2023/Data_eraC_preBPix_SKIMMED.root'
     if (year=="2023postBPix"): data = '/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data/2023/Data_eraD_postBPix_SKIMMED.root'
     if (year=="2022"): data = '/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data/2022/Data_eraCD_preEE_SKIMMED.root'

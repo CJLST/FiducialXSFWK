@@ -166,6 +166,8 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     ZX['2018_2e2mu'] = '0.7660052/1.235647'
     ZX['2018_4e'] = '0.650486/1.35893'
     ZX['2018_4mu'] = '0.69554/1.30465'
+
+    # 2022 values taken from https://indico.cern.ch/event/1360904/contributions/5896503/attachments/2832114/4948339/HZZmeeting_050424.pdf (slide 14)
     ZX['2022_2e2mu'] = '0.724/1.263'
     ZX['2022_4e'] = '0.495/1.451'
     ZX['2022_4mu'] = '0.677/1.321'
@@ -173,13 +175,13 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     ZX['2022EE_4e'] = '0.575/1.398'
     ZX['2022EE_4mu'] = '0.690/1.310'
 
-    #TODO: Update 2023 ZX values. The values for 2023 preBPix/postBPix are copy-pasted from 2022 at the moment 
-    ZX['2023preBPix_2e2mu'] = '0.724/1.263' # spencer
-    ZX['2023preBPix_4e'] = '0.575/1.398' # spencer
-    ZX['2023preBPix_4mu'] = '0.677/1.321' # spencer
-    ZX['2023postBPix_2e2mu'] = '0.724/1.263' # spencer
-    ZX['2023postBPix_4e'] = '0.575/1.398' # spencer
-    ZX['2023postBPix_4mu'] = '0.677/1.321' # spencer 
+    # 2023 values are copy-pasted from 2022 at the moment. #FIXME: Some aspects of the 2023 ZX systematic uncertainties still require further investigation. 
+    ZX['2023preBPix_2e2mu'] = '0.724/1.263'
+    ZX['2023preBPix_4e'] = '0.495/1.451'
+    ZX['2023preBPix_4mu'] = '0.677/1.321'
+    ZX['2023postBPix_2e2mu'] = '0.724/1.263'
+    ZX['2023postBPix_4e'] = '0.495/1.451'
+    ZX['2023postBPix_4mu'] = '0.677/1.321'
     
     
     # -------------------------------------------------------------------------------------------------
