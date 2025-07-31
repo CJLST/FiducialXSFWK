@@ -7,6 +7,8 @@ import json
 import argparse, optparse
 import os.path, sys
 
+gROOT.SetBatch(True)
+
 NAMECOUNTER = 0
 
 grootargs = []
@@ -27,7 +29,7 @@ def parseOptions():
     parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
     parser.add_option('',   '--year',  dest='YEAR',  type='string',default='',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--unblind', action='store_true', dest='UNBLIND', default=False, help='Use real data')
-    parser.add_option('',   '--v4', action='store_true', dest='V4', default=False, help='Print NLL scans for v4 physics model')
+    parser.add_option('',   '--v4', action='store_true', dest='V4', default= False, help='Print NLL scans for v4 physics model')
 
     # store options and arguments as global variables
     global opt, args
@@ -63,7 +65,6 @@ def BuildScan(scan, param, files, color, yvals, ycut):
     pyfunc = partial(Eval, spline)
     func = TF1('splinefn'+str(NAMECOUNTER), pyfunc, graph.GetX()[0], graph.GetX()[graph.GetN() - 1], 1)
     bestfit = func.GetMinimumX() #AT
-    print(bestfit)
     NAMECOUNTER += 1
     func.SetLineColor(color)
     func.SetLineWidth(3)
@@ -95,7 +96,6 @@ def BuildScan(scan, param, files, color, yvals, ycut):
     else:
         val_2sig = (0., 0., 0.)
         cross_2sig = cross_1sig
-    print(val)
     return {
         "graph"     : graph,
         "spline"    : spline,
@@ -161,8 +161,21 @@ elif year == '2017':
     _lumi = '41.48'
 elif year == '2018':
     _lumi = '59.83'
+
 elif year == 'Run3':
+    _lumi = '62'
+elif year == '2022':
+    _lumi = '7.98'
+elif year == '2022EE':
+    _lumi = '26.67'
+elif year == '2023preBPix':
+    _lumi = '17.79'
+elif year == '2023postBPix':
+    _lumi = '9.45'
+elif year == '2022full':
     _lumi = '34.7'
+elif year == '2023full':
+    _lumi = '27.3'
 else:
     _lumi = '138'
 
@@ -172,15 +185,16 @@ v4_flag = opt.V4
 doubleDiff = False
 if(obsName == 'mass4l'): label = 'm_{4l}'
 elif(obsName == 'mass4l_zzfloating'): label = 'm_{4l}'
-elif(obsName == 'njets_pt30_eta4p7'): label = 'N_{jet}, pT>30 GeV, |#eta|<4.7'
+elif(obsName == 'Nj'): label = 'N_{jet}, pT>30 GeV, |#eta|<4.7'
 elif(obsName == 'pT4l'): label = 'p_{T}^{H} (GeV)'
 elif(obsName == 'pT4l_kL'): label = '#kappa_{#lambda}'
 elif(obsName == 'rapidity4l'): label = '|y_{H}|'
 elif(obsName == 'costhetaZ1'): label = 'cos(#theta_{1})'
 elif(obsName == 'costhetaZ2'): label = 'cos(#theta_{2})'
 elif(obsName == 'phi'): label = '#Phi'
+elif(obsName == 'phi1'): label = '#Phi1'
 elif(obsName == 'phistar'): label = '#Phi^{#star}'
-elif(obsName == 'costhetastar'): label = 'cos(#theta^{*})'
+elif(obsName == 'costhetastarZZ'): label = 'cos(#theta^{*})'
 elif(obsName == 'massZ1'): label = 'm_{Z1} (GeV)'
 elif(obsName == 'massZ2'): label = 'm_{Z2} (GeV)'
 elif(obsName == 'pTj1'): label = 'p_{T}^{(j1, 4.7)} (GeV)'
@@ -237,7 +251,7 @@ elif(obsName == 'TCjmax vs pT4l'):
     doubleDiff = True
 
 # _poi    = 'SigmaBin'
-_obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'njets_pt30_eta4p7': 'NJ'}
+_obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
 if obsName not in _obsName:
     _obsName[obsName] = obsName
 # _poi    = 'r_smH_'+_obsName[obsName]+'_'
@@ -248,7 +262,6 @@ _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['ob
 obs_bins = _temp.observableBins
 _temp = __import__('xsec_'+obsName, globals(), locals(), ['xsec']) # , -1)
 xsec = _temp.xsec
-print(xsec)
 sys.path.remove('../inputs')
 
 nBins = len(obs_bins)
@@ -281,14 +294,14 @@ for i in range(nBins):
 
     if v4_flag:
         if (_bin % 2) == 0:
-            _obs_bin = 'r2e2muBin'+str(i/2)
+            _obs_bin = 'r2e2muBin'+str(i//2)
+            print("v4_flag - _obs_bin",_obs_bin,str(i//2), str(i))
         else:
-            _obs_bin = 'r4lBin'+str((i-1)/2)
+            _obs_bin = 'r4lBin'+str((i-1)//2)
 
     if 'kL' in obsName:
             _obs_bin = 'kappa_lambda'
 
-    print(_obs_bin)
 
     graphs = []
     grapherrs = []
@@ -297,11 +310,9 @@ for i in range(nBins):
     for ifile in range(len(fileList)):
         rfile = fileList[ifile].replace('OBS', _obs_bin)
         rfile = rfile.replace('BIN', obsName)
-        print(rfile)
         graphs.append(TGraph())
         fname = inputPath+rfile
         inF = TFile.Open(fname,"READ")
-        print(fname)
         tree = inF.Get("limit")
 
         if tree.GetBranch('r_smH_'+_obsName[obsName]+'_'+str(_bin)):
@@ -799,10 +810,10 @@ for i in range(nBins):
 
     Text = TPaveText(0.58, 0.88,0.93,0.95,'brNDC')
     #Text.SetNDC()
-    Text.SetTextAlign(31);
+    Text.SetTextAlign(31); #31
     Text.SetTextSize(0.5*c.GetTopMargin())
     leftText = "CMS"
-    re = "#bf{%s fb^{-1} (13 TeV)}" %(_lumi)
+    re = "#bf{%s fb^{-1} (13.6 TeV)}" %(_lumi)
     Text.AddText(re)
     Text.SetFillStyle(0)
     Text.SetLineStyle(0)
@@ -1070,8 +1081,8 @@ for i in range(nBins):
         resultsXS_asimov['SM_125_'+obsName+'_genbin'+str(i)+'_statOnly'] = {"uncerDn": -1.0*abs(exp_nom_stat[2]), "uncerUp": exp_nom_stat[1], "central": exp_nom[0]}
 
     c.Update()
-    c.SaveAs("plots/lhscan_compare_"+obsName+"_"+poi+".pdf")
-    c.SaveAs("plots/lhscan_compare_"+obsName+"_"+poi+".png")
+    #c.SaveAs("plots/lhscan_compare_"+obsName+"_"+poi+".pdf")
+    c.SaveAs("plots/"+year+"_lhscan_compare_"+obsName+"_"+poi+".png")
 
 if v4_flag:
     if opt.UNBLIND:

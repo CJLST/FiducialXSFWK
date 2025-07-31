@@ -86,3 +86,21 @@ More in detail, to define a new measurement (or to understand what is used in a 
 	```
 	python plot_LLScan.py --obsName NAME (str) --year YEAR (str)                                
 	```
+
+## Pipeline Submission
+
+The full analysis pipeline can be executed in batch mode using HTCondor with the provided submission script `sub_pipeline_22_23.sub`.
+
+This submission script runs `run_pipeline_22_23.py`, which performs the complete workflow including template and coefficient generation, datacard creation, fitting, plotting, and optional upload to a web area. Input options such as observable name, binning, and year are specified in a separate `input_args.txt` file, avoiding hardcoded arguments in the scripts.
+
+### Environment Setup
+
+Before submitting jobs, source the environment setup script, `source ./env.sh`, to configure necessary environment variables
+
+### Job Submission
+
+Submit the job to HTCondor using the following command:
+
+```
+condor_submit sub_pipeline.sub
+```

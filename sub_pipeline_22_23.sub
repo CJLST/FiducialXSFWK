@@ -1,0 +1,16 @@
+universe   = vanilla
+executable = run_pipeline_22_23.sh
+arguments  = $(obsName) $(binning) $(year)
+output     = logs/$(ClusterId).$(Process).out
+error      = logs/$(ClusterId).$(Process).err
+log        = logs/$(ClusterId).$(Process).log
+
++JobFlavour = "testmatch"
+
+transfer_input_files = $(transfer_input_files)
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+stream_output = True
+stream_error  = True
+
+queue obsName, binning, year from input_args.txt

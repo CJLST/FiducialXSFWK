@@ -32,9 +32,9 @@ def parseOptions():
     parser.add_option('',   '--ModelNames',dest='MODELNAMES',type='string',default='SM_125',help='Names of models for unfolding, separated by | . Default is "SM_125"')
     parser.add_option('',   '--theoryMass',dest='THEORYMASS',    type='string',default='125.38',   help='Mass value for theory prediction')
     parser.add_option('',   '--fixMass',  dest='FIXMASS',  type='string',default='125.0',   help='Fix mass, default is a string "125.09" or can be changed to another string, e.g."125.6" or "False"')
-    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
-    parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
-    parser.add_option('',   '--year',  dest='YEAR',  type='string',default='',   help='Year -> 2016 or 2017 or 2018 or Full')
+    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='pT4l',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
+    parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='|0|30|80|200|10000|',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
+    parser.add_option('',   '--year',  dest='YEAR',  type='string',default='2022',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--ZZfloating',action='store_true', dest='ZZ',default=False, help='Let ZZ normalisation to float')
     # Unblind option
     parser.add_option('',   '--unblind', action='store_true', dest='UNBLIND', default=False, help='Use real data')
@@ -54,7 +54,7 @@ def processCmd(cmd, quiet = 0):
     p = Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT, bufsize=-1)
     for line in iter(p.stdout.readline, ''):
         output=output+str(line)
-        print(line,)
+        #print(line,)
     p.stdout.close()
     if p.wait() != 0:
         raise RuntimeError("%r failed, exit status: %d" % (cmd, p.returncode))
@@ -75,8 +75,8 @@ def RunCombineCorrelation():
     # print 'Current directory: combine_files'
 
     for physicalModel in PhysicalModels:
-        if physicalModel == 'v2': # In this case implemented for mass4l only
-            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v2.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --setParameterRanges r4eBin0=0.0,2.5:r4muBin0=0.0,2.5:r2e2muBin0=0.0,2.5 --redefineSignalPOI r4eBin0,r4muBin0,r2e2muBin0 --algo=singles --cminDefaultMinimizerStrategy 0 --saveInactivePOI=1 --robustHesse 1 --robustHesseSave 1'
+        if physicalModel == 'v2': # In this case implemented for mass4l only (Mass-dependent fit using separate final states)
+            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v2_'+str(opt.YEAR)'.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --setParameterRanges r4eBin0=0.0,2.5:r4muBin0=0.0,2.5:r2e2muBin0=0.0,2.5 --redefineSignalPOI r4eBin0,r4muBin0,r2e2muBin0 --algo=singles --cminDefaultMinimizerStrategy 0 --saveInactivePOI=1 --robustHesse 1 --robustHesseSave 1'
             if not opt.UNBLIND:
                 cmd += ' -t -1 --setParameters '
                 for channel in ['4e', '4mu', '2e2mu']:
@@ -92,9 +92,9 @@ def RunCombineCorrelation():
             output = processCmd(cmd)
             # cmds.append(cmd)
 
-        if physicalModel == 'v4':
+        if physicalModel == 'v4': #More granular 2e2mu and 4l bin-by-bin decomposition
             # ----- 2e2mu -----
-            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v4.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 --saveInactivePOI=1 --robustHesse 1 --robustHesseSave 1 --setParameterRanges '
+            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v4_'+str(opt.YEAR)'.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 --saveInactivePOI=1 --robustHesse 1 --robustHesseSave 1 --setParameterRanges '
 
             for obsBin in range(nBins):
                 cmd += 'r2e2muBin'+str(obsBin)+'=0.0,2.5:r4lBin'+str(obsBin)+'=0.0,2.5:'
@@ -139,12 +139,12 @@ def RunCombineCorrelation():
 
 
         elif physicalModel == 'v3':
-            _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'njets_pt30_eta4p7': 'NJ'}
+            _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
             if obsName not in _obsName:
                 _obsName[obsName] = obsName
             fitName = _obsName[obsName]
 
-            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 --robustHesse 1 --robustHesseSave 1 --setParameterRanges '
+            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)'.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 --robustHesse 1 --robustHesseSave 1 --setParameterRanges '
             for obsBin in range(nBins):
                 cmd += 'r_smH_'+fitName+'_'+str(obsBin)+'=0.0,5.0:'
             cmd = cmd[:-1]

@@ -1,4 +1,5 @@
-import sys, os, string, re, pwd, commands, ast, optparse, shlex, time
+#import sys, os, string, re, pwd, commands, ast, optparse, shlex, time
+import sys, os, string, re, pwd, subprocess, ast, optparse, shlex, time # spencer
 from array import array
 from math import *
 from decimal import *
@@ -42,7 +43,9 @@ sys.argv = grootargs
 sys.path.append('../inputs')
 obsName = opt.OBSNAME
 
-_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins','acc','eff','err_eff','outinratio','err_outinratio','inc_wrongfrac','binfrac_wrongfrac'], -1)
+#_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins','acc','eff','err_eff','outinratio','err_outinratio','inc_wrongfrac','binfrac_wrongfrac'], -1)
+_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins','acc','eff','err_eff','outinratio','err_outinratio','inc_wrongfrac','binfrac_wrongfrac'], 0)
+
 observableBins = _temp.observableBins
 if not opt.DOUBLEDIFF: lenObsBins = len(observableBins)-1
 elif opt.DOUBLEDIFF: lenObsBins = len(observableBins)
@@ -58,8 +61,10 @@ binfrac_wrongfrac = _temp.binfrac_wrongfrac
 # lambdajesdn = _temp.lambdajesdn
 
 # _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs4l_br','higgs_xs'], -1)
-_temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
-if('2022' in opt.YEAR):
+#_temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
+_temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], 0) # spencer    
+
+if('2022' in opt.YEAR or '2023' in opt.YEAR):
     higgs_xs = _temp.higgs_xs_136TeV
 else:
     higgs_xs = _temp.higgs_xs
@@ -105,7 +110,7 @@ for fState in fStates:
 
         for genbin in range(lenObsBins):
 
-            print 'ggH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)
+            print('ggH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin))
             ggHxs = higgs_xs['ggH_125.38']*higgs4l_br['125.38_'+fState]*acc['ggH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]
             #ggHxs = acc['ggH_HRes_125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]
             VBFxs = higgs_xs['VBF_125.38']*higgs4l_br['125.38_'+fState]*acc['VBFH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]
@@ -113,6 +118,8 @@ for fState in fStates:
             ZHxs = higgs_xs['ZH_125.38']*higgs4l_br['125.38_'+fState]*acc['ZH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]
             ttHxs = higgs_xs['ttH_125.38']*higgs4l_br['125.38_'+fState]*acc['ttH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]
 
+            
+            
             effsm = ggHxs/(ggHxs+VBFxs+WHxs+ZHxs+ttHxs)*max(eff['ggH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(recobin)],0.0)
             #effsm = ggHxs/(ggHxs+VBFxs+WHxs+ZHxs+ttHxs)*max(eff['ggH_HRes_125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(recobin)],0.0)
             effsm += VBFxs/(ggHxs+VBFxs+WHxs+ZHxs+ttHxs)*max(eff['VBFH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(recobin)],0.0)

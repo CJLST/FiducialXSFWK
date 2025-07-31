@@ -227,7 +227,7 @@ class combineCommand():
         
     def get_ws(self, obs, SM):
         if SM:
-            self.ws = f'{FITS_PATH}/SM_125_all_13TeV_xs_{self.obs_name}_bin_{self.version}.root'
+            self.ws = f'{FITS_PATH}/SM_125_all_13TeV_xs_{self.obs_name}_bin_{self.version}_{opt.YEAR}.root'
             self.output = f'bestFit_{self.obs_name}_{self.version}_{self.channel}'
         else:
             self.ws = f'higgsCombinebestFit_{self.obs_name}_{self.version}_{self.channel}'

@@ -3,10 +3,10 @@ import optparse
 import ROOT
 from tdrStyle import *
 from binning import binning
-
+ROOT.gROOT.SetBatch(True)
 sPlotsStore = 'plots'
 
-print 'Welcome in plot_templates!'
+print('Welcome in plot_templates!')
 
 # Considering or not decimals in bin boundaries
 decimal = {
@@ -19,8 +19,8 @@ decimal = {
 'costhetaZ1': True,
 'costhetaZ2': True,
 'phi': True,
-'phistar': True,
-'costhetastar': True,
+'phi1': True,
+'costhetastarZZ': True,
 'massZ1': False,
 'massZ2': False,
 'pTj1': False,
@@ -62,8 +62,8 @@ def parseOptions():
     parser = optparse.OptionParser(usage)
 
     # input options
-    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
-    parser.add_option('',   '--year',  dest='YEAR',  type='string',default='Full',   help='Year -> 2016 or 2017 or 2018 or Full')
+    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='costhetaZ1',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
+    parser.add_option('',   '--year',  dest='YEAR',  type='string',default='2022',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--m4lLower',  dest='LOWER_BOUND',  type='int',default=105,   help='Lower bound for m4l')
     parser.add_option('',   '--m4lUpper',  dest='UPPER_BOUND',  type='int',default=160,   help='Upper bound for m4l')
     # store options and arguments as global variables
@@ -95,7 +95,7 @@ def cmsPreliminary(c, top):
     CMSPrelim = ROOT.TLatex()
     CMSPrelim.SetNDC(ROOT.kTRUE)
 
-    CMSPrelim.SetTextSize(0.8*c.GetTopMargin());
+    CMSPrelim.SetTextSize(0.8*c.GetTopMargin())
     CMSPrelim.SetTextFont(42)
     CMSPrelim.SetTextAlign(31) #align right
     CMSPrelim.DrawLatex(0.93, 0.96,"#bf{"+top+"}")
@@ -130,12 +130,15 @@ else:
     binRange = [str(obs_bins[i])+'_'+str(obs_bins[i+1]) for i in range(N_BINS)]
     binRangeLow = [str(obs_bins[i]) for i in range(N_BINS)]
     binRangeHigh = [str(obs_bins[i+1]) for i in range(N_BINS)]
-    binRangeLeg = [str(int(obs_bins[i]))+'<'+obsTag+'<'+str(int(obs_bins[i+1])) for i in range(N_BINS)]
+    if not decimal[obsTag]:
+        binRangeLeg = [str(int(obs_bins[i]))+'<'+obsTag+'<'+str(int(obs_bins[i+1])) for i in range(N_BINS)]
+    else:
+        binRangeLeg = [str((obs_bins[i]))+'<'+obsTag+'<'+str((obs_bins[i+1])) for i in range(N_BINS)]
 
-print(binRange)
-print(binRangeLow)
-print(binRangeHigh)
-print(binRangeLeg)
+print("binRange", binRange)
+print("binRangeLow", binRangeLow)
+print("binRangeHigh", binRangeHigh)
+print("binRangeLeg", binRangeLeg)
 
 
 # setup environment & canvas
@@ -153,8 +156,12 @@ c1.GetPad(0).SetBottomMargin(0.15)
 bkgName=['qqzz','ggzz','ZJetsCR']
 if opt.YEAR == 'Full':
     year=['2016', '2017', '2018']
-elif opt.YEAR == 'Run3':
+elif opt.YEAR == '2022full':
     year=['2022', '2022EE']
+elif opt.YEAR == '2023full':
+    year=['2023preBPix', '2023postBPix']
+elif opt.YEAR == 'Run3':
+    year=['2022', '2022EE', '2023preBPix', '2023postBPix']
 else:
     year=[opt.YEAR]
 print(year)
@@ -226,7 +233,7 @@ for iYear in range(len(year)):
         leg1.AddEntry(h1D_2e2mu[kBkg_qqZZ,iBin], "q#bar{q} #rightarrow ZZ","L")
         setHistProperties(h1D_2e2mu[kBkg_ggZZ,iBin],lineWidth,1,ROOT.kBlue-7)
         h1D_2e2mu[kBkg_ggZZ,iBin].Draw("histsame")
-        leg1.AddEntry(h1D_2e2mu[kBkg_ggZZ,iBin], "gg #rightarrow ZZ","L");
+        leg1.AddEntry(h1D_2e2mu[kBkg_ggZZ,iBin], "gg #rightarrow ZZ","L")
         setHistProperties(h1D_2e2mu[kBkg_ZJets,iBin],lineWidth,1,ROOT.kRed-7)
         h1D_2e2mu[kBkg_ZJets,iBin].Draw("histsame")
         leg1.AddEntry(h1D_2e2mu[kBkg_ZJets,iBin], "Z + X","L")
@@ -246,7 +253,7 @@ for iYear in range(len(year)):
         leg1.AddEntry(h1D_4mu[kBkg_qqZZ,iBin], "q#bar{q} #rightarrow ZZ","L")
         setHistProperties(h1D_4mu[kBkg_ggZZ,iBin],lineWidth,1,ROOT.kBlue-7)
         h1D_4mu[kBkg_ggZZ,iBin].Draw("histsame")
-        leg1.AddEntry(h1D_4mu[kBkg_ggZZ,iBin], "gg #rightarrow ZZ","L");
+        leg1.AddEntry(h1D_4mu[kBkg_ggZZ,iBin], "gg #rightarrow ZZ","L")
         setHistProperties(h1D_4mu[kBkg_ZJets,iBin],lineWidth,1,ROOT.kRed-7)
         h1D_4mu[kBkg_ZJets,iBin].Draw("histsame")
         leg1.AddEntry(h1D_4mu[kBkg_ZJets,iBin], "Z + X","L")
@@ -266,7 +273,7 @@ for iYear in range(len(year)):
         leg1.AddEntry(h1D_4e[kBkg_qqZZ,iBin], "q#bar{q} #rightarrow ZZ","L")
         setHistProperties(h1D_4e[kBkg_ggZZ,iBin],lineWidth,1,ROOT.kBlue-7)
         h1D_4e[kBkg_ggZZ,iBin].Draw("histsame")
-        leg1.AddEntry(h1D_4e[kBkg_ggZZ,iBin], "gg #rightarrow ZZ","L");
+        leg1.AddEntry(h1D_4e[kBkg_ggZZ,iBin], "gg #rightarrow ZZ","L")
         setHistProperties(h1D_4e[kBkg_ZJets,iBin],lineWidth,1,ROOT.kRed-7)
         h1D_4e[kBkg_ZJets,iBin].Draw("histsame")
         leg1.AddEntry(h1D_4e[kBkg_ZJets,iBin], "Z + X","L")

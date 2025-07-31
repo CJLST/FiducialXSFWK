@@ -22,9 +22,9 @@ def parseOptions():
     parser = optparse.OptionParser(usage)
 
     # input options
-    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
-    parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
-    parser.add_option('',   '--year',  dest='YEAR',  type='string',default='',   help='Year -> 2016 or 2017 or 2018 or Full')
+    parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='costhetaZ1',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
+    parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='|-1.0|-0.75|-0.50|-0.25|0.0|0.25|0.50|0.75|1.0|',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
+    parser.add_option('',   '--year',  dest='YEAR',  type='string',default='2022',   help='Year -> 2016 or 2017 or 2018 or Full')
     # store options and arguments as global variables
     global opt, args
     (opt, args) = parser.parse_args()
@@ -72,6 +72,7 @@ def matrix(obs_bins, obs_name, label):
 
     for year in years:
         _temp = __import__('inputs_sig_extrap_'+obs_name+'_'+str(year), globals(), locals(), ['eff', 'err_eff']) # Open file with coefficients
+        #_temp = __import__('inputs_sig_'+obs_name+'_'+str(year), globals(), locals(), ['eff', 'err_eff']) # spencer
         eff = _temp.eff
         err_eff = _temp.err_eff
         for signal in signals:
@@ -95,7 +96,8 @@ def matrix(obs_bins, obs_name, label):
                 print(eps)
 
                 # The following two lines set white color for bin with zero efficiency
-                my_cmap = copy.copy(matplotlib.cm.get_cmap("rainbow"))
+                #my_cmap = copy.copy(matplotlib.cm.get_cmap("rainbow"))
+                my_cmap = copy.copy(matplotlib.colormaps.get_cmap("rainbow"))
                 my_cmap.set_under('w')
 
                 # Define pcolormesh
@@ -187,6 +189,7 @@ def nonFid(obs_bins, obs_name, label):
 
     for year in years:
         _temp = __import__('inputs_sig_extrap_'+obs_name+'_'+str(year), globals(), locals(), ['outinratio', 'err_outinratio']) # Open file with coefficients
+        #_temp = __import__('inputs_sig_'+obs_name+'_'+str(year), globals(), locals(), ['outinratio', 'err_outinratio']) ## spencer
         outinratio = _temp.outinratio
         err_outinratio = _temp.err_outinratio
         for fState in ['4e', '4mu', '2e2mu']:
@@ -202,7 +205,8 @@ def nonFid(obs_bins, obs_name, label):
             print(eps)
 
             # The following two lines set white color for bin with zero efficiency
-            my_cmap = copy.copy(matplotlib.cm.get_cmap("rainbow"))
+            #my_cmap = copy.copy(matplotlib.cm.get_cmap("rainbow"))
+            my_cmap = copy.copy(matplotlib.colormaps.get_cmap("rainbow"))
             my_cmap.set_under('w')
 
             plt.pcolormesh(obs_bins_label_x, obs_bins_label_y, eps, cmap = my_cmap, alpha=0.6)
@@ -262,14 +266,23 @@ def nonFid(obs_bins, obs_name, label):
 
 signals_original = ['VBFH125', 'ggH125', 'ttH125', 'WminusH125', 'WplusH125', 'ZH125']
 signals = ['ggH125', 'VBFH125', 'WH125', 'ZH125', 'ttH125']
-eos_path_sig = '/eos/user/a/atarabin/MC_samples/'
-key = 'candTree'
-key_failed = 'candTree_failed'
+#eos_path_sig = '/eos/user/a/atarabin/MC_samples/'
+#key = 'candTree'
+#key_failed = 'candTree_failed'
 
 if (opt.YEAR == '2016'): years = [2016]
 if (opt.YEAR == '2017'): years = [2017]
 if (opt.YEAR == '2018'): years = [2018]
 if (opt.YEAR == 'Full'): years = [2016,2017,2018]
+
+if (opt.YEAR == '2022'): years = [2022]
+if (opt.YEAR == '2022EE'): years = ["2022EE"]
+if (opt.YEAR == '2023preBPix'): years = ["2023preBPix"]
+if (opt.YEAR == '2023postBPix'): years = ["2023postBPix"]
+
+if (opt.YEAR == '2022full'): years = [2022, "2022EE"]
+if (opt.YEAR == '2023full'): years = ["2023preBPix", "2023postBPix"]
+if (opt.YEAR == 'Run3'): years = [2022, "2022EE", "2023preBPix", "2023postBPix"]
 
 # obs_bins = {0:(opt.OBSBINS.split("|")[1:(len(opt.OBSBINS.split("|"))-1)]),1:['0','inf']}[opt.OBSBINS=='inclusive']
 # obs_bins = [float(i) for i in obs_bins] #Convert a list of str to a list of float
@@ -308,6 +321,18 @@ elif(obs_name == 'mass4l'):
     label = 'm$_4/ell$ (GeV)'
 elif(obs_name == 'mass4l_zzfloating'):
     label = 'm$_4/ell$ (GeV)'
+elif(obs_name == 'costhetaZ1'):
+    label = 'costhetaZ1'
+elif(obs_name == 'costhetaZ2'):
+    label = 'costhetaZ2'
+elif(obs_name == 'costhetastarZZ'):
+    label = 'costhetastarZZ'
+elif(obs_name == 'phi'):
+    label = 'phi'
+elif(obs_name == 'phi1'):
+    label = 'phi1'
+elif(obs_name == 'rapidity4l_pT4l'):
+    label = '|y$_H$| vs. p$_T^H$ (GeV)'
 else:
     label = ''
 
