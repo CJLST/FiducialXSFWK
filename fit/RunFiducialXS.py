@@ -434,7 +434,7 @@ def runFiducialXS():
     DataModelName = 'SM_125'
     if obsName.startswith("mass4l"):
         PhysicalModels = ['v2','v3']
-    elif obsName == 'D0m' or obsName == 'Dcp' or obsName == 'D0hp' or obsName == 'Dint' or obsName == 'DL1' or obsName == 'DL1Zg' or obsName == 'costhetaZ1' or obsName == 'costhetaZ2'or obsName == 'costhetastarZZ' or obsName == 'phi' or obsName == 'phi1' or obsName == 'massZ1' or obsName == 'massZ2':
+    elif obsName == 'D0m' or obsName == 'Dcp' or obsName == 'D0hp' or obsName == 'Dint' or obsName == 'DL1' or obsName == 'DL1Zg' or obsName == 'costhetaZ1' or obsName == 'costhetaZ2'or obsName == 'costhetastar' or obsName == 'phi' or obsName == 'phi1' or obsName == 'massZ1' or obsName == 'massZ2':
         PhysicalModels = ['v4', 'v3']
     elif 'kL' in obsName:
         PhysicalModels = ['kLambda']
@@ -750,7 +750,7 @@ def runFiducialXS():
                 K1 = frac4e/frac4e_sm
                 K2 = frac4mu/frac4mu_sm * (1.0-frac4e_sm)/(1.0-frac4e)
 
-                cmd_BR += 'K1Bin'+str(obsBin)+'='+str(K1)+',K2Bin'+str(obsBin)+'='+str(K2)+','
+                #cmd_BR += 'K1Bin'+str(obsBin)+'='+str(K1)+',K2Bin'+str(obsBin)+'='+str(K2)+','
 
             print(cmd_BR)
 

@@ -76,7 +76,7 @@ def matrix(obs_bins, obs_name, label):
         eff = _temp.eff
         err_eff = _temp.err_eff
         for signal in signals:
-            for fState in ['4e', '4mu', '2e2mu']:
+            for fState in ['4e', '4mu', '2e2mu', '4l']:
                 if not doubleDiff:
                     eps = np.zeros((len(obs_bins_label)-1, len(obs_bins_label)-1)) # Efficienty matrix
                     eps_err = np.zeros((len(obs_bins_label)-1, len(obs_bins_label)-1)) # Efficienty error matrix
@@ -109,16 +109,17 @@ def matrix(obs_bins, obs_name, label):
                         if not doubleDiff:
                             if (eps_err[i,j] < 0.002):
                                 if not doubleDiff:
-                                    plt.text(j+0.5, i+0.5, '{:.4f}'.format(z), ha='center', va='baseline', size = 'medium')
-                                    plt.text(j+0.5, i+0.5,'\n\n$\pm${:.4f}'.format(eps_err[i,j]), ha='center', va='center_baseline', size = 'x-small')
+                                    plt.text(j+0.5, i+0.5, '{:.3f}'.format(z), ha='center', va='baseline', size = 'x-small')
+                                    #plt.text(j+0.5, i+0.5,'\n\n$\pm${:.4f}'.format(eps_err[i,j]), ha='center', va='center_baseline', size = 'x-small')
                             else:
-                                plt.text(j+0.5, i+0.5, '{:.3f}'.format(z), ha='center', va='baseline', size = 'medium')
-                                plt.text(j+0.5, i+0.5,'\n\n$\pm${:.3f}'.format(eps_err[i,j]), ha='center', va='center_baseline', size = 'x-small')
+                                plt.text(j+0.5, i+0.5, '{:.3f}'.format(z), ha='center', va='baseline', size = 'x-small')
+                                #plt.text(j+0.5, i+0.5,'\n\n$\pm${:.3f}'.format(eps_err[i,j]), ha='center', va='center_baseline', size = 'x-small')
                         elif doubleDiff:
                             plt.text(j+0.5, i+0.5, '{:.2f}'.format(z), ha='center', va='center', size = 'x-small')
                             # plt.text(j+0.5, i+0.5,'\n\n$\pm${:.4f}'.format(eps_err[i,j]), ha='center', va='center_baseline', size = 'x-small')
                 plt.clim(vmin=0.01, vmax=1) # Range colorbar
                 plt.colorbar(label = 'EFFICIENCY (> 0.01)')
+                #plt.colorbar(label = 'F_NONFID (> 0.01)') 
                 plt.xticks(obs_bins_label_medium, tickLabel)
                 for tick in plt.gca().get_xaxis().get_major_ticks(): # Remove central tick
                     tick.tick1line.set_markersize(0)

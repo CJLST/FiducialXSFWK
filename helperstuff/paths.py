@@ -1,15 +1,15 @@
 ### ------- lxplus -------
-path = {
-'eos_path_sig': '/eos/user/m/mmanoni/HZZ_prod_300425_angles/',
-'eos_path': '/eos/user/m/mmanoni/',
-'eos_path_FR': '/eos/user/m/mmanoni/HZZ_FIDUCIAL/',
-}
-
 #path = {
-#'eos_path_sig': '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/',
+#'eos_path_sig': '/eos/user/m/mmanoni/HZZ_prod_300425_angles/',
 #'eos_path': '/eos/user/m/mmanoni/',
 #'eos_path_FR': '/eos/user/m/mmanoni/HZZ_FIDUCIAL/',
 #}
+
+path = {
+    'eos_path_sig': '/eos/home-s/sellissp/HZZ/SAMPLES/062025/',
+    'eos_path': '/eos/user/s/sellissp/',
+    'eos_path_FR': '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303',
+}
 
 #/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data
 

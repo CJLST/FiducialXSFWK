@@ -4,6 +4,8 @@
 import ROOT
 
 import sys
+import os
+import importlib.util
 import uproot 
 import awkward as ak
 from collections import defaultdict
@@ -88,17 +90,36 @@ def get_chan_cuts(channel, tree):
 
     return cutchan_gen_out
 
-def m4l_cuts(tree, obs_gen, obs_gen_low, obs_gen_high):
+def m4l_cuts(tree, obs_gen, obs_gen_low, obs_gen_high, doubleDiff, obs_gen_2nd=None, obs_gen_2nd_low=None, obs_gen_2nd_high=None):
+
     cutm4l_gen = (tree['GENmass4l'] > m4l_low) & (tree['GENmass4l'] < m4l_high)
     
-    if 'rapidity4l' in obs_gen:
-        obs_val = abs(tree[obs_gen])
-    else:
-        obs_val = tree[obs_gen]
+    if doubleDiff:
 
-    cutobs_gen = (obs_val >= obs_gen_low) & (obs_val < obs_gen_high)
+        obs_val = abs(tree[obs_gen]) if 'rapidity4l' in obs_gen else tree[obs_gen]
+        if obs_gen_2nd is not None:
+            obs_val_2nd = abs(tree[obs_gen_2nd]) if 'rapidity4l' in obs_gen_2nd else tree[obs_gen_2nd]
+            cutobs_gen = ((obs_val >= obs_gen_low) & (obs_val < obs_gen_high) &
+                          (obs_val_2nd >= obs_gen_2nd_low) & (obs_val_2nd < obs_gen_2nd_high))
+        else:
+            raise ValueError("doubleDiff=True requires obs_gen_2nd and its bounds")
+    else:
+        obs_val = abs(tree[obs_gen]) if 'rapidity4l' in obs_gen else tree[obs_gen]
+        cutobs_gen = (obs_val >= obs_gen_low) & (obs_val < obs_gen_high)
 
     return cutm4l_gen, cutobs_gen
+
+def build_histos(tree, sel, w_gen, w_nom, w_scale):
+
+    h_nom = ak.sum(w_gen[sel] * w_nom[sel])
+
+    h_scale = {}
+
+    for i in w_scale:
+        h_scale[i] = ak.sum(w_gen[sel] * w_scale[i][sel])
+
+    return h_nom, h_scale
+
 
 def get_qcd_weights(qcd_weights):
     w_nom = qcd_weights[:, 4]
@@ -121,21 +142,16 @@ def get_pdf_weights(pdf_weights):
            }
 
     return w_nom, w_scale, w_as
-    
-def build_histos(tree, sel, w_gen, w_nom, w_scale):
-
-    h_nom = ak.sum(w_gen[sel] * w_nom[sel])
-
-    h_scale = {}
-
-    for i in w_scale:
-        h_scale[i] = ak.sum(w_gen[sel] * w_scale[i][sel])
-
-    return h_nom, h_scale
 
 def get_scale_unc(process, channel, tree, scale, observable, nnlops = False):
-    obs_gen, obs_gen_low, obs_gen_high = observable
-    cutm4l_gen, cutobs_gen = m4l_cuts(tree, obs_gen, obs_gen_low, obs_gen_high)
+
+    if doubleDiff:
+        obs_gen, obs_gen_low, obs_gen_high, obs_gen_2nd, obs_gen_2nd_low, obs_gen_2nd_high = observable
+        cutm4l_gen, cutobs_gen = m4l_cuts(tree, obs_gen, obs_gen_low, obs_gen_high, True, obs_gen_2nd, obs_gen_2nd_low, obs_gen_2nd_high)
+    else:
+        obs_gen, obs_gen_low, obs_gen_high = observable
+        cutm4l_gen, cutobs_gen = m4l_cuts(tree, obs_gen, obs_gen_low, obs_gen_high, False)
+
     if process == "ZH125":
         cutchan_gen = get_zh_chan_cuts(channel, tree)
     else:
@@ -143,7 +159,8 @@ def get_scale_unc(process, channel, tree, scale, observable, nnlops = False):
 
     full_sel = cutm4l_gen & cutobs_gen & cutchan_gen & tree['passedFiducial'] == 1
     
-    fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/{year}/{process}/ZZ4lAnalysis.root" # spencer
+    fname = f"/eos/home-s/sellissp/HZZ/SAMPLES/062025/{year}_MC/{process}/ZZ4lAnalysis.root" # spencer 
+    #f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/{year}/{process}/ZZ4lAnalysis.root" # spencer
     with uproot.open(f'{fname}') as f: # spencer
         tree = f['AllEvents'].arrays() # spencer
 
@@ -170,89 +187,172 @@ def get_scale_unc(process, channel, tree, scale, observable, nnlops = False):
             w_var = w_as
     else:
         assert '... Unsupported type of uncertainty! Supported types are "qcd", "pdf", or "as" ...'
-        
+
     h_nom, h_scale = build_histos(tree, full_sel, w_gen, w_nom, w_var)
     h_tot, h_tot_scale = build_histos(tree, cutchan_gen, w_gen, w_nom, w_var)
-    
-    acc_nom = h_nom/h_tot
-
-    scale_vars = {}
-    for i in h_scale:
-        acc_scale = h_scale[i]/h_tot_scale[i]
-        scale_vars[i] = acc_scale/acc_nom
         
-    if scale == "pdf":
-        scale_vars = np.array(list(scale_vars.values()))*acc_nom
-        scale_unc = np.sqrt(np.sum(np.square(scale_vars - acc_nom)))
-        unc_up = (acc_nom + scale_unc)/acc_nom
-        unc_dn = (acc_nom - scale_unc)/acc_nom
-    else:
-        unc_up = max(scale_vars.values())
-        unc_dn = min(scale_vars.values())
-        
-    return unc_up, unc_dn
+    return h_nom, h_scale, h_tot, h_tot_scale
 
 def load_tree(fname):
     with uproot.open(f'{fname}') as f:
         #tree = f['ZZTree/candTree'].arrays()
-        tree = f['candTree'].arrays() # spencer
+        tree = f['ZZTree/candTree'].arrays() # spencer
         #tree_failed = f['ZZTree/candTree_failed'].arrays()
-        tree_failed = f['candTree_failed'].arrays() # spencer
+        tree_failed = f['ZZTree/candTree_failed'].arrays() # spencer
         
     tree_tot = ak.concatenate([tree, tree_failed])
     return tree_tot
-
-def get_th_xsec(process, obs_gen, suffix):
+'''
+def get_th_xsec(process, obs_gen, suffix, year):
 
     # Angular variables added by Martina
-    obs_name_dict = {"GENmass4l": "mass4l", "GENpT4l": "PTH", "GENrapidity4l": "YH", "GENcostheta1": "costhetaZ1", "GENcostheta2": "costhetaZ2", "GENPhi": "phi", "GENPhi1": "phi1", "GENcosthetastar": "costhetastarZZ"}
+    obs_name_dict = {"GENmass4l": "mass4l", "GENpT4l": "pT4l", "GENrapidity4l": "rapidity4l", "GENcostheta1": "costhetaZ1", "GENcostheta2": "costhetaZ2", "GENPhi": "phi", "GENPhi1": "phi1", "GENcosthetastar": "costhetastarZZ", "GENmassZ1": "massZ1", "GENmassZ2": "massZ2", "GENpTj1": "pTj1", "GENpTj2": "pTj2", "GENmjj": "mjj", "GENabsdetajj": "absdetajj", "GENdphijj": "dphijj", "GENmHj":  "mHj", "GENpTHj": "pTHj", "GENpTHjj": "pTHjj", "GENNj": "Nj", "GENTBMax": "TBMax", "GENTCMax": "TCMax"}
     obs_name = obs_name_dict[obs_gen]
     
-    if (('ZH' not in process) and ('W' not in process)):
-        th_xs = __import__(f'fidXS_{suffix}{obs_name}_{process.split("125")[0]}', globals(), locals(), vars)
+    # Determine module name
+    if ('ZH' not in process) and ('W' not in process):
+        module_name = f'fidXS_{suffix}{obs_name}_{process.split("125")[0]}_{year}'
     else:
-        th_xs = __import__(f'fidXS_{suffix}{obs_name}_VH', globals(), locals(), vars)
+        module_name = f'fidXS_{suffix}{obs_name}_VH_{year}'
+    
+    # Import module dynamically
+    th_xs = __import__(module_name, fromlist=[''])
     return th_xs
+'''
+def get_th_xsec(process, obs_gen, suffix, year, doubleDiff, obs_gen_2nd=None):
+    import sys, os
 
-def get_unc_dict(obs_gen, tree, th_xs, channel, bins, nnlops):
+    # Add the inputs folder to sys.path so Python can find the modules
+    inputs_dir = os.path.abspath("../inputs")
+    if inputs_dir not in sys.path:
+        sys.path.append(inputs_dir)
+
+    # Map GEN variable names
+    obs_name_dict = {
+        "GENmass4l": "mass4l", "GENpT4l": "pT4l", "GENrapidity4l": "rapidity4l",
+        "GENcostheta1": "costhetaZ1", "GENcostheta2": "costhetaZ2", "GENPhi": "phi",
+        "GENPhi1": "phi1", "GENcosthetastar": "costhetastarZZ",
+        "GENmassZ1": "massZ1", "GENmassZ2": "massZ2", "GENpTj1": "pTj1",
+        "GENpTj2": "pTj2", "GENmjj": "mjj", "GENabsdetajj": "absdetajj",
+        "GENdphijj": "dphijj", "GENmHj":  "mHj", "GENpTHj": "pTHj",
+        "GENpTHjj": "pTHjj", "GENNj": "Nj", "GENTBMax": "TBMax", "GENTCMax": "TCMax"
+    }
+    obs_name = obs_name_dict[obs_gen]
+
+    # Determine module name
+    if doubleDiff:
+
+        obs_name_2nd = obs_name_dict[obs_gen_2nd]
+
+        if ('ZH' not in process) and ('W' not in process):
+            pname = process.replace("NNLOPS_", "").split("125")[0]
+            module_name = f'fidXS_{suffix}{obs_name}_{obs_name_2nd}_{pname}_{year}'
+        else:
+            module_name = f'fidXS_{suffix}{obs_name}_{obs_name_2nd}_VH_{year}'
+    
+    else:
+
+        if ('ZH' not in process) and ('W' not in process):
+            pname = process.replace("NNLOPS_", "").split("125")[0]
+            module_name = f'fidXS_{suffix}{obs_name}_{pname}_{year}'
+        else:
+            module_name = f'fidXS_{suffix}{obs_name}_VH_{year}'
+
+    print(module_name)
+
+    # Import module dynamically
+    th_xs = __import__(module_name, fromlist=[''])
+
+    return th_xs
+def get_unc_dict(obs_gen, year, tree, th_xs, channel, bins, nnlops, doubleDiff, obs_gen_2nd = None):
+
     unc_var_dn = {}
     unc_var_up = {}
-    for var in ["qcd", "pdf", "as"]:
+    h_nom_var = {}
+    h_scale_var = {}
+    h_tot_var = {}
+    h_tot_scale_var = {}
+
+    for var in ["qcd", "pdf", "as"]: # SPENCER
+
         unc_bin_dn = {}
         unc_bin_up = {}
-        for idx in range(len(bins)-1):
-            obs_gen_low = bins[idx]
-            obs_gen_high = bins[idx+1]
-            if "mass4l" in obs_gen:
-                obs_gen_low = 105
-                obs_gen_high = 160
-            observable = [obs_gen, obs_gen_low, obs_gen_high]
+        h_nom_var[var] = {}
+        h_scale_var[var] = {}
+        h_tot_var[var] = {}
+        h_tot_scale_var[var] = {}
 
-            var_up, var_dn = get_scale_unc(process, channel, tree, var, observable, nnlops)
+        if doubleDiff:
+            length = len(bins)
+        else:
+            length = len(bins)-1
+
+        for idx in range(length):
+
+            if doubleDiff:
+                obs_gen_low = bins[idx][0]
+                obs_gen_high = bins[idx][1]
+                obs_gen_2nd_low = bins[idx][2]
+                obs_gen_2nd_high = bins[idx][3]
+                observable = [obs_gen, obs_gen_low, obs_gen_high, obs_gen_2nd, obs_gen_2nd_low, obs_gen_2nd_high]
+            else:
+                obs_gen_low = bins[idx]
+                obs_gen_high = bins[idx+1]
+                #if "mass4l" in obs_gen:
+                #    obs_gen_low = 105
+                #    obs_gen_high = 160
+                observable = [obs_gen, obs_gen_low, obs_gen_high]
+
+            h_nom, h_scale, h_tot, h_tot_scale = get_scale_unc(process, channel, tree, var, observable, nnlops)
+
+            acc_nom = h_nom/h_tot
+
+            scale_vars = {}
+            for i in h_scale:
+                acc_scale = h_scale[i]/h_tot_scale[i]
+                scale_vars[i] = acc_scale/acc_nom
+                
+            if var == "pdf":
+                scale_vars = np.array(list(scale_vars.values()))*acc_nom
+                scale_unc = np.sqrt(np.sum(np.square(scale_vars - acc_nom)))
+                unc_up = (acc_nom + scale_unc)/acc_nom
+                unc_dn = (acc_nom - scale_unc)/acc_nom
+            else:
+                unc_up = max(scale_vars.values())
+                unc_dn = min(scale_vars.values())
             
-            up = 1 + (var_up-1) + YR4_UNC[process][var]['up']
+            up = 1 + (unc_up-1) + YR4_UNC[process][var]['up']
             # Correlate
             # np.sqrt((var_up-1)**2 + YR4_UNC[process][var]['up']**2)
-            dn = 1 - ((1-var_dn) + YR4_UNC[process][var]['dn'])
+            dn = 1 - ((1-unc_dn) + YR4_UNC[process][var]['dn'])
             # Correlate
             # np.sqrt((1-var_dn)**2 + YR4_UNC[process][var]['dn']**2)
 
-            print(f'({var}) {obs_gen}, bin_{idx} ({channel}): {up*th_xs.fidXS[idx]}/{dn*th_xs.fidXS[idx]}')
+            print(f'( {year} - {var}) {obs_gen}, bin_{idx} ({channel}): {up*th_xs.fidXS[idx]}/{dn*th_xs.fidXS[idx]}')
 
             unc_bin_up[idx] = up*th_xs.fidXS[idx]
             unc_bin_dn[idx] = dn*th_xs.fidXS[idx]
+
+            h_nom_var[var][idx] = h_nom
+            h_scale_var[var][idx] = h_scale
+            h_tot_var[var][idx] = h_tot
+            h_tot_scale_var[var][idx] = h_tot_scale
         
         unc_var_up[var] = unc_bin_up
         unc_var_dn[var] = unc_bin_dn
-    
-    return unc_var_up, unc_var_dn
 
-def get_uncerainties(obs_gen, year, process, channel, bins, nnlops):
+
+    return unc_var_up, unc_var_dn, h_nom_var, h_scale_var, h_tot_var, h_tot_scale_var
+
+def get_uncerainties(obs_gen, year, process, channel, bins, nnlops, doubleDiff, obs_gen_2nd = None):
+
     unc = {}
+    h = {}
 
     #fname = f"/eos/user/m/mbonanom/Run3RedTrees/lheWeights/2022EE/{process}_MC_2022EE_skimmed.root"
-    fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/{year}/{process}/{process}_reducedTree_MC_{year}_skimmed_nnlops.root" # spencer
-
+    #fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/{year}/{process}/{process}_reducedTree_MC_{year}_skimmed_nnlops.root" # spencer
+    fname = f"/eos/home-s/sellissp/HZZ/SAMPLES/062025/{year}_MC/{process}/ZZ4lAnalysis_SKIMMED.root" # spencer
+    
     if (process == "ggH125") and nnlops:
         suffix = "NNLOPS_"
     else:
@@ -260,24 +360,38 @@ def get_uncerainties(obs_gen, year, process, channel, bins, nnlops):
 
     tree = load_tree(fname)
     
-    th_xs = get_th_xsec(process, obs_gen, suffix)
+    th_xs = get_th_xsec(process, obs_gen, suffix, year, doubleDiff, obs_gen_2nd)
     
-    unc_var_up, unc_var_dn = get_unc_dict(obs_gen, tree, th_xs, channel, bins, nnlops)
+    if doubleDiff:
+        unc_var_up, unc_var_dn, h_nom_var, h_scale_var, h_tot_var, h_tot_scale_var = get_unc_dict(obs_gen, year, tree, th_xs, channel, bins, nnlops, doubleDiff, obs_gen_2nd)
+    else:
+        unc_var_up, unc_var_dn, h_nom_var, h_scale_var, h_tot_var, h_tot_scale_var = get_unc_dict(obs_gen, year, tree, th_xs, channel, bins, nnlops, doubleDiff)
 
     unc[process] = (unc_var_dn, unc_var_up)
+    h[process] = (h_nom_var, h_scale_var, h_tot_var, h_tot_scale_var)
     
-    return unc
+    return unc, h
 
-def save_uncertainties(process, obs_gen, nnlops):
-    obs_name = obs_gen.split('GEN')[1]
+def save_uncertainties(process, obs_gen, nnlops, year, years, unc, h, doubleDiff, obs_gen_2nd=None):
+
     pname = process.split("125")[0]
+
+    if doubleDiff:
+        obs_1 = opt.OBSNAME.split(' vs ')[0]
+        obs_2 = opt.OBSNAME.split(' vs ')[1]
+        obs_name = obs_1 + '_' + obs_2
+    else:
+        obs_name = obs_gen.split('GEN')[1]
+
     if (process == "ggH125") and nnlops:
         suffix = "NNLOPS_"
     else:
         suffix = ""
 
-    th_xs = get_th_xsec(process, obs_gen, suffix)
-    with open(f'fidXS_{suffix}{obs_name}_{pname}.py', mode = 'w') as f:
+
+    th_xs = get_th_xsec(process, obs_gen, suffix, year, doubleDiff, obs_gen_2nd)
+         
+    with open(f'../inputs/fidXS_{suffix}{obs_name}_{pname}_{opt.YEAR}.py', mode = 'w') as f:
         f.write(f'Boundaries = {bins}\n')
         f.write(f'fidXS = {th_xs.fidXS}\n')
         f.write(f'fidXS_scale_up = {list(unc[process][1]["qcd"].values())}\n')
@@ -286,6 +400,20 @@ def save_uncertainties(process, obs_gen, nnlops):
         f.write(f'fidXS_pdf_dn = {list(unc[process][0]["pdf"].values())}\n')
         f.write(f'fidXS_alpha_up = {list(unc[process][1]["as"].values())}\n')
         f.write(f'fidXS_alpha_dn = {list(unc[process][0]["as"].values())}\n')
+
+        # save these to compute ratios for merging eras
+        f.write(f'h_nom_qcd = {h[process][0]["qcd"]}\n')
+        f.write(f'h_scale_qcd = {list(h[process][1]["qcd"].values())}\n')
+        f.write(f'h_tot_qcd = {h[process][2]["qcd"]}\n')
+        f.write(f'h_tot_scale_qcd = {list(h[process][3]["qcd"].values())}\n')
+        f.write(f'h_nom_pdf = {h[process][0]["pdf"]}\n')
+        f.write(f'h_scale_pdf = {list(h[process][1]["pdf"].values())}\n')
+        f.write(f'h_tot_pdf = {h[process][2]["pdf"]}\n')
+        f.write(f'h_tot_scale_pdf = {list(h[process][3]["pdf"].values())}\n')
+        f.write(f'h_nom_as = {h[process][0]["as"]}\n')
+        f.write(f'h_scale_as = {list(h[process][1]["as"].values())}\n')
+        f.write(f'h_tot_as = {h[process][2]["as"]}\n')
+        f.write(f'h_tot_scale_as = {list(h[process][3]["as"].values())}\n')
 
 YR4_UNC = {'ggH125': {'qcd': {'up': 0.077, 'dn': 0.088},
                      'pdf': {'up': 0.018, 'dn': 0.018},
@@ -313,7 +441,7 @@ if __name__ == '__main__':
     m4l_low = 105
     m4l_high = 160
     channel = '4l'  
-    year = opt.YEAR
+    #year = opt.YEAR
 
     bins, doubleDiff = binning(opt.OBSNAME)
     if doubleDiff:
@@ -329,29 +457,277 @@ if __name__ == '__main__':
     if doubleDiff:
         obs_gen = observables[obs_name_2d]['obs_gen']
         obs_gen_2nd = observables[obs_name_2d]['obs_gen_2nd']
+        length = len(bins)
     else:
         obs_gen = observables[obs_name]['obs_gen']
+        obs_gen_2nd = None
+        length = len(bins)-1
 
-    for process in ["ggH125"]:
+    if (opt.YEAR == 'Run3'): years = ['2022', '2022EE', '2023preBPix', '2023postBPix']
+            
+    if (opt.YEAR == '2022'): years = ['2022']
+    if (opt.YEAR == '2022EE'): years = ['2022EE']
+    if (opt.YEAR == '2023preBPix'): years = ['2023preBPix']
+    if (opt.YEAR == '2023postBPix'): years = ['2023postBPix']
+
+    if (opt.YEAR == '2022full'): years = ['2022', '2022EE']
+    if (opt.YEAR == '2023full'): years = ['2023preBPix', '2023postBPix']
+
+
+    if (opt.YEAR == '2022full' or opt.YEAR == '2023full' or opt.YEAR == 'Run3'):
+
+        unc = {}
+        h = {}
+
+        processes = ["NNLOPS_ggH125", "ggH125", "VBFH125", "ttH125"]#, "ZH125"]
+
+        for process in processes:
+
+            # --- initialize per-bin totals ---
+            h_nom_qcd_TOT = {idx: 0.0 for idx in range(length)}
+            h_tot_qcd_TOT = {idx: 0.0 for idx in range(length)}
+            h_scale_qcd_TOT = {idx: [] for idx in range(length)}
+            h_tot_scale_qcd_TOT = {idx: [] for idx in range(length)}
+
+            h_nom_as_TOT = {idx: 0.0 for idx in range(length)}
+            h_tot_as_TOT = {idx: 0.0 for idx in range(length)}
+            h_scale_as_TOT = {idx: [] for idx in range(length)}
+            h_tot_scale_as_TOT = {idx: [] for idx in range(length)}
+
+            h_nom_pdf_TOT = {idx: 0.0 for idx in range(length)}
+            h_tot_pdf_TOT = {idx: 0.0 for idx in range(length)}
+            h_scale_pdf_TOT = {idx: [] for idx in range(length)}
+            h_tot_scale_pdf_TOT = {idx: [] for idx in range(length)}
+
+            suffix = "NNLOPS_" if process.startswith("NNLOPS_") else ""
+            if process.startswith("NNLOPS_"):
+                pname = process.replace("NNLOPS_", "").split("125")[0]
+            else:
+                pname = process.split("125")[0]
+
+            print(f'Processing {process}...')
+
+            if doubleDiff:
+                fname_ALL = f'../inputs/fidXS_{suffix}{obs_name}_{obs_name_2nd}_{pname}_{opt.YEAR}.py'
+            else:
+                fname_ALL = f'../inputs/fidXS_{suffix}{obs_name}_{pname}_{opt.YEAR}.py'
+
+            if os.path.exists(fname_ALL):
+                th_xs = get_th_xsec(pname, obs_gen, suffix, opt.YEAR, doubleDiff, obs_gen_2nd)
+            else:
+                print(f'{fname_ALL} does not exist!')
+                continue
+
+            for year in years:
+
+                if doubleDiff:
+                    fname = f'../inputs/fidXS_{suffix}{obs_name}_{obs_name_2nd}_{pname}_{year}.py'
+                else:
+                    fname = f'../inputs/fidXS_{suffix}{obs_name}_{pname}_{year}.py'
+
+                if os.path.exists(fname):
+
+                    module_name = f'fidXS_{suffix}{obs_name}_{pname}_{year}'
+                    print(module_name)
+                    spec = importlib.util.spec_from_file_location(module_name, fname)
+                    module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(module)
+
+                    for idx in range(length):
+
+                        # QCD
+                        print(h_nom_qcd_TOT)
+                        print(module.h_nom_qcd)
+                        h_nom_qcd_TOT[idx] += module.h_nom_qcd[idx]
+                        h_tot_qcd_TOT[idx] += module.h_tot_qcd[idx]
+
+                        if not h_scale_qcd_TOT[idx]:
+                            h_scale_qcd_TOT[idx] = module.h_scale_qcd[idx].copy()
+                            h_tot_scale_qcd_TOT[idx] = module.h_tot_scale_qcd[idx].copy()
+                        else:
+                            # sum per variation (dict value by key)
+                            for key, val in module.h_scale_qcd[idx].items():
+                                h_scale_qcd_TOT[idx][key] += val
+                            for key, val in module.h_tot_scale_qcd[idx].items():
+                                h_tot_scale_qcd_TOT[idx][key] += val
+
+                        # alpha_s
+                        h_nom_as_TOT[idx] += module.h_nom_as[idx]
+                        h_tot_as_TOT[idx] += module.h_tot_as[idx]
+
+                        if not h_scale_as_TOT[idx]:
+                            h_scale_as_TOT[idx] = module.h_scale_as[idx].copy()
+                            h_tot_scale_as_TOT[idx] = module.h_tot_scale_as[idx].copy()
+                        else:
+                            # sum per variation (dict value by key)
+                            for key, val in module.h_scale_as[idx].items():
+                                h_scale_as_TOT[idx][key] += val
+                            for key, val in module.h_tot_scale_as[idx].items():
+                                h_tot_scale_as_TOT[idx][key] += val
+
+                        # PDF
+                        h_nom_pdf_TOT[idx] += module.h_nom_pdf[idx]
+                        h_tot_pdf_TOT[idx] += module.h_tot_pdf[idx]
+                        
+                        if not h_scale_pdf_TOT[idx]:
+                            h_scale_pdf_TOT[idx] = module.h_scale_pdf[idx].copy()
+                            h_tot_scale_pdf_TOT[idx] = module.h_tot_scale_pdf[idx].copy()
+                        else:
+                            # sum per variation (dict value by key)
+                            for key, val in module.h_scale_pdf[idx].items():
+                                h_scale_pdf_TOT[idx][key] += val
+                            for key, val in module.h_tot_scale_pdf[idx].items():
+                                h_tot_scale_pdf_TOT[idx][key] += val
+
+                else:
+                    print(f'../inputs/fidXS_{suffix}{obs_name}_{pname}_{opt.YEAR}.py' + ' does not exist!')
+                    continue
+            
+
+            up_qcd_TOT, dn_qcd_TOT, dn_pdf_TOT = {}, {}, {}
+            up_as_TOT, dn_as_TOT, up_pdf_TOT = {}, {}, {}
+
+            for idx in range(length):
+
+                acc_nom_qcd_TOT = h_nom_qcd_TOT[idx] / h_tot_qcd_TOT[idx]
+                acc_nom_as_TOT  = h_nom_as_TOT[idx] / h_tot_as_TOT[idx]
+
+                acc_scale_qcd_TOT = np.array(list(h_scale_qcd_TOT[idx].values()))/np.array(list(h_tot_scale_qcd_TOT[idx].values()))
+                acc_scale_as_TOT =np.array(list(h_scale_as_TOT[idx].values()))/np.array(list(h_tot_scale_as_TOT[idx].values()))
+
+                scale_vars_qcd_TOT = acc_scale_qcd_TOT/acc_nom_qcd_TOT
+                scale_vars_as_TOT = acc_scale_as_TOT/acc_nom_as_TOT
+
+                up_qcd_TOT[idx] = max(scale_vars_qcd_TOT)
+                dn_qcd_TOT[idx] = min(scale_vars_qcd_TOT)
+
+                up_as_TOT[idx] = max(scale_vars_as_TOT)
+                dn_as_TOT[idx] = min(scale_vars_as_TOT)
         
-        unc = get_uncerainties(obs_gen, year, process, channel, bins, True)
-        save_uncertainties(process, obs_gen, True)
-
-        if doubleDiff:
-
-            unc = get_uncerainties(obs_gen_2nd, year, process, channel, bins, True)
-            save_uncertainties(process, obs_gen_2nd, True)
-
-    for process in ["ggH125", "VBFH125", "ttH125", "ZH125"]:
-
-        unc = get_uncerainties(obs_gen, year, process, channel, bins, False)
-        save_uncertainties(process, obs_gen, False) 
-
-        if doubleDiff:
-
-            unc = get_uncerainties(obs_gen_2nd, year, process, channel, bins, False)
-            save_uncertainties(process, obs_gen_2nd, False)
+            
     
+            for idx in range(length):
+
+                acc_nom_pdf_TOT = h_nom_pdf_TOT[idx] / h_tot_pdf_TOT[idx]
+                acc_scale_pdf_TOT = np.array(list(h_scale_pdf_TOT[idx].values()))/np.array(list(h_tot_scale_pdf_TOT[idx].values()))
+                scale_unc_pdf_TOT = np.sqrt(np.sum(np.square(acc_scale_pdf_TOT -  acc_nom_pdf_TOT)))
+                up_pdf_TOT[idx] = (acc_nom_pdf_TOT + scale_unc_pdf_TOT)/acc_nom_pdf_TOT
+                dn_pdf_TOT[idx] = (acc_nom_pdf_TOT - scale_unc_pdf_TOT)/acc_nom_pdf_TOT
+
+            '''
+            print(f'--- Final results for {process} (last bin) ---')
+            print('qcd all', scale_vars_qcd_TOT)
+            print('qcd max', max(scale_vars_qcd_TOT))
+            print('qcd min', min(scale_vars_qcd_TOT))
+            print('as all', scale_vars_as_TOT)
+            print('as max', max(scale_vars_as_TOT))
+            print('as min', min(scale_vars_as_TOT))
+            print('pdf all', acc_scale_pdf_TOT)
+            print('pdf up', up_pdf_TOT)
+            print('pdf dn', dn_pdf_TOT)
+            print('-------------------------------')
+            '''
+
+            print('qcd up:', up_qcd_TOT)
+            print('qcd dn:', dn_qcd_TOT)
+            print('as up:', up_as_TOT)
+            print('as dn:', dn_as_TOT) 
+            print('pdf up:', up_pdf_TOT)
+            print('pdf dn:', dn_pdf_TOT)
+
+            unc_bin_up_pdf, unc_bin_dn_pdf = {}, {}
+            unc_bin_up_qcd, unc_bin_dn_qcd = {}, {}
+            unc_bin_up_as, unc_bin_dn_as = {}, {}
+
+            for idx in range(length):
+
+                if process.startswith("NNLOPS_"):
+                    p = process.replace("NNLOPS_", "")
+                else:
+                    p = process
+
+                # PDF: symmetric RMS + correlated uncertainty
+                up_pdf = 1 + (up_pdf_TOT[idx]-1) + YR4_UNC[p]['pdf']['up']
+                dn_pdf = 1 - ((1 - dn_pdf_TOT[idx]) + YR4_UNC[p]['pdf']['dn'])
+                unc_bin_up_pdf[idx] = up_pdf * th_xs.fidXS[idx]
+                unc_bin_dn_pdf[idx] = dn_pdf * th_xs.fidXS[idx]
+
+                # QCD: envelope + correlated uncertainty
+                up_qcd = 1 + (up_qcd_TOT[idx]-1) + YR4_UNC[p]['qcd']['up']
+                dn_qcd = 1 - ((1 - dn_qcd_TOT[idx]) + YR4_UNC[p]['qcd']['dn'])
+                unc_bin_up_qcd[idx] = up_qcd * th_xs.fidXS[idx]
+                unc_bin_dn_qcd[idx] = dn_qcd * th_xs.fidXS[idx]
+
+                # alpha_s: envelope + correlated uncertainty
+                up_as = 1 + (up_as_TOT[idx]-1) + YR4_UNC[p]['as']['up']
+                dn_as = 1 - ((1 - dn_as_TOT[idx]) + YR4_UNC[p]['as']['dn'])
+                unc_bin_up_as[idx] = up_as * th_xs.fidXS[idx]
+                unc_bin_dn_as[idx] = dn_as * th_xs.fidXS[idx]
+
+            print(up_qcd)
+            print(dn_qcd)
+
+            unc_var_up, unc_var_dn = {}, {}
+            h_nom_var, h_scale_var, h_tot_var, h_tot_scale_var = {}, {}, {}, {}
+
+            unc_var_up['pdf'] = unc_bin_up_pdf
+            unc_var_dn['pdf'] = unc_bin_dn_pdf
+            unc_var_up['qcd'] = unc_bin_up_qcd
+            unc_var_dn['qcd'] = unc_bin_dn_qcd
+            unc_var_up['as'] = unc_bin_up_as
+            unc_var_dn['as'] = unc_bin_dn_as
+
+            h_nom_var['pdf'] = h_nom_pdf_TOT
+            h_scale_var['pdf'] = h_scale_pdf_TOT
+            h_tot_var['pdf'] = h_tot_pdf_TOT
+            h_tot_scale_var['pdf'] = h_tot_scale_pdf_TOT
+            h_nom_var['qcd'] = h_nom_qcd_TOT
+            h_scale_var['qcd'] = h_scale_qcd_TOT
+            h_tot_var['qcd'] = h_tot_qcd_TOT
+            h_tot_scale_var['qcd'] = h_tot_scale_qcd_TOT
+            h_nom_var['as'] = h_nom_as_TOT
+            h_scale_var['as'] = h_scale_as_TOT
+            h_tot_var['as'] = h_tot_as_TOT
+            h_tot_scale_var['as'] = h_tot_scale_as_TOT
+
+            unc[p] = (unc_var_dn, unc_var_up)
+            h[p] = (h_nom_var, h_scale_var, h_tot_var, h_tot_scale_var)
+
+            if doubleDiff:
+                if process.startswith("NNLOPS_"):
+                    save_uncertainties("ggH125", obs_gen, True, opt.YEAR, years, unc, h, True, obs_gen_2nd)
+                else:
+                    save_uncertainties(process, obs_gen, False, opt.YEAR, years, unc, h, True, obs_gen_2nd)
+            else:
+                if process.startswith("NNLOPS_"):
+                    save_uncertainties("ggH125", obs_gen, True, opt.YEAR, years, unc, h, False)
+                else:
+                    save_uncertainties(process, obs_gen, False, opt.YEAR, years, unc, h, False)
+
+    else:
+
+        processes = ["NNLOPS_ggH125", "ggH125", "VBFH125", "ttH125", "ZH125"]
+
+        for process in processes:
+
+            use_NNLOPS_flag = process.startswith("NNLOPS_")
+
+            if use_NNLOPS_flag:
+                process = process.replace("NNLOPS_", "")
+
+            for year in years:
+
+                if doubleDiff:
+                    unc, h = get_uncerainties(obs_gen, year, process, channel, bins, use_NNLOPS_flag, True, obs_gen_2nd)
+                else:
+                    unc, h = get_uncerainties(obs_gen, year, process, channel, bins, use_NNLOPS_flag, False)
+
+            if doubleDiff:
+                save_uncertainties(process, obs_gen, use_NNLOPS_flag, opt.YEAR, year, unc, h, True, obs_gen_2nd)
+            else:
+                save_uncertainties(process, obs_gen, use_NNLOPS_flag, opt.YEAR, year, unc, h, False)
+
+            
     # spencer
             
     '''

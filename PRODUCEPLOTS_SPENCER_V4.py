@@ -2724,7 +2724,7 @@ def plotXS(obsName, obs_bins, chan, obs_bins_boundaries = False):
 
     if obsName != 'mass4l' and obsName != 'mass4l_zzfloating':
         latex2.SetTextSize(0.022)
-        latex2.DrawLatex(0.93, 0.87,"p-value(POWHEG): "+pvalues[obsName])
+        #latex2.DrawLatex(0.93, 0.87,"p-value(POWHEG): "+pvalues[obsName])
 
     if ("2p5" in obsName):
         latex2.SetTextSize(0.4*c.GetTopMargin())
@@ -2835,7 +2835,7 @@ def plotXS(obsName, obs_bins, chan, obs_bins_boundaries = False):
         dummy.SetMaximum(10)
 
         dummy.GetXaxis().SetRangeUser(0,upLim)
-        if obsName == 'pTHj' or obsName == 'pTHjj' or obsName=='mjj' or obsName == 'dphijj' or obsName == 'absdetajj':
+        if obsName == 'pTHj' or obsName == 'pTHjj' or obsName=='mjj' or obsName == 'dphijj' or obsName == 'absdetajj' or obsName == 'pTj1':
             dummy.GetXaxis().SetRangeUser(obs_bins[0],upLim)
 
         a = dummy.GetXaxis()
@@ -2993,7 +2993,7 @@ def plotXS(obsName, obs_bins, chan, obs_bins_boundaries = False):
       if ((data[i]+data_hi[i])/ggH_minloHJ[i]>ratiomax): ratiomax=(data[i]+data_hi[i])/ggH_minloHJ[i]
     maxYscale = ratiomax*1.1
     if (obsName.startswith("pTj1")):
-        dummy2.GetYaxis().SetNdivisions(8);
+        dummy2.GetYaxis().SetNdivisions(506);
     elif obsName=="pT4l":
         maxYscale = ratiomax*1.3
         dummy2.GetYaxis().SetNdivisions(508)
@@ -3403,7 +3403,7 @@ if not doubleDiff:
         obs_bins[len(obs_bins)-1]='300.0'
     elif obs_name == 'mjj':
         obs_bins[0]=-75
-        obs_bins[len(obs_bins)-1]='525.0'
+        obs_bins[len(obs_bins)-1]='600.0'
     elif obs_name == 'mHj':
         obs_bins[len(obs_bins)-1]='880.0'
     elif obs_name == 'dphijj':
@@ -3416,9 +3416,9 @@ if not doubleDiff:
         obs_bins[0]=-25
         obs_bins[len(obs_bins)-1]='100.0'
     elif obs_name == 'pTj1':
-        obs_bins[len(obs_bins)-1]='240.0'
+        obs_bins[len(obs_bins)-1]='200.0'
     elif obs_name == 'pTj2':
-        obs_bins[len(obs_bins)-1]='140.0'
+        obs_bins[len(obs_bins)-1]='200.0'
     elif obs_name == 'absdetajj':
         obs_bins[0]=-2
     elif jetFlag and not doubleDiff:

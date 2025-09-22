@@ -25,7 +25,7 @@ decimal = {
 'phi': True,
 'phi1': True,
 #'phistar': True,
-'costhetastarZZ': True,
+'costhetastar': True,
 'massZ1': False,
 'massZ2': False,
 'pTj1': False,
@@ -50,7 +50,10 @@ decimal = {
 'pTj1_pTj2': False,
 'pT4l_pTHj': False,
 'massZ1_massZ2': False,
-'TCjmax_pT4l': False
+'TCjmax_pT4l': False,
+'absdetajj_mjj': False,
+'Nj_pT4l': False,
+'pT4l_pTj1': False,
 }
 
 def readParam(file_param):
@@ -169,7 +172,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
 
     print(os.getcwd())
 
-    massParaMap = readParam('/afs/cern.ch/user/m/mmanoni/FiducialXS/CMSSW_14_1_0_pre4/src/FiducialXSFWK/fit/param/sim_massParam_ggH_105160_'+channel+'_'+year+'.txt')
+    massParaMap = readParam('/afs/cern.ch/user/s/sellissp/public/HZZ/CMSSW_14_1_0_pre4/src/FiducialXSFWK/fit/param/sim_massParam_ggH_105160_'+channel+'_'+year+'.txt')
                 
     CMS_zz4l_mean_m_sig = ROOT.RooRealVar("CMS_zz4l_mean_m_sig","CMS_zz4l_mean_m_sig",-10,10)
     CMS_zz4l_mean_e_sig = ROOT.RooRealVar("CMS_zz4l_mean_e_sig","CMS_zz4l_mean_e_sig",-10,10)
@@ -335,7 +338,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
             p2_32023preBPix = ROOT.RooFormulaVar("CMS_"+comb_name+"_p2_32023preBPix","p2_32023preBPix","11.485371-0.07875*(MH-125)",ROOT.RooArgList(MH))
             nonResH = ROOT.RooLandau(comb_name, "landau", m, p1_32023preBPix, p2_32023preBPix)
     elif(year =='2023postBPix'):
-        lumi = ROOT.RooRealVar("lumi_132023postBPix","lumi_132023postBPix", 9.451)
+        lumi = ROOT.RooRealVar("lumi_132023postBPix","lumi_132023postBPix", 9.451+109.08)
         if (channel=='2e2mu'):
             CMS_zz4l_n_sig_3_2023postBPix = ROOT.RooRealVar("CMS_zz4l_n_sig_3_2023postBPix","CMS_zz4l_n_sig_3_2023postBPix",-10,10)
             CMS_zz4l_mean_sig_3_centralValue_2e2murecobin2023postBPix = ROOT.RooFormulaVar("CMS_zz4l_mean_sig_3_centralValue_2e2mu" + recobin + "2023postBPix","CMS_zz4l_mean_sig_3_centralValue_2e2mu" + recobin + "2023postBPix", "(%s) + (@0*@1*@3 + @0*@2*@4)/2" %(massParaMap["mean_"+channel+"_"+year]), ROOT.RooArgList(MH,CMS_zz4l_mean_m_sig,CMS_zz4l_mean_e_sig,CMS_zz4l_mean_m_err,CMS_zz4l_mean_e_err))
@@ -687,7 +690,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
 
         xheff = 0.0
         sumxsec = 0.0
-        for prodMode in ['VBFH', 'ZH', 'WH', 'ttH']:
+        for prodMode in ['VBFH', 'WH', 'ZH', 'ttH']: #ZH
             _prodMode = prodMode
             if prodMode == 'VBFH':
                 _prodMode = 'VBF'
@@ -879,7 +882,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
             SigmaHBin_ggH['4e'+str(genbin)] = ROOT.RooFormulaVar("SigmaGGH4eBin"+str(genbin),"(@0*@1*@2)", ROOT.RooArgList(SigmaBin_ggH[str(genbin)], fracGGH4eBin[str(genbin)], K1GGHBin[str(genbin)]))
             SigmaHBin_ggH['4mu'+str(genbin)] = ROOT.RooFormulaVar("SigmaGGH4muBin"+str(genbin),"(@0*(1.0-@1*@2)*@3*@4/(1.0-@1))", ROOT.RooArgList(SigmaBin_ggH[str(genbin)], fracGGH4eBin[str(genbin)], K1GGHBin[str(genbin)], K2GGHBin[str(genbin)], fracGGH4muBin[str(genbin)]))
             SigmaHBin_ggH['2e2mu'+str(genbin)] = ROOT.RooFormulaVar("SigmaGGH2e2muBin"+str(genbin),"(@0*(1.0-@1*@2)*(1.0-@3*@4/(1.0-@1)))", ROOT.RooArgList(SigmaBin_ggH[str(genbin)], fracGGH4eBin[str(genbin)], K1GGHBin[str(genbin)], K2GGHBin[str(genbin)], fracGGH4muBin[str(genbin)]))
-
+            
             if not doubleDiff:
                 SigmaBin_xH[str(genbin)] = ROOT.RooRealVar('xs_hzz_xH_'+_obsName[obsName]+'_'+str(observableBins[genbin]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin+1]).replace('.', 'p').replace('-','m'), 'xs_hzz_xH_'+_obsName[obsName]+'_'+str(observableBins[genbin]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin+1]).replace('.', 'p').replace('-','m'), fidxs_xH['4l'], 0.0, 10.0)
             else:
@@ -888,7 +891,8 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
             SigmaHBin_xH['4e'+str(genbin)] = ROOT.RooFormulaVar("SigmaXH4eBin"+str(genbin),"(@0*@1*@2)", ROOT.RooArgList(SigmaBin_xH[str(genbin)], fracXH4eBin[str(genbin)], K1XHBin[str(genbin)]))
             SigmaHBin_xH['4mu'+str(genbin)] = ROOT.RooFormulaVar("SigmaXH4muBin"+str(genbin),"(@0*(1.0-@1*@2)*@3*@4/(1.0-@1))", ROOT.RooArgList(SigmaBin_xH[str(genbin)], fracXH4eBin[str(genbin)], K1XHBin[str(genbin)], K2XHBin[str(genbin)], fracXH4muBin[str(genbin)]))
             SigmaHBin_xH['2e2mu'+str(genbin)] = ROOT.RooFormulaVar("SigmaXH2e2muBin"+str(genbin),"(@0*(1.0-@1*@2)*(1.0-@3*@4/(1.0-@1)))", ROOT.RooArgList(SigmaBin_xH[str(genbin)], fracXH4eBin[str(genbin)], K1XHBin[str(genbin)], K2XHBin[str(genbin)], fracXH4muBin[str(genbin)]))
-
+            
+            
             # Here we define the scalings used for the Combination (and v3 measurements)
             # The POIs are now signal strenght modifiers, hence xsecSM is constant
             trueH_norm_final[genbin] = ROOT.RooFormulaVar(processName+"_"+recobin+"_final","@0*@1*@2" ,ROOT.RooArgList(SigmaHBin[channel+str(genbin)],fideff_var[genbin],lumi))
@@ -1019,10 +1023,10 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
 
     # Data Obs
     #data_obs_file = ROOT.TFile("/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/Data/reducedTree_AllData_"+year+".root")
-    if (year=="2022"): data_obs_file =  ROOT.TFile("/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data/2022/Data_eraCD_preEE_SKIMMED.root")
-    if (year=="2022EE"): data_obs_file =  ROOT.TFile("/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data/2022/Data_eraEFG_postEE_SKIMMED.root")
-    if (year=="2023preBPix"): data_obs_file =  ROOT.TFile("/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data/2023/Data_eraC_preBPix_SKIMMED.root")
-    if (year=="2023postBPix"): data_obs_file =  ROOT.TFile("/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data/2023/Data_eraD_postBPix_SKIMMED.root")
+    if (year=="2022"): data_obs_file =  ROOT.TFile("/eos/home-s/sellissp/HZZ/SAMPLES/062025/2022_Data/Data_eraCD_preEE_SKIMMED.root")
+    if (year=="2022EE"): data_obs_file =  ROOT.TFile("/eos/home-s/sellissp/HZZ/SAMPLES/062025/2022_Data/Data_eraEFG_postEE_SKIMMED.root")
+    if (year=="2023preBPix"): data_obs_file =  ROOT.TFile("/eos/home-s/sellissp/HZZ/SAMPLES/062025/2023_Data/Data_eraC_preBPix_SKIMMED.root")
+    if (year=="2023postBPix"): data_obs_file =  ROOT.TFile("/eos/home-s/sellissp/HZZ/SAMPLES/062025/2023_Data/Data_eraD_postBPix_SKIMMED.root")
     #data_obs_tree = data_obs_file.Get("SR")
     data_obs_tree = data_obs_file.Get("ZZTree/candTree")
 

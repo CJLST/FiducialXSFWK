@@ -115,7 +115,7 @@ extrap_inc_wrongfrac = {}
 extrap_binfrac_wrongfrac = {}
 nBins = len(obs_bins)
 if not doubleDiff: nBins = len(obs_bins)-1 #In case of 1D measurement the number of bins is -1 the length of obs_bins(=bin boundaries)
-for channel in ['2e2mu', '4e', '4mu']:#, '4l']:
+for channel in ['2e2mu', '4e', '4mu', '4l']:
     for genBin in range(nBins):
         for recoBin in range(nBins):
             fig,axs = plt.subplots(2, 3, figsize=(30,10), dpi=80)

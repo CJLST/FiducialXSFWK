@@ -89,7 +89,7 @@ def exp_xsec():
     XH = []
     XH_ggh = []
     XH_vbf = []
-    XH_zh = []
+    #XH_zh = []
     XH_wh = []
     XH_ttH = []
     nBins = len(observableBins)
@@ -97,7 +97,7 @@ def exp_xsec():
     xs = {}
     xs_ggh = {}
     xs_vbf = {}
-    xs_zh = {}
+    #xs_zh = {}
     xs_wh = {}
     xs_vh = {}
     xs_tth = {}
@@ -107,7 +107,7 @@ def exp_xsec():
         XH.append(0.0)
         XH_ggh.append(0.0)
         XH_vbf.append(0.0)
-        XH_zh.append(0.0)
+        #XH_zh.append(0.0)
         XH_wh.append(0.0)
         XH_ttH.append(0.0)
 
@@ -116,20 +116,20 @@ def exp_xsec():
             print(acc_ggh['ggH125_'+suffix+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)])
             xxs_ggh = higgs_xs['ggH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc_ggh['ggH125_'+suffix+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             xxs_vbf = higgs_xs['VBF_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['VBFH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
-            xxs_zh = higgs_xs['ZH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['ZH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
+            #xxs_zh = higgs_xs['ZH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['ZH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             xxs_tth = higgs_xs['ttH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['ttH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             xxs_wh = higgs_xs['WH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['WH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
 
             XH_fs = higgs_xs['ggH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc_ggh['ggH125_'+suffix+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             XH_fs += higgs_xs['VBF_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['VBFH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             XH_fs += higgs_xs['WH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['WH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
-            XH_fs += higgs_xs['ZH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['ZH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
+            #XH_fs += higgs_xs['ZH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['ZH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             XH_fs += higgs_xs['ttH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['ttH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             XH[obsBin]+=XH_fs
 
             XH_ggh[obsBin]+=xxs_ggh
             XH_vbf[obsBin]+=xxs_vbf
-            XH_zh[obsBin]+=xxs_zh
+            #XH_zh[obsBin]+=xxs_zh
             XH_wh[obsBin]+=xxs_wh
             XH_ttH[obsBin]+=xxs_tth
 
@@ -139,32 +139,26 @@ def exp_xsec():
         print('Bin ', obsBin, '\t SigmaBin', obsBin, ' = ', _obsxsec)
         print('Bin ', obsBin, '\t SigmaBin', obsBin, ' (ggh) = ', XH_ggh[obsBin])
         print('Bin ', obsBin, '\t SigmaBin', obsBin, ' (vbf) = ', XH_vbf[obsBin])
-        print('Bin ', obsBin, '\t SigmaBin', obsBin, ' (zh) = ', XH_zh[obsBin])
+        #print('Bin ', obsBin, '\t SigmaBin', obsBin, ' (zh) = ', XH_zh[obsBin])
         print('Bin ', obsBin, '\t SigmaBin', obsBin, ' (wh) = ', XH_wh[obsBin])
         print('Bin ', obsBin, '\t SigmaBin', obsBin, ' (tth) = ', XH_ttH[obsBin])
-        print('(xcheck : ', XH_ggh[obsBin]+XH_vbf[obsBin]+XH_zh[obsBin]+XH_wh[obsBin]+XH_ttH[obsBin],')')
-        print('(XH : ', XH_vbf[obsBin]+XH_zh[obsBin]+XH_wh[obsBin]+XH_ttH[obsBin],')')
+        #print('(xcheck : ', XH_ggh[obsBin]+XH_vbf[obsBin]+XH_zh[obsBin]+XH_wh[obsBin]+XH_ttH[obsBin],')')
+        #print('(XH : ', XH_vbf[obsBin]+XH_zh[obsBin]+XH_wh[obsBin]+XH_ttH[obsBin],')')
         print('\n\n')
         xs['SigmaBin'+str(obsBin)] = _obsxsec
         xs_ggh['SigmaBin'+str(obsBin)] = XH_ggh[obsBin]
         xs_vbf['SigmaBin'+str(obsBin)] = XH_vbf[obsBin]
-        xs_vh['SigmaBin'+str(obsBin)] = XH_zh[obsBin]+XH_wh[obsBin]
+        xs_vh['SigmaBin'+str(obsBin)] = XH_wh[obsBin]#+XH_zh[obsBin]
         xs_wh['SigmaBin'+str(obsBin)] = XH_wh[obsBin]
         xs_tth['SigmaBin'+str(obsBin)] = XH_ttH[obsBin]
         
-        xs_xh['SigmaBin'+str(obsBin)] = XH_vbf[obsBin]+XH_zh[obsBin]+XH_wh[obsBin]+XH_ttH[obsBin]
+        xs_xh['SigmaBin'+str(obsBin)] = XH_vbf[obsBin]+XH_wh[obsBin]+XH_ttH[obsBin]#+XH_zh[obsBin]
 
-    with open('../inputs/xsec_'+obsName+'.py', 'w') as f:
+    with open('../inputs/xsec_'+obsName+'_'+opt.YEAR+'.py', 'w') as f:
         f.write('xsec = '+str(xs)+' \n')
 
 
-    if obsName == 'pT4l':
-        obsFull = 'PTH'
-
-    if obsName == 'rapidity4l':
-        obsFull = 'YH'
-    else:
-        obsFull = obsName
+    obsFull = obsName
 
     '''
     with open('../inputs/fidXS_'+suffix+obsFull+'_ggH.py', 'w') as f:
@@ -220,7 +214,7 @@ def exp_xsec():
 
     
     #''' 
-    with open('../inputs/fidXS_'+suffix+obsFull+'_ggH.py', 'w') as f:
+    with open('../inputs/fidXS_'+suffix+obsFull+'_ggH_'+opt.YEAR+'.py', 'w') as f:
         f.write('Boundaries = '+str(observableBins)+'\n')
         f.write('fidXS = '+str(list(xs_ggh.values()))+'\n')
         f.write('fidXS_scale_up = '+str(list(xs_ggh.values()))+'\n')
@@ -230,7 +224,7 @@ def exp_xsec():
         f.write('fidXS_alpha_up = '+str(list(xs_ggh.values()))+'\n')
         f.write('fidXS_alpha_dn = '+str(list(xs_ggh.values()))+'\n')
 
-    with open('../inputs/fidXS_'+obsFull+'_VBFH.py', 'w') as f:
+    with open('../inputs/fidXS_'+obsFull+'_VBFH_'+opt.YEAR+'.py', 'w') as f:
         f.write('Boundaries = '+str(observableBins)+'\n')
         f.write('fidXS = '+str(list(xs_vbf.values()))+'\n')
         f.write('fidXS_scale_up = '+str(list(xs_vbf.values()))+'\n')
@@ -240,7 +234,7 @@ def exp_xsec():
         f.write('fidXS_alpha_up = '+str(list(xs_vbf.values()))+'\n')
         f.write('fidXS_alpha_dn = '+str(list(xs_vbf.values()))+'\n')
 
-    with open('../inputs/fidXS_'+obsFull+'_VH.py', 'w') as f:
+    with open('../inputs/fidXS_'+obsFull+'_VH_'+opt.YEAR+'.py', 'w') as f:
         f.write('Boundaries = '+str(observableBins)+'\n')
         f.write('fidXS = '+str(list(xs_vh.values()))+'\n')
         f.write('fidXS_scale_up = '+str(list(xs_vh.values()))+'\n')
@@ -250,7 +244,7 @@ def exp_xsec():
         f.write('fidXS_alpha_up = '+str(list(xs_vh.values()))+'\n')
         f.write('fidXS_alpha_dn = '+str(list(xs_vh.values()))+'\n')
 
-    with open('../inputs/fidXS_'+obsFull+'_ttH.py', 'w') as f:
+    with open('../inputs/fidXS_'+obsFull+'_ttH_'+opt.YEAR+'.py', 'w') as f:
         f.write('Boundaries = '+str(observableBins)+'\n')
         f.write('fidXS = '+str(list(xs_tth.values()))+'\n')
         f.write('fidXS_scale_up = '+str(list(xs_tth.values()))+'\n')
@@ -260,7 +254,7 @@ def exp_xsec():
         f.write('fidXS_alpha_up = '+str(list(xs_tth.values()))+'\n')
         f.write('fidXS_alpha_dn = '+str(list(xs_tth.values()))+'\n')
 
-    with open('../inputs/fidXS_'+obsFull+'_xH.py', 'w') as f:
+    with open('../inputs/fidXS_'+obsFull+'_xH_'+opt.YEAR+'.py', 'w') as f:
         f.write('Boundaries = '+str(observableBins)+'\n')
         f.write('fidXS = '+str(list(xs_xh.values()))+'\n')
         f.write('fidXS_scale_up = '+str(list(xs_xh.values()))+'\n')

@@ -164,7 +164,7 @@ elif year == '2018':
     _lumi = '59.83'
 
 elif year == 'Run3':
-    _lumi = '62'
+    _lumi = '170.9' #62
 
 elif year == '2022':
     _lumi = '7.98'
@@ -198,7 +198,7 @@ elif(obsName == 'costhetaZ2'): label = 'cos(#theta_{2})'
 elif(obsName == 'phi'): label = '#Phi'
 elif(obsName == 'phi1'): label = '#Phi1'
 elif(obsName == 'phistar'): label = '#Phi^{#star}'
-elif(obsName == 'costhetastarZZ'): label = 'cos(#theta^{*})'
+elif(obsName == 'costhetastar'): label = 'cos(#theta^{*})'
 elif(obsName == 'massZ1'): label = 'm_{Z1} (GeV)'
 elif(obsName == 'massZ2'): label = 'm_{Z2} (GeV)'
 elif(obsName == 'pTj1'): label = 'p_{T}^{(j1, 4.7)} (GeV)'
@@ -223,7 +223,7 @@ elif(obsName == 'rapidity4l vs pT4l'):
     label = '|y_{H}|'
     label_2nd = 'p_{T}^{H} (GeV)'
     doubleDiff = True
-elif(obsName == 'njets_pt30_eta4p7 vs pT4l'):
+elif(obsName == 'Nj vs pT4l'):
     obsName_tmp = obsName.split(' vs ')
     obsName = obsName_tmp[0]+"_"+obsName_tmp[1]
     label = 'N_{jet}'
@@ -253,7 +253,19 @@ elif(obsName == 'TCjmax vs pT4l'):
     label = '#mathscr{T}_{#mathscr{C},{j}} (GeV)'
     label_2nd = 'p_{T}^{H} (GeV)'
     doubleDiff = True
-
+elif(obsName == 'absdetajj vs mjj'):
+    obsName_tmp = obsName.split(' vs ')
+    obsName = obsName_tmp[0]+"_"+obsName_tmp[1]
+    label = '|#Delta#Eta_{jj}|'
+    label_2nd =  'm_{jj} (GeV)'
+    doubleDiff = True
+elif(obsName == 'pT4l vs pTj1'):
+    obsName_tmp = obsName.split(' vs ')
+    obsName = obsName_tmp[0]+"_"+obsName_tmp[1]
+    label = 'p_{T}^{H} (GeV)'
+    label_2nd = 'p_{T}^{(j1, 4.7)} (GeV)'
+    doubleDiff = True
+    
 # _poi    = 'SigmaBin'
 _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
 if obsName not in _obsName:
@@ -264,7 +276,8 @@ if obsName not in _obsName:
 sys.path.append('../inputs')
 _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins']) #, -1)
 obs_bins = _temp.observableBins
-_temp = __import__('xsec_'+obsName, globals(), locals(), ['xsec']) # , -1)
+print(obs_bins)
+_temp = __import__('xsec_'+obsName+'_'+opt.YEAR, globals(), locals(), ['xsec']) # , -1)
 xsec = _temp.xsec
 sys.path.remove('../inputs')
 

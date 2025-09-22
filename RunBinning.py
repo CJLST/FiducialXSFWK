@@ -5,13 +5,17 @@ import uproot as uproot
 import ROOT
 import argparse
 from array import array
+import random
+import math
 
 from observables import observables
 from binning import binning
 from paths import path
 
+np.set_printoptions(linewidth=np.inf)
+
 print()
-print('Welcome in RunBinning!')
+print('Welcome to RunBinning!')
 print()
 
 def parseOptions():
@@ -20,10 +24,15 @@ def parseOptions():
     parser = argparse.ArgumentParser(description="Run binning for fiducial cross-section measurement")
 
     parser.add_argument('--obsName', required=True, type=str, help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
-    parser.add_argument('--obsBins', required=True, type=str, help='Bin boundaries for the differential measurement separated by "|", e.g. "|0|50|100|". Use empty string for default.')
+    parser.add_argument('--obsBins', required=False, type=str, help='Bin boundaries for the differential measurement separated by "|", e.g. "|0|50|100|". Use empty string for default.')
     parser.add_argument('--year', required=True, type=str, help='Year (e.g., "2022", "2023preBPix", etc.)')
-    parser.add_argument('--m4lLower', dest='m4lLower', type=int, default=105, help='Lower bound for m4l (default: 105)')
-    parser.add_argument('--m4lUpper', dest='m4lUpper', type=int, default=160, help='Upper bound for m4l (default: 160)')
+    parser.add_argument('--m4lLower', dest='m4lLower', type=int, default=110, help='Lower bound for m4l (default: 105)')
+    parser.add_argument('--m4lUpper', dest='m4lUpper', type=int, default=130, help='Upper bound for m4l (default: 160)')
+    parser.add_argument('--finstate', dest='finstate', type=str, default="4l", help='4mu, 4e, 2e2mu, 2mu2e, 4l')
+    parser.add_argument('--do2024', dest='do2024', action='store_true', help='add 2024 lumi (109.08 invfb) to 2023postBPix')
+    parser.add_argument('--PRINT', dest='PRINT', action='store_true', help='print output of each binning')
+    parser.add_argument('--AUTO', dest='AUTO', action='store_true', help='do binning')
+    parser.add_argument('--NBINS', required=False, type=int, help='number of bins to try')
 
     opt = parser.parse_args()
     return opt
@@ -33,45 +42,75 @@ opt = parseOptions()
 # ---------------------------------------------------- FUNCTIONS TO GENERATE DATAFRAMES ----------------------------------------------------
 
 # Weights for histogram
-def weight(df, xsec, gen, lumi):
-    # xsec is in overallEventWeight now
-    weight = (lumi * 1000 * df.overallEventWeight * df.dataMCWeight)/gen
-    df['weight'] = weight
+def weight(df, xsec, gen, lumi, type, additional = None):
+
+    # overallEventWeight[0] = PUWeight[0]*tree.genHEPMCweight*tree.dataMCWeight
+
+    if type == "sig":
+
+        coeff = (lumi * 1000 * xsec) / gen
+
+        #weight_reco = np.sign(df.genHEPMCweight) * df.PUWeight * df.dataMCWeight
+        weight_reco = df.genHEPMCweight * df.PUWeight * df.dataMCWeight
+        #weight_gen = np.sign(df.genHEPMCweight)
+        #eight_gen = df.genHEPMCweight
+        
+        if additional == "ggH":
+           weight_reco *= df.ggH_NNLOPS_weight
+
+        weight_event = weight_reco * coeff
+        #weight_total = weight_reco.sum()
+
+        weight = weight_event # / weight_total
+
+        df['weight'] = weight
+
+    if type =="bkg":
+
+        weight = (lumi * 1000 * df.overallEventWeight * df.dataMCWeight)/gen
+        df['weight'] = weight
+
     return df
 
 # Uproot to generate pandas
-def prepareTrees(samples, year):
+def prepareTrees(samples, year, treename):
     df = {}
     for sample in samples:
         fname = path['eos_path_sig']+year+"_MC/"+sample+"/ZZ4lAnalysis_SKIMMED.root"
-        df[sample] = uproot.open(fname)[key]
+        df[sample] = uproot.open(fname)[treename]
     return df
 
 # Calculate cross sections
-def xsecs(samples, year):
-    xsec_ = {}
-    df = prepareTrees(samples, year)
-    for sample in samples:
-        total_weight = df[sample].arrays("overallEventWeight",library="np")["overallEventWeight"]
-        puweight = df[sample].arrays("PUWeight", library="np")["PUWeight"]
-        genweight = df[sample].arrays("genHEPMCweight", library="np")["genHEPMCweight"]
-        if 'ZZTo' in sample:
-            # TODO: Add EW KFactor once in the samples
-            KFactor_QCD_qqZZ_M_Weight = df[sample].arrays("KFactor_QCD_qqZZ_M_Weight", library="np")["KFactor_QCD_qqZZ_M_Weight"]
-            xsec = total_weight/(puweight*genweight*KFactor_QCD_qqZZ_M_Weight)
-        elif 'ggTo' in sample:
-            KFactor_QCD_ggZZ_Nominal_Weight = df[sample].arrays("KFactor_QCD_ggZZ_Nominal_Weight", library="np")["KFactor_QCD_ggZZ_Nominal_Weight"]
-            xsec = total_weight/(puweight*genweight*KFactor_QCD_ggZZ_Nominal_Weight)
-        else:
-            xsec = total_weight/(puweight*genweight)
+def xsecs(samples, year, treename):
 
-        xsec_[sample] = xsec[0]
+    xsec_ = {}
+    if treename == treepass:
+        df = prepareTrees(samples, year, treename)
+        for sample in samples:
+            total_weight = df[sample].arrays("overallEventWeight",library="np")["overallEventWeight"]
+            puweight = df[sample].arrays("PUWeight", library="np")["PUWeight"]
+            genweight = df[sample].arrays("genHEPMCweight", library="np")["genHEPMCweight"]
+            if 'ZZTo' in sample:
+                # TODO: Add EW KFactor once in the samples
+                KFactor_QCD_qqZZ_M_Weight = df[sample].arrays("KFactor_QCD_qqZZ_M_Weight", library="np")["KFactor_QCD_qqZZ_M_Weight"]
+                xsec = total_weight/(puweight*genweight*KFactor_QCD_qqZZ_M_Weight)
+            elif 'ggTo' in sample:
+                KFactor_QCD_ggZZ_Nominal_Weight = df[sample].arrays("KFactor_QCD_ggZZ_Nominal_Weight", library="np")["KFactor_QCD_ggZZ_Nominal_Weight"]
+                xsec = total_weight/(puweight*genweight*KFactor_QCD_ggZZ_Nominal_Weight)
+            else:
+                xsec = total_weight/(puweight*genweight)
+
+            xsec_[sample] = xsec[0]
+    else:
+        for sample in samples:
+            xsec_[sample] = 1
 
     return xsec_
 
 # Get the "number" of MC events to divide the weights
-def generators(samples, year):
+def generators(samples, year, df):
     gen = {}
+    
     for sample in samples:
         fname = path['eos_path_sig']+year+"_MC/"+sample+"/ZZ4lAnalysis_SKIMMED.root"
         gen[sample] = uproot.open(fname)["Counters"].values()[39] 
@@ -83,14 +122,14 @@ def add_fin_state(i, j):
         fin = '4e'
     elif abs(i) == 169 and abs(j) == 169:
         fin = '4mu'
-    elif (abs(i) == 121 and abs(j) == 169):
+    elif abs(i) == 121 and abs(j) == 169:
         fin = '2e2mu'
-    elif (abs(i) == 169 and abs(j) == 121):
+    elif abs(i) == 169 and abs(j) == 121:
         fin = '2mu2e'
     else: print('Problem with add_fin_state')
     return fin
 
-def dataframes(samples, year, year_mc):
+def dataframes(samples, year, year_mc, treename, type):
     if year_mc == '2022':
         lumi = 7.9804
     elif year_mc == '2022EE':
@@ -99,24 +138,36 @@ def dataframes(samples, year, year_mc):
         lumi = 17.794
     elif year_mc == '2023postBPix':
         lumi = 9.451
+        if opt.do2024:
+            lumi += 109.08
 
     d = {}
-    df_all = prepareTrees(samples, year_mc)
-    gen_df = generators(samples, year_mc)
-    xsec_df = xsecs(samples, year_mc)
+    df_all = prepareTrees(samples, year_mc, treename)
+    gen_df = generators(samples, year_mc, df_all)
+    xsec_df = xsecs(samples, year_mc, treename)
 
     for sample in samples:
+        if sample == "ggH125":
+            vars.append("ggH_NNLOPS_weight")
         gen = gen_df[sample]
         xsec = xsec_df[sample]
         df_np = df_all[sample].arrays(vars, library="np")
         df = pd.DataFrame({var: df_np[var] for var in vars})
         df['FinState'] = [add_fin_state(i, j) for i, j in zip(df.Z1Flav, df.Z2Flav)]
-        d[sample] = weight(df, xsec, gen, lumi)
+        if type == "sig":
+            df['cuth4l_gen'] = [add_cuth4l_gen(i,j) for i,j in zip(df.GENlep_MomMomId,df.GENlep_Hindex)]
+            df['cuth4l_reco'] = [add_cuth4l_reco(list(row[0]), list(row[1]), list(row[2]), list(row[3])) for row in zip(df['lep_Hindex'], df['lep_genindex'], df['GENlep_MomMomId'], df['GENlep_MomId'])]
+        if sample == "ggH125":
+            d[sample] = weight(df, xsec, gen, lumi, type, "ggH")
+            vars.remove("ggH_NNLOPS_weight")
+        else:
+            d[sample] = weight(df, xsec, gen, lumi, type)
 
     return d
 
-def skim_df(samples, year, year_mc, type):
-    df = dataframes(samples, year, year_mc)
+def skim_df(samples, year, year_mc, treename, type):
+
+    df = dataframes(samples, year, year_mc, treename, type)
     df_skim = {}
     frames = []
     
@@ -142,6 +193,22 @@ def skim_df(samples, year, year_mc, type):
     print(f"{year} {type} skimmed df created")
     return df_skim
 
+def add_cuth4l_gen(momMomId,Hindex):
+    if (int(Hindex[0])==99) | (int(Hindex[1])==99) | (int(Hindex[2])==99) | (int(Hindex[3])==99):
+        return False
+    if int(momMomId[int(Hindex[0])])==25 and int(momMomId[int(Hindex[1])])==25 and int(momMomId[int(Hindex[2])])==25 and int(momMomId[int(Hindex[3])])==25:
+        return True
+    else:
+        return False
+#Checks if all four generator-level leptons are descendants of a Higgs boson (i.e., if it’s a true H→ZZ→4l decay).
+
+def add_cuth4l_reco(Hindex,genIndex,momMomId,momId): #(Hindex, momMomId,momId):
+    if (Hindex[0]==99) | (Hindex[1]==99) | (Hindex[2]==99) | (Hindex[3]==99) | (int(Hindex[0])==-1) | (int(Hindex[1])==-1) | (int(Hindex[2])==-1) | (int(Hindex[3])==-1):
+        return False
+    if ((genIndex[Hindex[0]]>-0.5)*momMomId[max(0,genIndex[Hindex[0]])]==25) and ((genIndex[Hindex[0]]>-0.5)*momId[max(0,genIndex[Hindex[0]])]==23) and ((genIndex[Hindex[1]]>-0.5)*momMomId[max(0,genIndex[Hindex[1]])]==25) and ((genIndex[Hindex[1]]>-0.5)*momId[max(0,genIndex[Hindex[1]])]==23) and ((genIndex[Hindex[2]]>-0.5)*momMomId[max(0,genIndex[Hindex[2]])]==25) and ((genIndex[Hindex[2]]>-0.5)*momId[max(0,genIndex[Hindex[2]])]==23) and ((genIndex[Hindex[3]]>-0.5)*momMomId[max(0,genIndex[Hindex[3]])]==25) and ((genIndex[Hindex[3]]>-0.5)*momId[max(0,genIndex[Hindex[3]])]==23):
+        return True
+    else:
+        return False
 # ------------------------------------------------- FUNCTIONS TO GENERATE DATAFRAME FOR ZX ---------------------------------------------------
 
 def FindFinalState(z1_flav, z2_flav):
@@ -275,10 +342,10 @@ def do_ZX(df_skim, year, year_mc):
 
     keyZX = 'CRZLLTree/candTree'
 
-    if (year=="2022"): data = '/eos/user/s/sellissp/HZZ/SAMPLES/062025/2022_Data/Data_eraCD_preEE_SKIMMED.root'
-    if (year=="2022EE"): data = '/eos/user/s/sellissp/HZZ/SAMPLES/062025/2022_Data/Data_eraEFG_postEE_SKIMMED.root'
-    if (year=="2023preBPix"): data = '/eos/user/s/sellissp/HZZ/SAMPLES/062025/2023_Data/Data_eraC_preBPix_SKIMMED.root'
-    if (year=="2023postBPix"): data = '/eos/user/s/sellissp/HZZ/SAMPLES/062025/2023_Data/Data_eraD_postBPix_SKIMMED.root'
+    if (year=="2022"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/062025/2022_Data/Data_eraCD_preEE_SKIMMED.root'
+    if (year=="2022EE"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/062025/2022_Data/Data_eraEFG_postEE_SKIMMED.root'
+    if (year=="2023preBPix"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/062025/2023_Data/Data_eraC_preBPix_SKIMMED.root'
+    if (year=="2023postBPix"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/062025/2023_Data/Data_eraD_postBPix_SKIMMED.root'
 
     ttreeZX = uproot.open(data)[keyZX]
     ttreeZX = ttreeZX.arrays(zx_vars, library="np")
@@ -294,7 +361,7 @@ def do_ZX(df_skim, year, year_mc):
     return dfZX
 
 
-# ---------------------------------------------------- FUNCTIONS FOR BINNING OPTIMIZATION ----------------------------------------------------
+# ---------------------------------------------------- FUNCTIONS FOR COMPUTING BINNING RESULTS ----------------------------------------------------
 
 def do_AMS(sig_counts, bkg_counts, bkg_errors):
 
@@ -306,18 +373,18 @@ def do_AMS(sig_counts, bkg_counts, bkg_errors):
 
     AMS = []
     for i in range(len(sig_counts)):
-
         s = sig_counts[i]
         b = qqZZ[i] + ggZZ[i] + ZX[i]
 
-        #sigma_b = np.sqrt( (qqZZ_err[i]**2/qqZZ[i]**2 + ggZZ_err[i]**2/ggZZ[i]**2 + ZX_err[i]**2/ZX[i]**2 ) / (qqZZ[i]**2+ggZZ[i]**2+ZX[i]**2) ) # FROM HIG 21 09 AN
         sigma_b = np.sqrt(qqZZ_err[i]**2 + ggZZ_err[i]**2 + ZX_errors[i]**2)
 
-        term1 = (s+b) * np.log( ((s+b)*(b+sigma_b**2))/(b**2+(s+b)*sigma_b**2) )
-        term2 = (b**2/sigma_b**2) * np.log(1 + (s*sigma_b**2)/(b*(b+sigma_b**2)))
+        with np.errstate(divide='ignore', invalid='ignore'):  # suppress div by zero warnings
+            term1 = (s+b) * np.log( ((s+b)*(b+sigma_b**2))/(b**2+(s+b)*sigma_b**2) )
+            term2 = (b**2/sigma_b**2) * np.log(1 + (s*sigma_b**2)/(b*(b+sigma_b**2)))
 
-        AMS.append( np.sqrt(2*term1 - 2*term2) )
-    
+            AMS_val = np.sqrt(2*term1 - 2*term2)
+            AMS.append(AMS_val)
+
     return AMS
 
 def get_bin_index(x, bins):
@@ -326,68 +393,118 @@ def get_bin_index(x, bins):
             return i
     if x == bins[-1]:
         return len(bins) - 2
-    return -1  # out of range
+    return -1  # out of rangef
 
-def do_migration(dfs_sig, years, obs_name, obsBins, doubleDiff):
+def do_migration(dfs_sig, years, obs_name, obsBins, doubleDiff, doprint):
 
     if not doubleDiff:
         bins = [float(x) for x in obsBins.strip('|').split('|') if x]
         nbins = len(bins) - 1
         bin_array = np.array(bins, dtype=float)
         hist = ROOT.TH2F("tmp_hist", "tmp_hist", nbins, bin_array, nbins, bin_array)
+        hist_fidonly = ROOT.TH1F("tmp1_hist", "tmp1_hist", nbins, bin_array)
+        hist_recoonly = ROOT.TH1F("tmp2_hist", "tmp2_hist", nbins, bin_array)
 
     else:
-        obs_name_1st = obs_name.split('vs')[0].strip()
-        obs_name_2nd = obs_name.split('vs')[1].strip()
-        
-        x_str, y_str = [s.strip() for s in obsBins.split('vs')]
-        xbins = [float(x) for x in x_str.strip('|').split('|') if x]
-        ybins = [float(y) for y in y_str.strip('|').split('|') if y]
-        
-        nbins_x = len(xbins) - 1
-        nbins_y = len(ybins) - 1
-        xbin_array = np.array(xbins, dtype=float)
-        ybin_array = np.array(ybins, dtype=float)
+        region_strs = [r.strip() for r in obsBins.split('/')]
 
-        nbins = nbins_x * nbins_y
+        all_xbins = []
+        all_ybins = []
+        nbins_x_list = []
+        nbins_y_list = []
+
+        for region in region_strs:
+            x_str, y_str = [s.strip() for s in region.split('vs')]
+            xbins = [float(x) for x in x_str.strip('|').split('|') if x]
+            ybins = [float(y) for y in y_str.strip('|').split('|') if y]
+
+            all_xbins.append(xbins)
+            all_ybins.append(ybins)
+            nbins_x_list.append(len(xbins) - 1)
+            nbins_y_list.append(len(ybins) - 1)
+
+        nbins = sum(nx * ny for nx, ny in zip(nbins_x_list, nbins_y_list))
+
         hist = ROOT.TH2F("tmp_hist", "tmp_hist", nbins, 0, nbins, nbins, 0, nbins)
 
     for year in years:
         for sig in dfs_sig[year].keys():
+
             df_sel = dfs_sig[year][sig][(dfs_sig[year][sig]['ZZMass'] >= opt.m4lLower) & 
                                         (dfs_sig[year][sig]['ZZMass'] <= opt.m4lUpper) &
                                         (dfs_sig[year][sig]['GENmass4l'] >= opt.m4lLower) & 
                                         (dfs_sig[year][sig]['GENmass4l'] <= opt.m4lUpper)]
+
+            df_fidonly = df_sel[(df_sel['passedFullSelection'] == 0) &
+                                (df_sel['passedFiducial'] == 1)]
+
+            df_recoonly = df_sel[(df_sel['passedFullSelection'] == 1) &
+                                 (df_sel['passedFiducial'] == 0)]
+
+            df_sel = df_sel[(df_sel['passedFullSelection'] == 1) &
+                            (df_sel['passedFiducial'] == 1)]
 
             if not doubleDiff:
                 for x, y, w in zip(df_sel[observables[obs_name]['obs_gen']], 
                                    df_sel[observables[obs_name]['obs_reco']], 
                                    df_sel['weight']):
                     hist.Fill(x, y, w)
-            if doubleDiff:
-                for x1, x2, y1, y2, w in zip(df_sel[observables[obs_name_1st]['obs_gen']],
-                                             df_sel[observables[obs_name_2nd]['obs_gen']],
-                                             df_sel[observables[obs_name_1st]['obs_reco']],
-                                             df_sel[observables[obs_name_2nd]['obs_reco']],
-                                             df_sel['weight']):
+                for x, w in zip(df_fidonly[observables[obs_name]['obs_gen']], 
+                                df_fidonly['weight']):
+                    hist_fidonly.Fill(x, w)
+                for x, w in zip(df_recoonly[observables[obs_name]['obs_reco']], 
+                                df_recoonly['weight']):
+                    hist_recoonly.Fill(x, w)
+            else:
+                obs_name_1st = obs_name.split('vs')[0].strip()
+                obs_name_2nd = obs_name.split('vs')[1].strip()
 
-                    gen_bin1 = get_bin_index(x1, xbins)
-                    gen_bin2 = get_bin_index(x2, ybins)
-                    reco_bin1 = get_bin_index(y1, xbins)
-                    reco_bin2 = get_bin_index(y2, ybins)
+                for x1, x2, y1, y2, w in zip(
+                    df_sel[observables[obs_name_1st]['obs_gen']],
+                    df_sel[observables[obs_name_2nd]['obs_gen']],
+                    df_sel[observables[obs_name_1st]['obs_reco']],
+                    df_sel[observables[obs_name_2nd]['obs_reco']],
+                    df_sel['weight']):
 
-                    if -1 in (gen_bin1, gen_bin2, reco_bin1, reco_bin2):
-                        continue  # skip out-of-range
+                    # Find gen bin and gen offset region
+                    gen_flat_bin = -1
+                    gen_bin_offset = 0
+                    gen_found = False
+                    for xbins, ybins, nbins_x, nbins_y in zip(all_xbins, all_ybins, nbins_x_list, nbins_y_list):
+                        gen_bin1 = get_bin_index(x1, xbins)
+                        gen_bin2 = get_bin_index(x2, ybins)
+                        if -1 not in (gen_bin1, gen_bin2):
+                            gen_flat_bin = gen_bin_offset + gen_bin1 * nbins_y + gen_bin2
+                            gen_found = True
+                            break
+                        gen_bin_offset += nbins_x * nbins_y
 
-                    gen_flat_bin = gen_bin1 * nbins_y + gen_bin2
-                    reco_flat_bin = reco_bin1 * nbins_y + reco_bin2
+                    reco_flat_bin = -1
+                    reco_bin_offset = 0
+                    reco_found = False
+                    for xbins, ybins, nbins_x, nbins_y in zip(all_xbins, all_ybins, nbins_x_list, nbins_y_list):
+                        reco_bin1 = get_bin_index(y1, xbins)
+                        reco_bin2 = get_bin_index(y2, ybins)
+                        if -1 not in (reco_bin1, reco_bin2):
+                            reco_flat_bin = reco_bin_offset + reco_bin1 * nbins_y + reco_bin2
+                            reco_found = True
+                            break
+                        reco_bin_offset += nbins_x * nbins_y
 
-                    hist.Fill(gen_flat_bin + 0.5, reco_flat_bin + 0.5, w)  # center of bin
+                    if not (gen_found and reco_found):
+                        continue
+
+                    hist.Fill(gen_flat_bin + 0.5, reco_flat_bin + 0.5, w)
 
     matrix = np.zeros((nbins, nbins), dtype=float)
-    for i in range(1, nbins + 1):
-        for j in range(1, nbins + 1):
+    for i in range(0, nbins + 1):
+        for j in range(0, nbins + 1):
             matrix[i - 1, j - 1] = max(0.0, hist.GetBinContent(i, j))
+
+    #recoonly = []
+    #for i in range(1, nbins + 1):
+    #    recoonly.append(max(0.0, hist_recoonly.GetBinContent(i, j)))
+    #recoonly_ = recoonly / np.sum(recoonly)
 
     matrix = np.flipud(matrix)
 
@@ -397,7 +514,21 @@ def do_migration(dfs_sig, years, obs_name, obsBins, doubleDiff):
 
     np.set_printoptions(formatter={'float_kind': lambda x: f"{x:.2f}"})
 
-    return matrix
+    mig_score = do_migration_score(matrix)
+    try:
+        con_number = np.linalg.cond(matrix)
+    except np.linalg.LinAlgError:
+        con_number = 99
+
+    if doprint:
+        print(f"migration matrix:")
+        print(matrix)
+        #print(f"{np.round(recoonly_, 2)} - nonfid = {np.sum(recoonly):.2f}")
+        print()
+        print(f"migration score: {mig_score}")
+        print(f"condition number: {con_number}")
+
+    return mig_score, con_number
 
 
 def do_migration_score(matrix):
@@ -412,24 +543,53 @@ def do_migration_score(matrix):
 
     return diag_sum / total
 
-def do_binning(dfs_sig, dfs_bkg, years, obs_name, obsBins, doubleDiff):
+def do_binning(dfs_sig, dfs_bkg, years, obs_name, obsBins, doubleDiff, doprint):
     
-    print()
+    if doprint: print()
 
     if not doubleDiff:
         bins = [float(x) for x in obsBins.strip('|').split('|') if x]
         nbins = len(bins) - 1
         bin_array = np.array(bins)
+
+        if doprint:
+            print("bins: ", bin_array)
+
     if doubleDiff:
         obs_name_1st = obs_name.split('vs')[0].strip()
         obs_name_2nd = obs_name.split('vs')[1].strip()
-        x_str, y_str = [s.strip() for s in obsBins.split('vs')]
-        xbins = [float(x) for x in x_str.strip('|').split('|') if x]
-        ybins = [float(y) for y in y_str.strip('|').split('|') if y]
-        nbins_x, nbins_y = len(xbins) - 1, len(ybins) - 1
-        xbin_array, ybin_array = np.array(xbins, dtype=float), np.array(ybins, dtype=float)
-        nbins = nbins_x * nbins_y
-        print("binning:", "(" + ", ".join(f"[{xbins[i]}, {xbins[i+1]}] [{ybins[j]}, {ybins[j+1]}]" for i in range(len(xbins)-1) for j in range(len(ybins)-1)) + ")")
+
+        regions = [region.strip() for region in obsBins.split('/') if region.strip()]
+        
+        all_xbins = []
+        all_ybins = []
+        
+        if doprint: print("bins:")
+
+        n = 0
+        for region in regions:
+            n += 1
+            if 'vs' not in region:
+                raise ValueError(f"Missing 'vs' in region: {region}")
+            
+            x_str, y_str = [s.strip() for s in region.split('vs')]
+            xbins = [float(x) for x in x_str.strip('|').split('|') if x]
+            ybins = [float(y) for y in y_str.strip('|').split('|') if y]
+
+            all_xbins.append(np.array(xbins, dtype=float))
+            all_ybins.append(np.array(ybins, dtype=float))
+
+            if doprint: print(f"bin {n}: ", end="")
+            for i in range(len(xbins)-1):
+                for j in range(len(ybins)-1):
+                    if doprint: print(f"[{xbins[i]}, {xbins[i+1]}]x[{ybins[j]}, {ybins[j+1]}]", end="  ")
+            if doprint: print()
+
+        nbins = sum((len(xb)-1)*(len(yb)-1) for xb, yb in zip(all_xbins, all_ybins))
+        
+        if doprint:
+            print(f"total bins: {nbins}")
+            print()
 
     sum_sig_weighted_counts = {sig: np.zeros(nbins) for sig in dfs_sig[years[0]].keys()}
     total_sig_weighted_counts, total_sig_bin_error2 = np.zeros(nbins), np.zeros(nbins)
@@ -439,65 +599,73 @@ def do_binning(dfs_sig, dfs_bkg, years, obs_name, obsBins, doubleDiff):
     for year in years:
         for sig in dfs_sig[year].keys():
 
-            df_sel = dfs_sig[year][sig][(dfs_sig[year][sig]['ZZMass'] >= opt.m4lLower) & 
-                                        (dfs_sig[year][sig]['ZZMass'] <= opt.m4lUpper)]
+            df_sel = dfs_sig[year][sig][(dfs_sig[year][sig]['passedFullSelection'] == 1) &
+                                        (dfs_sig[year][sig]['ZZMass'] >= opt.m4lLower) & 
+                                        (dfs_sig[year][sig]['ZZMass'] <= opt.m4lUpper)
+                                        & (dfs_sig[year][sig]['cuth4l_reco'] == True)]
 
-            #df_sel = df_sel[df_sel['FinState'] == '4e' ] # keep only 4e events
-            #df_sel = df_sel[df_sel['FinState'] == '4mu' ] # keep only 4mu events
-            #df_sel = df_sel[df_sel['FinState'] == '2e2mu'] # keep only 2e2mu events
-            #df_sel = df_sel[df_sel['FinState'] == '2mu2e'] # keep only 2mu2e events
+            if opt.finstate != "4l":
+                df_sel = df_sel[(df_sel['FinState'] == opt.finstate)]
 
-            df_weights = df_sel['weight']
-        
             if not doubleDiff:
                 hist = ROOT.TH1F(f"hist_sig_{sig}_{year}", "", nbins, bin_array) 
-                df_obs = df_sel[observables[obs_name]['obs_reco']]
-                if obs_name == 'rapidity4l': df_obs = np.abs(df_obs)
-                for val, wgt in zip(df_obs, df_weights):
-                    hist.Fill(val, wgt)
+                if obs_name == 'rapidity4l': 
+                    col = observables[obs_name]['obs_reco']
+                    df_sel.loc[:, col] = df_sel[col].abs()
+                for x, w in zip(df_sel[observables[obs_name]['obs_reco']], df_sel['weight']):
+                    hist.Fill(x, w)
 
                 weighted_counts = np.array([hist.GetBinContent(i + 1) for i in range(nbins)])
-
                 #bin_errors = np.array([hist.GetBinError(i + 1) for i in range(nbins)])
                 bin_errors = np.sqrt(weighted_counts)
 
             if doubleDiff:
-                hist = ROOT.TH2F(f"hist_sig_{sig}_{year}", "", nbins_x, xbin_array, nbins_y, ybin_array)
+                weighted_counts_list = []
+                bin_errors_list = []
+
                 df_obs_x = df_sel[observables[obs_name_1st]['obs_reco']]
                 df_obs_y = df_sel[observables[obs_name_2nd]['obs_reco']]
                 if obs_name_1st == 'rapidity4l': df_obs_x = np.abs(df_obs_x)
                 if obs_name_2nd == 'rapidity4l': df_obs_y = np.abs(df_obs_y)
-                
 
-                for val_x, val_y, wgt in zip(df_obs_x, df_obs_y, df_weights):
-                    hist.Fill(val_x, val_y, wgt)
+                obs_x_vals = df_obs_x.values
+                obs_y_vals = df_obs_y.values
+                weights = df_sel['weight'].values
 
-                weighted_counts = np.array([
-                    hist.GetBinContent(i + 1, j + 1)
-                    for i in range(nbins_x)
-                    for j in range(nbins_y)
-                ])
+                for idx, (xbins, ybins) in enumerate(zip(all_xbins, all_ybins)):
+                    nbins_x = len(xbins) - 1
+                    nbins_y = len(ybins) - 1
 
-                #bin_errors = np.array([
-                #    hist.GetBinError(i + 1, j + 1)
-                #    for i in range(nbins_x)
-                #    for j in range(nbins_y)
-                #])
-                bin_errors = np.sqrt(weighted_counts)
+                    hist = ROOT.TH2F(f"hist_sig_{sig}_{year}_region{idx}", "", nbins_x, xbins, nbins_y, ybins)
+
+                    for x, y, w in zip(obs_x_vals, obs_y_vals, weights):
+                        if x >= xbins[0] and x < xbins[-1] and y >= ybins[0] and y < ybins[-1]:
+                            hist.Fill(x, y, w)
+
+                    region_counts = np.array([
+                        hist.GetBinContent(i + 1, j + 1)
+                        for i in range(nbins_x)
+                        for j in range(nbins_y)
+                    ])
+                    weighted_counts_list.append(region_counts)
+                    bin_errors_list.append(np.sqrt(region_counts))
+
+                weighted_counts = np.concatenate(weighted_counts_list)
+                bin_errors = np.concatenate(bin_errors_list)
 
 
             sum_sig_weighted_counts[sig] += weighted_counts
             total_sig_weighted_counts += weighted_counts
             total_sig_bin_error2 += bin_errors ** 2
 
-    for sample, counts in sum_sig_weighted_counts.items():
-        print(f"{sample} weighted counts per bin: {counts}")
-        #print(f"    total: {np.sum(counts)}")
-    print(f"sig total: {np.sum(total_sig_weighted_counts)}")
-
-    print(f"total sig weighted counts per bin: {total_sig_weighted_counts}")
-    print(f"total sig errors per bin: {np.sqrt(total_sig_bin_error2)}")
-    print()
+    if doprint:
+        for sample, counts in sum_sig_weighted_counts.items():
+            print(f"{sample} weighted counts per bin: {counts}")
+            #print(f"    total: {np.sum(counts)}")
+        print(f"sig total: {np.sum(total_sig_weighted_counts)}")
+        print(f"total sig weighted counts per bin: {total_sig_weighted_counts}")
+        print(f"total sig errors per bin: {np.sqrt(total_sig_bin_error2)}")
+        print()
 
     bkg_weighted_counts = {}
     bkg_binerrors = {}
@@ -505,12 +673,17 @@ def do_binning(dfs_sig, dfs_bkg, years, obs_name, obsBins, doubleDiff):
     for year in years:
         for bkg in dfs_bkg[year].keys():
 
-            df_sel = dfs_bkg[year][bkg][(dfs_bkg[year][bkg]['ZZMass'] >= opt.m4lLower) & (dfs_bkg[year][bkg]['ZZMass'] <= opt.m4lUpper)]
+            df_sel = dfs_bkg[year][bkg][(dfs_bkg[year][bkg]['ZZMass'] >= opt.m4lLower) & 
+                                        (dfs_bkg[year][bkg]['ZZMass'] <= opt.m4lUpper)]
 
-            #if bkg == 'ZX':
-            #    df_sel = df_sel[df_sel['FinState'] == 3]
-            #else:
-            #    df_sel = df_sel[df_sel['FinState'] == '2mu2e']
+            if opt.finstate != "4l":
+                if bkg == 'ZX': 
+                    if opt.finstate == "4e": df_sel = df_sel[(df_sel['FinState'] == 0)]
+                    if opt.finstate == "4mu": df_sel = df_sel[(df_sel['FinState'] == 1)]
+                    if opt.finstate == "2e2mu": df_sel = df_sel[(df_sel['FinState'] == 2)]
+                    if opt.finstate == "2mu2e": df_sel = df_sel[(df_sel['FinState'] == 3)]
+                else:
+                    df_sel = df_sel[(df_sel['FinState'] == opt.finstate)]
 
             if bkg == 'ZX': 
                 df_weights = df_sel['ZX_yield']
@@ -519,38 +692,56 @@ def do_binning(dfs_sig, dfs_bkg, years, obs_name, obsBins, doubleDiff):
                 
             if not doubleDiff:
                 hist = ROOT.TH1F(f"hist_bkg_{bkg}_{year}", "", nbins, bin_array)
-                df_obs = df_sel[observables[obs_name]['obs_reco']]
-                if obs_name == 'rapidity4l': df_obs = np.abs(df_obs)
-                for val, wgt in zip(df_obs, df_weights):
-                    hist.Fill(val, wgt)
+                if obs_name == 'rapidity4l': 
+                    col = observables[obs_name]['obs_reco']
+                    df_sel.loc[:, col] = df_sel[col].abs()
+                for x, w in zip(df_sel[observables[obs_name]['obs_reco']], df_weights):
+                    hist.Fill(x, w)
 
                 weighted_counts = np.array([hist.GetBinContent(i + 1) for i in range(nbins)])
-                
                 #bin_errors = np.array([hist.GetBinError(i + 1) for i in range(nbins)])
                 bin_errors = np.sqrt(weighted_counts)
 
             if doubleDiff:
-                hist = ROOT.TH2F(f"hist_bkg_{bkg}_{year}", "", nbins_x, xbin_array, nbins_y, ybin_array)
+                weighted_counts_list = []
+                bin_errors_list = []
+
                 df_obs_x = df_sel[observables[obs_name_1st]['obs_reco']]
                 df_obs_y = df_sel[observables[obs_name_2nd]['obs_reco']]
                 if obs_name_1st == 'rapidity4l': df_obs_x = np.abs(df_obs_x)
                 if obs_name_2nd == 'rapidity4l': df_obs_y = np.abs(df_obs_y)
-                for val_x, val_y, wgt in zip(df_obs_x, df_obs_y, df_weights):
-                    hist.Fill(val_x, val_y, wgt)
 
-                weighted_counts = np.array([
-                    hist.GetBinContent(i + 1, j + 1)
-                    for i in range(nbins_x)
-                    for j in range(nbins_y)
-                ])
-                
-                #bin_errors = np.array([
-                #    hist.GetBinError(i + 1, j + 1)
-                #    for i in range(nbins_x)
-                #    for j in range(nbins_y)
-                #])
+                obs_x_vals = df_obs_x.values
+                obs_y_vals = df_obs_y.values
+                weights = df_weights.values
+
+                for idx, (xbins, ybins) in enumerate(zip(all_xbins, all_ybins)):
+                    nbins_x = len(xbins) - 1
+                    nbins_y = len(ybins) - 1
+
+                    hist = ROOT.TH2F(f"hist_bkg_{bkg}_{year}_region{idx}", "", nbins_x, xbins, nbins_y, ybins)
+
+                    # Loop over events and fill if in range of current region
+                    for x, y, w in zip(obs_x_vals, obs_y_vals, weights):
+                        if x >= xbins[0] and x < xbins[-1] and y >= ybins[0] and y < ybins[-1]:
+                            hist.Fill(x, y, w)
+
+                    # Collect bin contents and errors from this region
+                    region_counts = np.array([
+                        hist.GetBinContent(i + 1, j + 1)
+                        for i in range(nbins_x)
+                        for j in range(nbins_y)
+                    ])
+                    weighted_counts_list.append(region_counts)
+                    bin_errors_list.append(np.sqrt(region_counts))
+
+                weighted_counts = np.concatenate(weighted_counts_list)
+                bin_errors = np.concatenate(bin_errors_list)
+
+            if bkg == 'ZX' and opt.year == 'Run3' and year == "2023postBPix" and opt.do2024 == True:
+                weighted_counts *= (109.08+9.451)/9.451
                 bin_errors = np.sqrt(weighted_counts)
-
+                
             sum_bkg_weighted_counts[bkg] += weighted_counts
             total_bkg_weighted_counts += weighted_counts
             total_bkg_bin_error2 += bin_errors**2
@@ -558,50 +749,166 @@ def do_binning(dfs_sig, dfs_bkg, years, obs_name, obsBins, doubleDiff):
             bkg_binerrors[bkg] = bin_errors
             
 
-    for bkg, counts in sum_bkg_weighted_counts.items():
-        print(f"{bkg} weighted counts per bin: {counts}")
-    for bkg, counts in sum_bkg_weighted_counts.items():
-        print(f"{bkg} total: {np.sum(counts)}")
-
-    print(f"total bkg weighted counts per bin: {total_bkg_weighted_counts}")
-    print(f"total bkg errors per bin: {np.sqrt(total_bkg_bin_error2)}")
-    print()
+    if doprint:
+        for bkg, counts in sum_bkg_weighted_counts.items():
+            print(f"{bkg} weighted counts per bin: {counts}")
+        for bkg, counts in sum_bkg_weighted_counts.items():
+            print(f"{bkg} total: {np.sum(counts)}")
+        print(f"total bkg weighted counts per bin: {total_bkg_weighted_counts}")
+        print(f"total bkg errors per bin: {np.sqrt(total_bkg_bin_error2)}")
+        print()
 
     with np.errstate(divide='ignore', invalid='ignore'):
         ssqrtb = np.divide(total_sig_weighted_counts, np.sqrt(total_bkg_weighted_counts), out=np.zeros_like(total_sig_weighted_counts), where=total_bkg_weighted_counts!=0)
     
     AMS = do_AMS(total_sig_weighted_counts, bkg_weighted_counts, bkg_binerrors)
-    print(f"AMS per bin: {AMS}")
-    print()
 
-    gen_reco = do_migration(dfs_sig, years, obs_name, obsBins, doubleDiff)
-    print(f"migration matrix:")
-    print(gen_reco)
-    print()
-    print(f"migration score: {do_migration_score(gen_reco)}")
-    print(f"condition number: {np.linalg.cond(gen_reco)}")
+    if doprint:
+        print(f"AMS per bin: {AMS}")
+        print()
+
+    migration_score, condition_number = do_migration(dfs_sig, years, obs_name, obsBins, doubleDiff, doprint)
+
+    return AMS, migration_score, condition_number
+
+# ------------------------------------------------- FUNCTIONS TO AUTOMATICALLY OPTIMIZE BINNING ---------------------------------------------------
+
+
+
+def parse_bins(obs_bins):
+    return [float(x) for x in obs_bins.strip('|').split('|') if x]
+
+def bins_to_string(bins):
+    return "|" + "|".join(str(x) for x in bins) + "|"
+
+def flatten_dfs(dfs_sig, obs_name):
+    vals = []
+    wts  = []
+    for year_dict in dfs_sig.values():
+        for df in year_dict.values():
+            obs_val = df[observables[obs_name]['obs_reco']]
+            weight  = df['weight']
+            vals.append(obs_val)
+            wts.append(weight)
+    return pd.concat(vals, ignore_index=True), pd.concat(wts, ignore_index=True)
+
+def get_init_binning(obs_name, dfs_sig, doubleDiff, nbins):
+    values, weights = flatten_dfs(dfs_sig, obs_name)
+    values = values.to_numpy()
+    weights = weights.to_numpy()
+    
+    # compute weighted cumulative distribution
+    sorter = np.argsort(values)
+    values_sorted = values[sorter]
+    weights_sorted = weights[sorter]
+    cdf = np.cumsum(weights_sorted)
+    cdf /= cdf[-1]  # normalize to 1
+
+    percentiles = np.linspace(0, 1, nbins)
+    array = np.interp(percentiles, cdf, values_sorted)[1:-1]
+    
+    return array
+
+import numpy as np
+from scipy.optimize import minimize
+
+def objective(bins_internal, dfs_sig, dfs_bkg, years, obs_name, doubleDiff,
+              w_ams=1.0, w_con=1.0, w_mig=1.0,
+              xmin=None, xmax=None, fixed_first_edge=None):
+
+    # Ensure numpy array
+    bins_internal = np.array(bins_internal)
+
+    # Build full bin array
+    if obs_name in ("pTj1", "pTj2", "mjj", "absdetajj", "pTHj", "pTHjj", "mHj"):
+        bins = [xmin, fixed_first_edge] + sorted(bins_internal.tolist()) + [xmax]
+    else:
+        bins = [xmin] + sorted(bins_internal.tolist()) + [xmax]
+
+    # Evaluate metrics
+    sig, mig, con = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(bins), doubleDiff, opt.PRINT)
+    sig = np.array(sig, dtype=float)
+
+    # --- Hard constraints ---
+    #if np.any(np.isnan(sig[:-1])) or np.any(sig[:-1] < 3):
+    #    return 1e9
+    if np.any(np.diff(bins) < 0.1):
+        return 1e9
+
+    # --- Objective ---
+    loss = (w_con * con - w_mig * mig)
+
+    return loss
+
+
+def optimize_binning(dfs_sig, dfs_bkg, years, obs_name, doubleDiff, xmin, xmax, obs_bins_str, n_bins):
+
+    all_bins = parse_bins(obs_bins_str)
+
+    if obs_name in ("pTj1", "pTj2"):
+        all_bins[0] = -100
+        all_bins[1] = 30
+        adjusted_start_edge = 30
+    else:
+        adjusted_start_edge = None
+
+    # --- Inner optimization ---
+    res = minimize( objective, all_bins, args=(dfs_sig, dfs_bkg, years, obs_name, doubleDiff, 1.0, 1.0, 1.0, xmin, xmax, adjusted_start_edge), method="Nelder-Mead", options={"maxiter": 10, "disp": True})
+
+    # --- Construct full bin array ---
+    if obs_name in ("pTj1", "pTj2"):
+        best_bins = [xmin, adjusted_start_edge] + sorted(res.x.tolist()) + [xmax]
+    else:
+        best_bins = [xmin] + sorted(res.x.tolist()) + [xmax]
+
+    # --- Compute final loss with large nbins weight ---
+    sig, mig, con = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(best_bins), doubleDiff, opt.PRINT)
+    sig = np.array(sig, dtype=float)
+
+    if np.any(np.isnan(sig[:-1])) or np.any(sig[:-1] < 3):
+        return None, float("inf")  # invalid solution
+
+    # Loss: high weight for number of bins
+    w_nbins = 100.0
+    w_ams = 1.0
+    w_mig = 1.0
+    w_con = 1.0
+
+    loss = (w_con * con - w_mig * mig - w_ams * np.sqrt(np.sum(sig**2)) - w_nbins * len(best_bins))
+
+    return best_bins, loss
+
 
 # -----------------------------------------------------------------------------------------                                                                                                                                                                                                                                                 
 # ------------------------------- MAIN ----------------------------------------------------                                                                                                                                                                                                                                                 
 # -----------------------------------------------------------------------------------------
 
-sigs = ['ggH125', 'VBFH125', 'ttH125', 'WminusH125', 'WplusH125', 'ZH125']
+sigs = ['ggH125', 'VBFH125', 'WminusH125', 'WplusH125', 'ZH125', 'ttH125']
 bkgs = ['ZZTo4l', 'ggTo2e2mu_Contin_MCFM701','ggTo4e_Contin_MCFM701', 'ggTo4mu_Contin_MCFM701', 'ggTo2e2tau_Contin_MCFM701', 'ggTo2mu2tau_Contin_MCFM701', 'ggTo4tau_Contin_MCFM701']
-
-#sigs = ['VBFH125']
-#bkgs = ['ggH125', 'ttH125', 'WminusH125', 'WplusH125', 'ZH125', 'ZZTo4l', 'ggTo2e2mu_Contin_MCFM701','ggTo4e_Contin_MCFM701', 'ggTo4mu_Contin_MCFM701', 'ggTo2e2tau_Contin_MCFM701', 'ggTo2mu2tau_Contin_MCFM701', 'ggTo4tau_Contin_MCFM701']
-
 
 #eos_path_FR = path['eos_path_FR']
 eos_path = path['eos_path']
-key = 'ZZTree/candTree'
+
+treepass = 'ZZTree/candTree'
+treefail = 'ZZTree/candTree_failed'
 
 obs_name = opt.obsName
-obs_bins = opt.obsBins
+
+if opt.obsBins is not None:
+    obs_bins = opt.obsBins
+else:
+    opt.AUTO = True
+
 
 doubleDiff = 'vs' in obs_name
 
 vars = ['overallEventWeight', 'dataMCWeight', 'ZZMass', 'Z1Flav', 'Z2Flav', 'LepLepId', 'LepEta', 'LepPt']
+
+# TO MAKE CSV #
+#obsvars = ['pT4l', 'rapidity4l', 'massZ1', 'massZ2', 'pTj1', 'pTj2', 'Nj', 'mjj', 'absdetajj', 'dphijj', 'pTHj', 'pTHjj', 'mHj', 'TBjmax', 'TCjmax']
+#for obs in obsvars:
+#    vars.append(observables[obs]['obs_gen'])
+# TO MAKE CSV #
 
 if not doubleDiff: 
     vars.append(observables[obs_name]['obs_reco'])
@@ -610,8 +917,6 @@ if doubleDiff:
     obs_name_2nd = obs_name.split('vs')[1].strip()
     vars.append(observables[obs_name_1st]['obs_reco'])
     vars.append(observables[obs_name_2nd]['obs_reco'])
-
-
 
 zx_vars = vars.copy()
 for var in ['overallEventWeight', 'dataMCWeight']:
@@ -647,13 +952,20 @@ if (opt.year == 'Run3'):
 
 dfs_sig = {}
 dfs_bkg = {}
-                                                                                                                                                                                                                                                                                                   
+
+#save_dir = "/eos/home-s/sellissp/HZZ/SAMPLES/CSV/"
+#os.makedirs(save_dir, exist_ok=True)
+                                                       
 for year, year_mc in zip(years, years_MC):
     FR_mu_EB, FR_mu_EE, FR_e_EB, FR_e_EE = openFR(year_mc)
-    df_bkg = skim_df(bkgs, year, year_mc, 'bkg')
+    df_bkg = skim_df(bkgs, year, year_mc, treepass, 'bkg')
     dfs_bkg[year] = df_bkg
+    #for key, df in dfs_bkg[year].items(): # TO MAKE CSV #
+    #    df.to_csv(os.path.join(save_dir, f"bkg_{year}_{key}.csv"), index=False) # TO MAKE CSV #
 
-vars.append('GENmass4l')
+for var in ['GENmass4l', 'genHEPMCweight', 'PUWeight', 'passedFiducial', 'passedFullSelection', 'GENlep_Hindex', 'lep_Hindex','lep_genindex','GENlep_MomMomId','GENlep_MomId', 'GENlep_id', 'EventNumber', 'GENZ_DaughtersId', 'GENZ_MomId']:
+    vars.append(var)
+
 if not doubleDiff: 
     vars.append(observables[obs_name]['obs_gen'])
 if doubleDiff:
@@ -661,7 +973,73 @@ if doubleDiff:
     vars.append(observables[obs_name_2nd]['obs_gen'])
 
 for year, year_mc in zip(years, years_MC):
-    df_sig = skim_df(sigs, year, year_mc, 'sig')
-    dfs_sig[year] = df_sig
+    df_sig_pass = skim_df(sigs, year, year_mc, treepass, 'sig')
+    #df_sig_fail = skim_df(sigs, year, year_mc, treefail, 'sig')
+    #df_sig = pd.concat([df_sig_pass, df_sig_fail], ignore_index=True)
+    dfs_sig[year] = df_sig_pass
+    #for key, df in dfs_sig[year].items(): # TO MAKE CSV #
+    #    df.to_csv(os.path.join(save_dir, f"sig_{year}_{key}.csv"), index=False) # TO MAKE CSV #
 
-do_binning(dfs_sig, dfs_bkg, years, obs_name, obs_bins, doubleDiff)
+'''
+# TO USE CSV #
+for year in years:
+    dfs_bkg[year] = {}
+    for filename in os.listdir(save_dir):
+        if filename.startswith(f"bkg_{year}_") and filename.endswith(".csv"):
+            key = filename[len(f"bkg_{year}_"):-4]
+            filepath = os.path.join(save_dir, filename)
+            dfs_bkg[year][key] = pd.read_csv(filepath)
+
+for year in years:
+    dfs_sig[year] = {}
+    for filename in os.listdir(save_dir):
+        if filename.startswith(f"sig_{year}_") and filename.endswith(".csv"):
+            key = filename[len(f"sig_{year}_"):-4]
+            filepath = os.path.join(save_dir, filename)
+            dfs_sig[year][key] = pd.read_csv(filepath)
+# TO USE CSV #
+'''
+
+
+if opt.AUTO:
+
+    best_bins = None
+    best_score = float("inf")
+
+    if obs_name in ("pTj1", "pTj2", "mjj", "absdetajj", "dphijj", "pTHj", "pTHjj", "mHj"):
+        xmin, xmax = -100, 10000
+    else:
+        xmin, xmax = 0, 10000
+
+    for n_bins in range(7, 12):
+
+        init_binning = get_init_binning(obs_name, dfs_sig, doubleDiff, n_bins)
+
+        try:
+            bins, score = optimize_binning(dfs_sig, dfs_bkg, years, obs_name, doubleDiff, xmin, xmax, bins_to_string(init_binning), n_bins)
+            if bins is None:
+                print(f"n_bins={n_bins}: optimization failed or invalid solution.")
+                continue
+            print(f"n_bins={n_bins}, score={score:.3f}")
+
+        except Exception as e:
+            print(f"n_bins={n_bins}: optimization exception: {e}")
+            continue
+
+        if score < best_score:
+            best_score = score
+            best_bins = bins
+
+        print("nbins: ", n_bins)
+        print("bins: ", bins)
+        print("score: ", score)
+        if score < best_score:
+            print("BEST SCORE SO FAR")
+
+
+    print("\n" + "-"*100)
+    print("OPTIMAL BINNING:", best_bins)
+    do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(best_bins), doubleDiff, True)
+    print("-"*100)
+else:
+    do_binning(dfs_sig, dfs_bkg, years, obs_name, obs_bins, doubleDiff, True)

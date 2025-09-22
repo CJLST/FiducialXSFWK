@@ -63,11 +63,11 @@ observables = {
     {'obs_reco': 'pTHjj',
     'obs_gen': 'GENpTHjj'},
 'TCjmax': {
-     'obs_reco': 'TCjmax',
-     'obs_gen':  'GENTCjmax'},
+     'obs_reco': 'TCMax',
+     'obs_gen':  'GENTCMax'},
 'TBjmax': {
-     'obs_reco': 'TBjmax',
-     'obs_gen':  'GENTBjmax'},
+     'obs_reco': 'TBMax',
+     'obs_gen':  'GENTBMax'},
 'D0m':
     {'obs_reco': 'D0m',
     'obs_gen': 'GEN_D0m'},
@@ -117,22 +117,27 @@ observables = {
 'TCjmax vs pT4l':
     {'obs_reco_2nd': 'ZZPt',
     'obs_gen_2nd': 'GENpT4l',
-    'obs_reco': 'TCjmax',
-    'obs_gen': 'GENTCjmax'},
+    'obs_reco': 'TCMax',
+    'obs_gen': 'GENTCMax'},
 'absdetajj vs mjj': # spencer
     {'obs_reco': 'absdetajj',
      'obs_gen': 'GENabsdetajj',
      'obs_reco_2nd': 'mjj',
      'obs_gen_2nd': 'GENmjj'},
-'ZZPt vs Nj':
+'pT4l vs Nj':
     {'obs_reco': 'ZZPt',
      'obs_gen': 'GENpT4l',
      'obs_reco_2nd': 'Nj',
      'obs_gen_2nd': 'GENNj'},
-'ZZy vs ZZPt':
+'rapidity4l vs pT4l':
     {'obs_reco': 'ZZy',
      'obs_gen': 'GENrapidity4l',
      'obs_reco_2nd': 'ZZPt',
      'obs_gen_2nd': 'GENpT4l'},
+'pT4l vs pTj1':
+    {'obs_reco': 'ZZPt',
+     'obs_gen': 'GENpT4l',
+     'obs_reco_2nd': 'pTj1',
+     'obs_gen_2nd': 'GENpTj1'},
 }
 
