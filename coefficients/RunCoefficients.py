@@ -94,14 +94,109 @@ def weight(df, fail, xsec, gen, lumi, additional = None):
         df['weight_histo_reco_NNLOPS'] = weight_histo_reco_NNLOPS #NNLOPS (only ggH)
     return df
 
+import uproot
+import numpy as np
+import awkward as ak
+
+def merge_dicts_of_lists(d1, d2):
+    result = {}
+    all_keys = set(d1.keys()) | set(d2.keys())
+    for k in all_keys:
+        v1 = d1.get(k)
+        v2 = d2.get(k)
+        if v1 is not None and v2 is not None:
+            # Handle awkward arrays and lists
+            result[k] = ak.concatenate([v1, v2])
+        elif v1 is not None:
+            result[k] = v1
+        else:
+            result[k] = v2
+    return result
+
+def weight_uncs(year, process, scale):
+    """
+    Load and combine uncertainty weights (qcd, pdf, as) for one or more processes.
+    If process == 'WH125', both WplusH125 and WminusH125 are included.
+    """
+
+    # Define which processes to include
+    if process == "WH125":
+        processes = ["WminusH125", "WplusH125"]
+        doW = True
+    else:
+        processes = [process]
+        doW = False
+
+    w_nom = []
+    w_var = {}
+
+    for proc in processes:
+        fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/062025/{year}_MC/{proc}/ZZ4lAnalysis.root"
+        with uproot.open(fname) as f:
+            tree = f["AllEvents"].arrays()
+
+        if scale == "qcd":
+            w_name = "LHEScaleWeight"
+            scale_weights = tree[w_name]
+            w_nom_i, w_scale_i = get_qcd_weights(scale_weights)
+            w_var_i = w_scale_i
+        elif scale in ("pdf", "as"):
+            w_name = "LHEPdfWeight"
+            scale_weights = tree[w_name]
+            w_nom_i, w_scale_i, w_as_i = get_pdf_weights(scale_weights)
+            w_var_i = w_scale_i if scale == "pdf" else w_as_i
+        else:
+            raise ValueError('Unsupported scale type. Use "qcd", "pdf", or "as".')
+
+        # Combine nominal weights
+        w_nom.extend(w_nom_i)  # append array elements, not list of arrays
+
+        # Combine dictionaries (sum values with same keys)
+        if w_var:
+            w_var = merge_dicts_of_lists(w_var, w_var_i)
+        else:
+            w_var = w_var_i
+
+    # Convert w_nom to a single integer array
+    w_nom = [int(x) for x in w_nom]
+
+    return w_nom, w_var
+
 #Calculates different types of event weights for histogram filling:
 #weight_gen: based on generator-level sign of event weights.
 #weight_reco: additional corrections like pile-up and data-MC scale factors.
 #weight_histo_*: scaled by luminosity and cross-section to normalize MC.
 #if additional == 'ggH': #Applies extra NNLOPS weights for gluon-gluon fusion Higgs production
 
+################################################################################################################################
+
+def get_qcd_weights(qcd_weights):
+    w_nom = qcd_weights[:, 4]
+    w_scale = {}
+    for i in range(9):
+        if ((i == 2) | (i == 4) | (i == 6)): continue
+        w_scale[i] = qcd_weights[:, i]
+
+    return w_nom, w_scale
+
+def get_pdf_weights(pdf_weights):
+    w_nom = pdf_weights[:, 0]
+    w_scale = {}
+    for i in range(1,101):
+        w_scale[i] = pdf_weights[:, i]
+        
+    w_as = {
+            0: pdf_weights[:, -1],
+            1: pdf_weights[:, -2]
+           }
+
+    return w_nom, w_scale, w_as
+
+################################################################################################################################
+
 
 # Uproot to generate pandas
+'''
 def prepareTrees(year):
     d_sig = {}
     d_sig_failed = {}
@@ -116,9 +211,31 @@ def prepareTrees(year):
         d_sig_failed[signal] = uproot.open(fname)[key_failed]
 
     return d_sig, d_sig_failed
+'''
 #Loads ROOT files using uproot and returns the TTree objects for each signal process for both:
 #Passed events
 #Failed events (didn’t pass fiducial/reco cuts)
+
+
+def prepareTrees(year):
+    d_sig = {}
+    d_sig_failed = {}
+    for sample in signals_original:
+
+        if year == "2024" and sample == "ZZTo4l":
+            year = "2023postBPix" # use 2023postBPix for 2024 ZZTo4l sample
+        elif year == "2024" and sample.startswith("ggTo"):
+            year = "2023postBPix" # use 2023postBPix for 2024 ggZZ samples
+        elif year == "2024" and sample == "ZH125":
+            year = "2023postBPix" # use 2023postBPix for 2024 ZH samples
+
+        fname = path['eos_path_sig']+year+"_MC/"+sample+"/ZZ4lAnalysis_SKIMMED.root"
+
+        d_sig[sample] = uproot.open(fname)[key]
+        d_sig_failed[sample] = uproot.open(fname)[key_failed]
+
+    return d_sig, d_sig_failed
+
 
 # Calculate cross sections
 def xsecs(year):
@@ -148,8 +265,6 @@ def xsecs(year):
     return xsec_sig
 #Computes cross-section values for each signal sample using:
 #xsec = sum of overall weights / (PUWeight * genHEPMCweight * (ggH weight if applicable) )
- 
-    
 
 def add_fin_state_reco(i, j):
     # fin = 'other'
@@ -226,6 +341,7 @@ def add_cuth4l_reco(Hindex,genIndex,momMomId,momId): #(Hindex, momMomId,momId):
 #Checks if all reconstructed leptons originated from a Z that came from a Higgs (via gen association).
 
 # Get the "number" of MC events to divide the weights
+'''
 def generators(year):
     gen_sig = {}
     for signal in signals_original:
@@ -240,6 +356,24 @@ def generators(year):
         print("Counters is: ", gen_sig[signal])
     return gen_sig
 #Retrieves the number of generated events from a special histogram (Counters) in the ROOT file. This number is needed to normalize event weights.
+'''
+
+def generators(year):
+    gen = {}
+    
+    for sample in signals_original:
+
+        if year == "2024" and sample == "ZZTo4l":
+            year = "2023postBPix" # use 2023postBPix for 2024 ZZTo4l sample
+        elif year == "2024" and sample.startswith("ggTo"):
+            year = "2023postBPix" # use 2023postBPix for 2024 ggZZ samples
+        elif year == "2024" and sample == "ZH125":
+            year = "2023postBPix" # use 2023postBPix for 2024 ZH samples
+
+
+        fname = path['eos_path_sig']+year+"_MC/"+sample+"/ZZ4lAnalysis_SKIMMED.root"
+        gen[sample] = uproot.open(fname)["Counters"].values()[39] 
+    return gen
 
 def createDataframe(d_sig,fail,gen,xsec,signal,lumi,obs_reco,obs_gen,obs_reco_2nd='None',obs_gen_2nd='None'):
     b_sig = ['EventNumber','GENmass4l', 'GENlep_id', 'GENlep_MomId',
@@ -318,6 +452,7 @@ def createDataframe(d_sig,fail,gen,xsec,signal,lumi,obs_reco,obs_gen,obs_reco_2n
         df = df.drop(columns=['ggH_NNLOPS_weight'])
 
     return df
+
 #Central function to:
 #Extract event variables from the ROOT files using uproot
 #Assign final states (reco & gen)
@@ -341,7 +476,10 @@ def dataframes(year, doubleDiff):
     elif year == '2023preBPix':
         lumi = 17.794
     elif year == '2023postBPix':
-        lumi = 9.451+109.08
+        lumi = 9.451 #+109.08
+    elif year == '2024':
+        lumi = 109.08
+
     d_df_sig = {}
     d_df_sig_failed = {}
     d_sig, d_sig_failed = prepareTrees(year)
@@ -392,6 +530,7 @@ def skim_df(year, doubleDiff):
 '''
 import re
 
+
 def skim_df(year, doubleDiff):
     d_df_sig, d_df_sig_failed = dataframes(year, doubleDiff)
     d_skim_sig = {}
@@ -424,6 +563,7 @@ def skim_df(year, doubleDiff):
 
     print(f'{year} SKIMMED df CREATED')
     return d_skim_sig, d_skim_sig_failed
+
 
 # ------------------------------- FUNCTIONS TO CALCULATE COEFFICIENTS ----------------------------------------------------
 def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, genbin, obs_name, type, year, obs_reco_2nd = 'None', obs_gen_2nd = 'None', obs_name_2nd = 'None'):
@@ -533,7 +673,7 @@ def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, g
             err_acceptance[processBin] = -1.0
 
 
-        if type=='fullNNLOPS' or type=='ACggH': continue # In case of fullNNLOPS we are interested in acceptance only
+        #if type=='fullNNLOPS' or type=='ACggH': continue # In case of fullNNLOPS we are interested in acceptance only
 
         # --------------- EffRecoToFid ---------------
         eff_num = datafr[cutm4l_reco & cutobs_reco & passedFullSelection & cuth4l_reco &
@@ -552,6 +692,32 @@ def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, g
         else:
             effrecotofid[processBin] = -1.0
             err_effrecotofid[processBin] = -1.0
+
+
+        ### THEORY UNCERTAINTY ON EFFICIENCY ###
+
+        # scale variations
+
+        eff_num_var[processBin] = {}
+        eff_den_var[processBin] = {}
+
+        for scale in ["pdf", "qcd", "as"]:
+
+            eff_num_var[processBin][scale] = {}
+            eff_den_var[processBin][scale] = {}
+
+            w_nom, w_var = weight_uncs(year, signal, scale)
+
+            for w in w_var.keys():
+
+                datafr['recoweight_var'] = datafr[recoweight] * w_var[w]
+                datafr['weight_var'] = datafr[genweight] * w_var[w]
+
+                eff_num_var[processBin][scale][w] = datafr[cutm4l_reco & cutobs_reco & passedFullSelection & cuth4l_reco & passedFiducialSelection & cuth4l_gen & cutm4l_gen & cutchan_gen & cutobs_gen]['recoweight_var'].sum()
+                eff_den_var[processBin][scale][w] = datafr[passedFiducialSelection & cutm4l_gen & cutobs_gen & cutchan_gen & cuth4l_gen]['weight_var'].sum()
+        
+
+        if type=='fullNNLOPS' or type=='ACggH': continue # In case of fullNNLOPS we are interested in acceptance only
 
         # --------------- outinratio ---------------
         oir_num = datafr[cutm4l_reco & cutobs_reco & passedFullSelection & cuth4l_reco &
@@ -605,7 +771,7 @@ def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, g
 
 def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None', obs_gen_2nd = 'None', obs_name_2nd = 'None',):
     if obs_reco != 'ZZMass':
-        chans = ['4l', '4e', '4mu', '2e2mu'] # SPENCER 18 07 2025
+        chans = ['4l', '4e', '4mu', '2e2mu'] 
     else:
         chans = ['4l', '4e', '4mu', '2e2mu']
     m4l_low = opt.LOWER_BOUND
@@ -650,6 +816,8 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
                 f.write('acc_den = '+str(accden)+' \n')
                 f.write('eff_num = '+str(effnum)+' \n')
                 f.write('eff_den = '+str(effden)+' \n')
+                f.write('eff_num_var = '+str(eff_num_var)+' \n')
+                f.write('eff_den_var = '+str(eff_den_var)+' \n')
                 f.write('oir_num = '+str(oirnum)+' \n')
                 f.write('oir_den = '+str(oirden)+' \n')
                 f.write('wf_num = '+str(wrongfracnum)+' \n')
@@ -658,10 +826,12 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
                 f.write('binwf_den = '+str(binwrongfracden)+' \n')
 
     elif type=='full' or type=='fullNNLOPS' or type=='ACggH' or type=='run3' or type=='2022full' or type=='2023full':
-        for chan in chans:
-            for recobin in range(nBins):
-                for genbin in range(nBins):
-                    getCoeff(chan, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, genbin, obs_name, type, 'None', obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
+        for year in years: # SPENCER 15 10 2025
+            for chan in chans:
+                for recobin in range(nBins):
+                    for genbin in range(nBins):
+                        #getCoeff(chan, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, genbin, obs_name, type, 'None', obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
+                        getCoeff(chan, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, genbin, obs_name, type, year, obs_reco_2nd, obs_gen_2nd, obs_name_2nd) # SPENCER 15 10 2025
 
         # Write dictionaries
         if doubleDiff: obs_name_dic = obs_name+'_'+obs_name_2nd
@@ -691,6 +861,8 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
                     f.write('acc_den = '+str(accden)+' \n')
                     f.write('eff_num = '+str(effnum)+' \n')
                     f.write('eff_den = '+str(effden)+' \n')
+                    f.write('eff_num_var = '+str(eff_num_var)+' \n')
+                    f.write('eff_den_var = '+str(eff_den_var)+' \n')
                     f.write('oir_num = '+str(oirnum)+' \n')
                     f.write('oir_den = '+str(oirden)+' \n')
                     f.write('wf_num = '+str(wrongfracnum)+' \n')
@@ -705,6 +877,12 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
                     f.write('err_acc = '+str(err_acceptance)+' \n')
                     f.write('acc_num = '+str(accnum)+' \n')
                     f.write('acc_den = '+str(accden)+' \n')
+                    f.write('eff = '+str(effrecotofid)+' \n')
+                    f.write('err_eff = '+str(err_effrecotofid)+' \n')
+                    f.write('eff_num = '+str(effnum)+' \n')
+                    f.write('eff_den = '+str(effden)+' \n')
+                    f.write('eff_num_var = '+str(eff_num_var)+' \n')
+                    f.write('eff_den_var = '+str(eff_den_var)+' \n')
             else:
                 with open('../inputs/inputs_sig_'+add_ac+obs_name_dic+'_NNLOPS_'+opt.YEAR+'.py', 'w') as f:
                     f.write('observableBins = '+str(obs_bins)+';\n')
@@ -712,6 +890,25 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
                     f.write('err_acc = '+str(err_acceptance)+' \n')
                     f.write('acc_num = '+str(accnum)+' \n')
                     f.write('acc_den = '+str(accden)+' \n')
+                    f.write('eff = '+str(effrecotofid)+' \n')
+                    f.write('err_eff = '+str(err_effrecotofid)+' \n')
+                    f.write('eff_num = '+str(effnum)+' \n')
+                    f.write('eff_den = '+str(effden)+' \n')
+                    f.write('eff_num_var = '+str(eff_num_var)+' \n')
+                    f.write('eff_den_var = '+str(eff_den_var)+' \n')
+
+
+from collections import defaultdict
+
+def recursive_add(d1, d2):
+    """Recursively add values in two nested dicts."""
+    result = {}
+    for key in set(d1) | set(d2):
+        if isinstance(d1.get(key), dict) and isinstance(d2.get(key), dict):
+            result[key] = recursive_add(d1.get(key, {}), d2.get(key, {}))
+        else:
+            result[key] = d1.get(key, 0) + d2.get(key, 0)
+    return result
 
 # -----------------------------------------------------------------------------------------
 # ------------------------------- MAIN ----------------------------------------------------
@@ -740,13 +937,14 @@ key_failed = 'ZZTree/candTree_failed' # spencer
 if (opt.YEAR == '2016'): years = ['2016post']
 if (opt.YEAR == '2017'): years = ['2017']
 if (opt.YEAR == '2018'): years = ['2018']
-if (opt.YEAR == 'Run3'): years = ['2022', '2022EE', '2023preBPix', '2023postBPix']
+if (opt.YEAR == 'Run3'): years = ['2022', '2022EE', '2023preBPix', '2023postBPix', '2024']
 if (opt.YEAR == 'Full'): years = ['2016post','2017','2018']
 
 if (opt.YEAR == '2022'): years = ['2022']
 if (opt.YEAR == '2022EE'): years = ['2022EE']
 if (opt.YEAR == '2023preBPix'): years = ['2023preBPix']
 if (opt.YEAR == '2023postBPix'): years = ['2023postBPix']
+if (opt.YEAR == '2024'): years = ['2024']
 
 if (opt.YEAR == '2022full'): years = ['2022', '2022EE']
 if (opt.YEAR == '2023full'): years = ['2023preBPix', '2023postBPix']
@@ -800,6 +998,8 @@ if opt.MERGE:
     wrongfracnum_totals, wrongfracden_totals = {}, {}
     binwrongfracnum_totals, binwrongfracden_totals = {}, {}
 
+    eff_num_var_totals, eff_den_var_totals = {}, {}
+
     for year in years:
 
         #fname = f'../inputs/inputs_sig_{obs_name}_{suffix}{year}{orig}.py'
@@ -828,6 +1028,24 @@ if opt.MERGE:
                 if module.wf_den.get(key, 0.0) >= 0: wrongfracden_totals[key] = wrongfracden_totals.get(key, 0.0) + module.wf_den.get(key, 0.0)
                 if module.binwf_num.get(key, 0.0) >= 0: binwrongfracnum_totals[key] = binwrongfracnum_totals.get(key, 0.0) + module.binwf_num.get(key, 0.0)
                 if module.binwf_den.get(key, 0.0) >= 0: binwrongfracden_totals[key] = binwrongfracden_totals.get(key, 0.0) + module.binwf_den.get(key, 0.0)
+
+                for subkey, subdict in module.eff_num_var.get(key, {}).items():
+                    for subsubkey, value in subdict.items():
+                        if value >= 0:
+                            eff_num_var_totals.setdefault(key, {})
+                            eff_num_var_totals[key].setdefault(subkey, {})
+                            eff_num_var_totals[key][subkey][subsubkey] = (
+                                eff_num_var_totals[key][subkey].get(subsubkey, 0.0) + value
+                            )
+
+                for subkey, subdict in module.eff_den_var.get(key, {}).items():
+                    for subsubkey, value in subdict.items():
+                        if value >= 0:
+                            eff_den_var_totals.setdefault(key, {})
+                            eff_den_var_totals[key].setdefault(subkey, {})
+                            eff_den_var_totals[key][subkey][subsubkey] = (
+                                eff_den_var_totals[key][subkey].get(subsubkey, 0.0) + value
+                            )
 
     if opt.NNLOPS:
         acceptance = {k: (accnum_totals[k] / accden_totals[k]) if accden_totals[k] != 0 else 0 for k in module.acc.keys()}
@@ -869,6 +1087,8 @@ if opt.MERGE:
             f.write('acc_den = '+str(accden_totals)+' \n')
             f.write('eff_num = '+str(effnum_totals)+' \n')
             f.write('eff_den = '+str(effden_totals)+' \n')
+            f.write('eff_num_var = '+str(eff_num_var_totals)+' \n')
+            f.write('eff_den_var = '+str(eff_den_var_totals)+' \n')
             f.write('oir_num = '+str(oirnum_totals)+' \n')
             f.write('oir_den = '+str(oirden_totals)+' \n')
             f.write('wf_num = '+str(wrongfracnum_totals)+' \n')
@@ -877,6 +1097,7 @@ if opt.MERGE:
             f.write('binwf_den = '+str(binwrongfracden_totals)+' \n')
         
 else:
+
     # Generate dataframes
     d_sig = {}
     d_sig_failed = {}
@@ -916,6 +1137,8 @@ else:
         outinratio = {}
         err_outinratio = {}
         effrecotofid = {}
+        eff_num_var = {} ## theory uncert on efficiency numerator
+        eff_den_var = {} ## theory uncert on efficiency denominator
         err_effrecotofid = {}
         acceptance = {}
         err_acceptance = {}

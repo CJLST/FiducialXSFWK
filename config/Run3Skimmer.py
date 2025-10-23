@@ -98,7 +98,7 @@ def makeCR(_df, _flag):
                                                     .Define('LepCombRelIsoPF', "std::vector<float> LepCombRelIsoPF{Leptons_iso[ZLLCand_Z1l1Idx[ZLLbest"+_flag+"Idx]], Leptons_iso[ZLLCand_Z1l2Idx[ZLLbest"+_flag+"Idx]], Leptons_iso[ZLLCand_Z2l1Idx[ZLLbest"+_flag+"Idx]], Leptons_iso[ZLLCand_Z2l2Idx[ZLLbest"+_flag+"Idx]]}; return LepCombRelIsoPF")
                                                     .Define('LepisID', "std::vector<bool> LepisID{Leptons_isid[ZLLCand_Z1l1Idx[ZLLbest"+_flag+"Idx]], Leptons_isid[ZLLCand_Z1l2Idx[ZLLbest"+_flag+"Idx]], Leptons_isid[ZLLCand_Z2l1Idx[ZLLbest"+_flag+"Idx]], Leptons_isid[ZLLCand_Z2l2Idx[ZLLbest"+_flag+"Idx]]}; return Leptons_isid")
                                                     .Define('LepMissingHit', "std::vector<unsigned char> LepMissingHit{Leptons_missinghit[ZLLCand_Z1l1Idx[ZLLbest"+_flag+"Idx]], Leptons_missinghit[ZLLCand_Z1l2Idx[ZLLbest"+_flag+"Idx]], Leptons_missinghit[ZLLCand_Z2l1Idx[ZLLbest"+_flag+"Idx]], Leptons_missinghit[ZLLCand_Z2l2Idx[ZLLbest"+_flag+"Idx]]}; return LepMissingHit")
-                                                    .Define('PFMET', "MET_pt")
+                                                    #.Define('PFMET', "PFMET_pt")
                                                     ## overallEventWeight contains everything in NanoAODs
                                                     .Define('L1prefiringWeight', "1") ## Dummy
                                                     .Define('KFactor_EW_qqZZ', "1") ## Dummy
@@ -466,7 +466,7 @@ vars = {'RunNumber',
         'Z1Mass',
         'Z2Mass',
         #'dataMCWeight',
-        # 'PFMET',
+        #'PFMET',
         'LepPt',
         'LepEta',
         'LepPhi',
@@ -566,7 +566,8 @@ if MC:
         vars.add('KFactor_QCD_qqZZ_M_Weight')
     if 'ggTo' in inFileName:
         vars.add('KFactor_QCD_ggZZ_Nominal_Weight')
-    
+
+skip_ZLL = True
 if not MC:
     df_3P1F.Snapshot('CRZLLTree/candTree', "test_3P1F.root", vars, opts)
     df_2P2F.Snapshot('CRZLLTree/candTree', "test_2P2F.root", vars, opts)
@@ -577,12 +578,12 @@ if not MC:
     ## Solution: save each CR in a different tree and then merge them through another RooDataFrame
     ## Not fancy, but it works
     df_bis = ROOT.RDataFrame('CRZLLTree/candTree', "test_*.root")
-    #skip_ZLL = True
+    skip_ZLL = True
     if df_bis.Count().GetValue() != 0:
         ## If the number of entries in df_bis is zero (when debugging on few events)
         ## you get an error when trying to take the snapshot
         df_bis.Snapshot('CRZLLTree/candTree', outFileName, vars, opts)
-        #skip_ZLL = False
+        skip_ZLL = False
     ## Remove the intermediate files, we don't need them anymore
     os.system('rm test_*.root')
         
@@ -621,7 +622,7 @@ df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]
                                     .Define('LepSIP', "std::vector<float> LepSIP{Leptons_sip[ZZCand_Z1l1Idx[bestCandIdx]], Leptons_sip[ZZCand_Z1l2Idx[bestCandIdx]], Leptons_sip[ZZCand_Z2l1Idx[bestCandIdx]], Leptons_sip[ZZCand_Z2l2Idx[bestCandIdx]]}; return LepSIP")
                                     .Define('LepCombRelIsoPF', "std::vector<float> LepCombRelIsoPF{Leptons_iso[ZZCand_Z1l1Idx[bestCandIdx]], Leptons_iso[ZZCand_Z1l2Idx[bestCandIdx]], Leptons_iso[ZZCand_Z2l1Idx[bestCandIdx]], Leptons_iso[ZZCand_Z2l2Idx[bestCandIdx]]}; return LepCombRelIsoPF")
                                     # .Define('LepMissingHit', "std::vector<unsigned char> LepMissingHit{Leptons_missinghit[ZZCand_Z1l1Idx[bestCandIdx]], Leptons_missinghit[ZZCand_Z1l2Idx[bestCandIdx]], Leptons_missinghit[ZZCand_Z2l1Idx[bestCandIdx]], Leptons_missinghit[ZZCand_Z2l2Idx[bestCandIdx]]}; return LepMissingHit")
-                                    # .Define('PFMET', "MET_pt")
+                                    #.Define('PFMET', "PFMET_pt")
                                     .Define('lep_Hindex', "getHindex(LepPt)")
                                     .Define('passedFullSelection', "1")
                                     # spencer
@@ -844,7 +845,7 @@ if not _SKIPZL:
                                            .Define('LepCombRelIsoPF', "std::vector<float> LepCombRelIsoPF{Leptons_iso[ZCand_l1Idx[bestZIdx]], Leptons_iso[ZCand_l2Idx[bestZIdx]], Leptons_iso[ZLCand_lepIdx]}; return LepCombRelIsoPF")
                                            .Define('LepisID', "std::vector<bool> LepisID{Leptons_isid[ZCand_l1Idx[bestZIdx]], Leptons_isid[ZCand_l2Idx[bestZIdx]], Leptons_isid[ZLCand_lepIdx]}; return LepisID")
                                            .Define('LepMissingHit', "std::vector<unsigned char> LepMissingHit{Leptons_missinghit[ZCand_l1Idx[bestZIdx]], Leptons_missinghit[ZCand_l2Idx[bestZIdx]], Leptons_missinghit[ZLCand_lepIdx]}; return LepMissingHit")
-                                           .Define('PFMET', "MET_pt")
+                                           #.Define('PFMET', "PFMET_pt")
                                            ## overallEventWeight contains everything in NanoAODs
                                            .Define('L1prefiringWeight', "1") ## Dummy
                                            .Define('KFactor_EW_qqZZ', "1") ## Dummy
@@ -895,7 +896,7 @@ df_SR.Snapshot('ZZTree/candTree', outFileName, vars, opts)
 if "H12" in inFileName:
     opts.fMode = 'UPDATE'
     df_fail.Snapshot('ZZTree/candTree_failed', outFileName, vars_fail, opts)
-'''
+#'''
 ## Add counter only with the 40th entry
 counters = ROOT.TH1F("Counters", "Counters", 50, 0, 100)
 if opt.MC:
@@ -905,7 +906,7 @@ if opt.MC:
     counters.Write()
     print("Counter belongs to:", counters.GetDirectory().GetName())
     root.Close()
-'''
+#'''
 
 if opt.MC:
     root = ROOT.TFile.Open(inFileName)
@@ -926,15 +927,15 @@ if opt.MC:
     root_file.Close()
 
 root_file = ROOT.TFile(outFileName, "UPDATE")
-'''
+#'''
 if not skip_ZLL:
     sub_dir = root_file.Get("CRZLLTree")
     sub_dir.cd()
     counters.Write()
 
-if not opt.SKIPZL:
+if not _SKIPZL:
     sub_dir = root_file.Get("CRZLTree")
     sub_dir.cd()
     counters.Write()
-'''
+#'''
 root_file.Close()

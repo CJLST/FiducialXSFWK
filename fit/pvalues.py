@@ -275,8 +275,8 @@ class combineCommand():
             K1 = frac4e/frac4e_sm
             K2 = frac4mu/frac4mu_sm * (1.0-frac4e_sm)/(1.0-frac4e)
             
-            self.kappas[f'K1Bin{obsBin}'] = K1
-            self.kappas[f'K2Bin{obsBin}'] = K2
+            #self.kappas[f'K1Bin{obsBin}'] = K1
+            #self.kappas[f'K2Bin{obsBin}'] = K2
                 
     def init_command(self):
         self.command = f'combine -M MultiDimFit {self.ws} --algo={self.algo} -n {self.output} '

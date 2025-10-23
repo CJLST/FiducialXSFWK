@@ -7,10 +7,13 @@ import argparse
 from array import array
 import random
 import math
+from tqdm import tqdm
 
 from observables import observables
 from binning import binning
 from paths import path
+
+np.seterr(invalid='ignore', divide='ignore')
 
 np.set_printoptions(linewidth=np.inf)
 
@@ -76,6 +79,14 @@ def weight(df, xsec, gen, lumi, type, additional = None):
 def prepareTrees(samples, year, treename):
     df = {}
     for sample in samples:
+
+        if year == "2024" and sample == "ZZTo4l":
+            year = "2023postBPix" # use 2023postBPix for 2024 ZZTo4l sample
+        elif year == "2024" and sample.startswith("ggTo"):
+            year = "2023postBPix" # use 2023postBPix for 2024 ggZZ samples
+        elif year == "2024" and sample == "ZH125":
+            year = "2023postBPix" # use 2023postBPix for 2024 ZH samples
+
         fname = path['eos_path_sig']+year+"_MC/"+sample+"/ZZ4lAnalysis_SKIMMED.root"
         df[sample] = uproot.open(fname)[treename]
     return df
@@ -112,6 +123,15 @@ def generators(samples, year, df):
     gen = {}
     
     for sample in samples:
+
+        if year == "2024" and sample == "ZZTo4l":
+            year = "2023postBPix" # use 2023postBPix for 2024 ZZTo4l sample
+        elif year == "2024" and sample.startswith("ggTo"):
+            year = "2023postBPix" # use 2023postBPix for 2024 ggZZ samples
+        elif year == "2024" and sample == "ZH125":
+            year = "2023postBPix" # use 2023postBPix for 2024 ZH samples
+
+
         fname = path['eos_path_sig']+year+"_MC/"+sample+"/ZZ4lAnalysis_SKIMMED.root"
         gen[sample] = uproot.open(fname)["Counters"].values()[39] 
     return gen
@@ -140,6 +160,8 @@ def dataframes(samples, year, year_mc, treename, type):
         lumi = 9.451
         if opt.do2024:
             lumi += 109.08
+    elif year_mc == '2024':
+        lumi = 109.08   
 
     d = {}
     df_all = prepareTrees(samples, year_mc, treename)
@@ -227,6 +249,8 @@ def openFR(year):
     
     if (year == "2022" or year == "2022EE" or year == "2023preBPix" or year == "2023postBPix"):
         fnameFR = "/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/FAKERATES/%s/FakeRates_SS_%s.root" % (year, year)
+    elif (year == "2024"):
+        fnameFR = "/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/FAKERATES/2023postBPix/FakeRates_SS_2023postBPix.root" # using 2023postBPix for 2024
     else:
         raise ValueError(f"ERROR: Unsupported year")
 
@@ -292,6 +316,13 @@ def comb(year):
             1.074, # 2e2mu
             1.078, # 2mu2e
         ])
+    elif year == "2024": # using 2023postBPix
+        cb_SS = np.array([
+            0.795, # 4e
+            1.025, # 4mu
+            1.074, # 2e2mu
+            1.078, # 2mu2e
+        ])
     return cb_SS
 
 def ratio(year): # 2022 from HIG 24 13, 2023 from SPENCER
@@ -323,6 +354,13 @@ def ratio(year): # 2022 from HIG 24 13, 2023 from SPENCER
             1.078,   # 2e2mu
             1.025,  # 2mu2e
             ])
+    elif year == "2024": # using 2023postBPix
+        OS_SS = np.array([
+            1.006,   # 4e
+            1.040,  # 4mu
+            1.078,   # 2e2mu
+            1.025,  # 2mu2e
+            ])
     return OS_SS
 
 def ZXYield(df, year, year_mc):
@@ -342,10 +380,15 @@ def do_ZX(df_skim, year, year_mc):
 
     keyZX = 'CRZLLTree/candTree'
 
-    if (year=="2022"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/062025/2022_Data/Data_eraCD_preEE_SKIMMED.root'
-    if (year=="2022EE"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/062025/2022_Data/Data_eraEFG_postEE_SKIMMED.root'
-    if (year=="2023preBPix"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/062025/2023_Data/Data_eraC_preBPix_SKIMMED.root'
-    if (year=="2023postBPix"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/062025/2023_Data/Data_eraD_postBPix_SKIMMED.root'
+    #if (year=="2022"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/062025/2022_Data/Data_eraCD_preEE_SKIMMED.root'
+    #if (year=="2022EE"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/062025/2022_Data/Data_eraEFG_postEE_SKIMMED.root'
+    #if (year=="2023preBPix"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/062025/2023_Data/Data_eraC_preBPix_SKIMMED.root'
+    #if (year=="2023postBPix"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/062025/2023_Data/Data_eraD_postBPix_SKIMMED.root'
+    if (year=="2022"): data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/062025/2022_Data/Data_eraCD_preEE_SKIMMED.root'
+    if (year=="2022EE"): data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/062025/2022_Data/Data_eraEFG_postEE_SKIMMED.root'
+    if (year=="2023preBPix"): data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/062025/2023_Data/Data_eraC_preBPix_SKIMMED.root'
+    if (year=="2023postBPix"): data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/062025/2023_Data/Data_eraD_postBPix_SKIMMED.root'
+    if (year=="2024"): data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/062025/2024_Data/2024_Data.root'
 
     ttreeZX = uproot.open(data)[keyZX]
     ttreeZX = ttreeZX.arrays(zx_vars, library="np")
@@ -386,6 +429,20 @@ def do_AMS(sig_counts, bkg_counts, bkg_errors):
             AMS.append(AMS_val)
 
     return AMS
+
+def do_AMS_simple(sig_counts, bkg_counts, bkg_errors):
+
+    s = sig_counts
+    b = bkg_counts
+    sigma_b = bkg_errors
+
+    with np.errstate(divide='ignore', invalid='ignore'):  # suppress div by zero warnings
+        term1 = (s+b) * np.log( ((s+b)*(b+sigma_b**2))/(b**2+(s+b)*sigma_b**2) )
+        term2 = (b**2/sigma_b**2) * np.log(1 + (s*sigma_b**2)/(b*(b+sigma_b**2)))
+
+        AMS_val = np.sqrt(2*term1 - 2*term2)
+
+    return AMS_val
 
 def get_bin_index(x, bins):
     for i in range(len(bins) - 1):
@@ -785,100 +842,236 @@ def flatten_dfs(dfs_sig, obs_name):
     vals = []
     wts  = []
     for year_dict in dfs_sig.values():
-        for df in year_dict.values():
+        for name, df in year_dict.items():
+            df = df[(df['ZZMass'] >= opt.m4lLower) & (df['ZZMass'] <= opt.m4lUpper)]
             obs_val = df[observables[obs_name]['obs_reco']]
-            weight  = df['weight']
+            if name == 'ZX':
+                weight = df['ZX_yield']
+            else:
+                weight = df['weight']
             vals.append(obs_val)
             wts.append(weight)
     return pd.concat(vals, ignore_index=True), pd.concat(wts, ignore_index=True)
 
-def get_init_binning(obs_name, dfs_sig, doubleDiff, nbins):
+def get_init_binning_soversqrtb(obs_name, dfs_sig, dfs_bkg, step_size, targetams, targetsig, eps=1e-3):
+
+    # flatten signal and background
+    sig_values, sig_weights = flatten_dfs(dfs_sig, obs_name)
+    bkg_values, bkg_weights = flatten_dfs(dfs_bkg, obs_name)
+
+    sig_values = sig_values.to_numpy()
+    sig_weights = sig_weights.to_numpy()
+    bkg_values = bkg_values.to_numpy()
+    bkg_weights = bkg_weights.to_numpy()
+
+    # restrict to range [xmin, xmax]
+    if obs_name == 'pTj1' or obs_name == 'pTj2':
+        xmin = 30.0  # jets must have pT > 30 GeV
+    elif obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
+        xmin = 0.0   # mjj, detajj, mHj, pTHj, pTHjj must be positive
+    else:
+        xmin = min(sig_values.min(), bkg_values.min())
+    xmax = max(sig_values.max(), bkg_values.max())
+
+    # scan from xmin to xmax
+    scan_points = np.arange(xmin, xmax + step_size, step_size)
+
+    edges = [xmin]   # always start at xmin
+
+    S, B = 0.0, 0.0  # running sums
+
+    for i in range(len(scan_points) - 1):
+        lo, hi = scan_points[i], scan_points[i + 1]
+
+        mask_sig = (sig_values >= lo) & (sig_values < hi)
+        mask_bkg = (bkg_values >= lo) & (bkg_values < hi)
+
+        S += sig_weights[mask_sig].sum()
+        B += bkg_weights[mask_bkg].sum()
+
+        current_ams = do_AMS_simple(S, B, np.sqrt(B)) if B > 0 else 0.0
+        #print(f"scanning [{lo:.2f}, {hi:.2f}]: S = {S:.2f}, B = {B:.2f}, AMS = {current_ams:.2f}")
+
+        if B > 0 and current_ams >= targetams and S>targetsig:
+            edges.append(hi)   # cut bin here
+            #print(f"--> Bin closed at {hi:.2f} (AMS reached {current_ams:.2f})")
+            S, B = 0.0, 0.0    # reset accumulators
+
+    # make sure last bin closes at xmax
+    if abs(edges[-1] - xmax) > eps:
+        edges.append(xmax)
+
+    return edges
+
+
+def perturb_bins(bins, n_bins, var_min, var_max, max_shift):
+    """
+    Perturb a random number of bin edges while keeping order and number of bins fixed.
+    
+    bins      : current list of bin edges
+    var_min   : minimum allowed value
+    var_max   : maximum allowed value
+    n_bins    : desired number of bins
+    max_shift : maximum fraction of bin width to shift an edge
+    """
+    new_bins = bins[:]
+    n_edges = len(new_bins) - 2  # exclude first and last edges
+
+    # Randomly decide how many edges to shift (at least 1)
+    num_edges_to_shift = random.randint(1, n_edges)
+
+    # Randomly pick edges to shift
+    edges_to_shift = random.sample(range(1, len(new_bins) - 1), num_edges_to_shift)
+
+    for idx in edges_to_shift:
+        left = new_bins[idx - 1]
+        right = new_bins[idx + 1]
+        
+        # fractional shift relative to local bin width
+        shift = random.uniform(-max_shift, max_shift) * (right - new_bins[idx])
+        new_edge = new_bins[idx] + shift
+
+        # Clamp to maintain ascending order
+        new_edge = max(left + 1e-6, min(right - 1e-6, new_edge))
+        new_bins[idx] = new_edge
+
+    #new_bins = [var_min] + list(new_bins) + [var_max]
+
+    return new_bins
+
+
+def get_init_binning(obs_name, dfs_sig, doubleDiff, nbins, xmin=None, xmax=None, eps=1e-3):
     values, weights = flatten_dfs(dfs_sig, obs_name)
     values = values.to_numpy()
     weights = weights.to_numpy()
-    
-    # compute weighted cumulative distribution
+
+    # restrict to range [xmin, xmax]
+    if xmin is not None:
+        mask_min = values >= xmin
+    else:
+        mask_min = np.ones_like(values, dtype=bool)
+
+    if xmax is not None:
+        mask_max = values <= xmax
+    else:
+        mask_max = np.ones_like(values, dtype=bool)
+
+    mask = mask_min & mask_max
+    values = values[mask]
+    weights = weights[mask]
+
+    # sort and compute weighted CDF
     sorter = np.argsort(values)
     values_sorted = values[sorter]
     weights_sorted = weights[sorter]
+
     cdf = np.cumsum(weights_sorted)
     cdf /= cdf[-1]  # normalize to 1
 
+    # compute percentiles between xmin and xmax
     percentiles = np.linspace(0, 1, nbins)
-    array = np.interp(percentiles, cdf, values_sorted)[1:-1]
-    
+    array = np.interp(percentiles, cdf, values_sorted)[1:-1]  # exclude first & last edges
+
+
     return array
 
-import numpy as np
-from scipy.optimize import minimize
+def random_bins(obs_name, n_bins_min, n_bins_max, step_size, targetams, targetsig):
 
-def objective(bins_internal, dfs_sig, dfs_bkg, years, obs_name, doubleDiff,
-              w_ams=1.0, w_con=1.0, w_mig=1.0,
-              xmin=None, xmax=None, fixed_first_edge=None):
+    sig_values, sig_weights = flatten_dfs(dfs_sig, obs_name)
+    bkg_values, bkg_weights = flatten_dfs(dfs_bkg, obs_name)
 
-    # Ensure numpy array
-    bins_internal = np.array(bins_internal)
+    sig_values = sig_values.to_numpy()
+    sig_weights = sig_weights.to_numpy()
+    bkg_values = bkg_values.to_numpy()
+    bkg_weights = bkg_weights.to_numpy()
 
-    # Build full bin array
-    if obs_name in ("pTj1", "pTj2", "mjj", "absdetajj", "pTHj", "pTHjj", "mHj"):
-        bins = [xmin, fixed_first_edge] + sorted(bins_internal.tolist()) + [xmax]
+    # restrict to range [xmin, xmax]
+    xmin = min(sig_values.min(), bkg_values.min())
+    xmax = max(sig_values.max(), bkg_values.max())
+
+    # Randomly pick number of bins
+    n_bins = random.randint(n_bins_min, n_bins_max)
+
+    #array = get_init_binning(obs_name, dfs_sig, doubleDiff, n_bins, xmin, xmax)
+    array = get_init_binning_soversqrtb(obs_name, dfs_sig, dfs_bkg, step_size, targetams, targetsig, eps=1e-3)
+    
+    array = perturb_bins(array, n_bins, xmin, xmax, max_shift=2)
+
+    if obs_name == 'pTj1' or obs_name == 'pTj2' or obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
+        array = [-100] + array
+
+    return array
+
+
+def meets_significance(obs_name, sig, low=3, high=4.5):
+    """
+    Check significance conditions:
+    - All bins except the last must be >= low
+    - All bins must be <= high
+    """
+    cond1 = all(x >= low for x in sig[:-1])
+    if obs_name == 'pTj1' or obs_name == 'pTj2' or obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
+        cond2 = all(x <= high for x in sig[1:])  # all but first bin
     else:
-        bins = [xmin] + sorted(bins_internal.tolist()) + [xmax]
+        cond2 = all(x <= high for x in sig)       # all bins
+    return cond1 and cond2
 
-    # Evaluate metrics
-    sig, mig, con = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(bins), doubleDiff, opt.PRINT)
-    sig = np.array(sig, dtype=float)
+'''
+def optimize_binning(initial_bins_str, dfs_sig, dfs_bkg, years, obs_name, doubleDiff, steps=1000):
 
-    # --- Hard constraints ---
-    #if np.any(np.isnan(sig[:-1])) or np.any(sig[:-1] < 3):
-    #    return 1e9
-    if np.any(np.diff(bins) < 0.1):
-        return 1e9
+    solutions = []
 
-    # --- Objective ---
-    loss = (w_con * con - w_mig * mig)
+    initial_bins = parse_bins(initial_bins_str)
+    n_bins = len(initial_bins) - 1
 
-    return loss
+    print("INITIAL BINNING")
+    sig, mig, con = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(initial_bins), doubleDiff, True)
+    ams_score = np.sqrt(np.sum(np.array(sig)**2))
+    solutions.append(((ams_score, con, mig), bins_to_string(initial_bins), sig))
 
-
-def optimize_binning(dfs_sig, dfs_bkg, years, obs_name, doubleDiff, xmin, xmax, obs_bins_str, n_bins):
-
-    all_bins = parse_bins(obs_bins_str)
-
-    if obs_name in ("pTj1", "pTj2"):
-        all_bins[0] = -100
-        all_bins[1] = 30
-        adjusted_start_edge = 30
+    if obs_name == 'pTj1' or obs_name == 'pTj2':
+        var_min, var_max = 30, initial_bins[-1]
+        bins = initial_bins[1:]
+    elif obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
+        var_min, var_max = 0, initial_bins[-1]
+        bins = initial_bins[1:]
     else:
-        adjusted_start_edge = None
+        var_min, var_max = initial_bins[0], initial_bins[-1]
+        bins = initial_bins
 
-    # --- Inner optimization ---
-    res = minimize( objective, all_bins, args=(dfs_sig, dfs_bkg, years, obs_name, doubleDiff, 1.0, 1.0, 1.0, xmin, xmax, adjusted_start_edge), method="Nelder-Mead", options={"maxiter": 10, "disp": True})
+    for step in range(steps):
 
-    # --- Construct full bin array ---
-    if obs_name in ("pTj1", "pTj2"):
-        best_bins = [xmin, adjusted_start_edge] + sorted(res.x.tolist()) + [xmax]
-    else:
-        best_bins = [xmin] + sorted(res.x.tolist()) + [xmax]
+        # propose new bins
+        if obs_name == 'pTj1' or obs_name == 'pTj2' or obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
+            new_bins = perturb_bins(bins, var_min, var_max, n_bins-1)
+            new_bins = [-100] + new_bins  # keep first bin fixed
+        else:
+            new_bins = perturb_bins(bins, var_min, var_max, n_bins)
 
-    # --- Compute final loss with large nbins weight ---
-    sig, mig, con = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(best_bins), doubleDiff, opt.PRINT)
-    sig = np.array(sig, dtype=float)
+        new_bins_str = bins_to_string(new_bins)
+        sig, mig, con = do_binning(dfs_sig, dfs_bkg, years, obs_name, new_bins_str, doubleDiff, opt.PRINT)
 
-    if np.any(np.isnan(sig[:-1])) or np.any(sig[:-1] < 3):
-        return None, float("inf")  # invalid solution
+        # reject invalid proposals
+        if not is_valid_sig(sig) or not meets_significance(sig):
+            continue
+        else:
+            ams_score = np.sqrt(np.sum(np.array(sig)**2))
+            # accept if not dominated
+            if not any(pareto_dominates(other[0], (ams_score, con, mig)) for other in solutions):
+                bins = new_bins
+                solutions.append(((ams_score, con, mig), new_bins_str, sig))
 
-    # Loss: high weight for number of bins
-    w_nbins = 100.0
-    w_ams = 1.0
-    w_mig = 1.0
-    w_con = 1.0
+    # extract Pareto front
+    front = pareto_front(solutions)
 
-    loss = (w_con * con - w_mig * mig - w_ams * np.sqrt(np.sum(sig**2)) - w_nbins * len(best_bins))
+    # pick best by tie-breaker
+    best_metrics, best_bins, best_sig = max(
+        front, key=lambda x: (x[0][2]) / (x[0][1] + 1e-6)
+    )
 
-    return best_bins, loss
-
-
+    best_ams, best_cond, best_mig = best_metrics
+    return best_bins, best_sig, best_cond, best_mig, front
+'''
 # -----------------------------------------------------------------------------------------                                                                                                                                                                                                                                                 
 # ------------------------------- MAIN ----------------------------------------------------                                                                                                                                                                                                                                                 
 # -----------------------------------------------------------------------------------------
@@ -934,6 +1127,9 @@ if (opt.year == '2023preBPix'):
 if (opt.year == '2023postBPix'):
     years_MC = ['2023postBPix']
     years = ["2023postBPix"]
+if (opt.year == '2024'):
+    years_MC = ['2024']
+    years = ["2024"]
 
 if (opt.year == '2022full'):
     years_MC = ['2022', '2022EE']
@@ -943,8 +1139,8 @@ if (opt.year == '2023full'):
     years = ["2023preBPix", "2023postBPix"]
 
 if (opt.year == 'Run3'):
-    years_MC = ['2022', '2022EE', '2023preBPix', '2023postBPix']
-    years = ["2022", "2022EE", "2023preBPix", "2023postBPix"]
+    years_MC = ['2022', '2022EE', '2023preBPix', '2023postBPix', '2024']
+    years = ["2022", "2022EE", "2023preBPix", "2023postBPix", "2024"]
 
 
 # --------------------------- RUN --------------------------------------------
@@ -1003,43 +1199,126 @@ for year in years:
 
 if opt.AUTO:
 
+    print(opt.obsName, " - AUTO BINNING")
+
     best_bins = None
-    best_score = float("inf")
 
-    if obs_name in ("pTj1", "pTj2", "mjj", "absdetajj", "dphijj", "pTHj", "pTHjj", "mHj"):
-        xmin, xmax = -100, 10000
-    else:
+    '''
+    if obs_name in ("pTj1", "pTj2"):
+        xmin, xmax = 30, 2000
+        step_size = 1
+    elif obs_name in ("mjj", "absdetajj", "pTHj", "pTHjj", "mHj"):
         xmin, xmax = 0, 10000
+        step_size = 1
+    elif obs_name in ("rapidity4l"):
+        xmin, xmax = 0, 2.5
+        step_size = 0.01
+    elif obs_name in ("massZ1"):
+        xmin, xmax = 40, 120
+        step_size = 1
+    elif obs_name in ("massZ2"):
+        xmin, xmax = 12, 65
+        step_size = 1
+    else:
+        step_size = 0.1
 
-    for n_bins in range(7, 12):
 
-        init_binning = get_init_binning(obs_name, dfs_sig, doubleDiff, n_bins)
+    # PERCENTILES
+    idx = 0
+    binnings = []
 
-        try:
-            bins, score = optimize_binning(dfs_sig, dfs_bkg, years, obs_name, doubleDiff, xmin, xmax, bins_to_string(init_binning), n_bins)
-            if bins is None:
-                print(f"n_bins={n_bins}: optimization failed or invalid solution.")
-                continue
-            print(f"n_bins={n_bins}, score={score:.3f}")
+    for n_bins in range(3, 20+1):
 
-        except Exception as e:
-            print(f"n_bins={n_bins}: optimization exception: {e}")
+        init_binning = get_init_binning(obs_name, dfs_sig, doubleDiff, n_bins+1, xmin, xmax, eps=1e-3)
+
+        if obs_name in ("pTj1", "pTj2", "mjj", "absdetajj", "pTHj", "pTHjj", "mHj"):
+            print("NBINS = ", n_bins+1)
+            init_binning = [-100] + [xmin] + init_binning.tolist() + [xmax]
+        else:
+            print("NBINS = ", n_bins)
+            init_binning = [xmin] + init_binning.tolist() + [xmax]
+
+        binnings.append(init_binning)
+        sig, mig, con = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(init_binning), doubleDiff, opt.PRINT)
+
+        if obs_name in ("pTj1", "pTj2"):
+            sig = np.array(sig[1:], dtype=float)  # ignore first bin
+        else:
+            sig = np.array(sig, dtype=float)
+
+        if np.sum(sig) > 3.5*n_bins:
+            idx += 1
             continue
 
-        if score < best_score:
-            best_score = score
-            best_bins = bins
+        else:
 
-        print("nbins: ", n_bins)
-        print("bins: ", bins)
-        print("score: ", score)
-        if score < best_score:
-            print("BEST SCORE SO FAR")
+            if obs_name in ("pTj1", "pTj2", "mjj", "absdetajj", "pTHj", "pTHjj", "mHj"):
+                print("IDEAL NUMBER OF BINS = ", n_bins)
+                best_bins, sig, con, mig, front = optimize_binning(bins_to_string(binnings[idx-1]), dfs_sig, dfs_bkg, years, obs_name, doubleDiff, steps=100)
+            else:
+                print("IDEAL NUMBER OF BINS = ", n_bins-1)
+                best_bins, sig, con, mig, front = optimize_binning(bins_to_string(binnings[idx-1]), dfs_sig, dfs_bkg, years, obs_name, doubleDiff, steps=100)
+
+            #try:
+            #best_bins, score = optimize_binning(dfs_sig, dfs_bkg, years, obs_name, doubleDiff, xmin, xmax, bins_to_string(init_binning))
+
+            #except Exception as e:
+            #    print(f"n_bins={n_bins-1}: optimization exception: {e}")
+            
+
+            break
+        
+    
+    # AMS
+    init_binning = get_init_binning_soversqrtb(obs_name, dfs_sig, dfs_bkg, step_size, eps=0)
+
+    if obs_name in ("pTj1", "pTj2", "mjj", "absdetajj", "pTHj", "pTHjj", "mHj"):
+            print("IDEAL NUMBER OF BINS = ", len(parse_bins(bins_to_string(init_binning))))
+            init_binning = [-100] + init_binning.tolist()
+    else:
+        print("IDEAL NUMBER OF BINS = ", len(parse_bins(bins_to_string(init_binning)))-1)
+        init_binning = init_binning.tolist()
 
 
-    print("\n" + "-"*100)
-    print("OPTIMAL BINNING:", best_bins)
-    do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(best_bins), doubleDiff, True)
-    print("-"*100)
+    best_bins, sig, con, mig, front = optimize_binning(bins_to_string(init_binning), dfs_sig, dfs_bkg, years, obs_name, doubleDiff, steps=5)
+    '''
+
+    n_bins_min = 99
+    n_bins_max = 99
+
+    step_size = 0.1
+
+    n_trials = 1000
+
+    if obs_name in ("pTj1", "pTj2", "mjj", "absdetajj", "pTHj", "pTHjj", "mHj"):
+        target_ams = 3.5
+        target_sig = 25
+    else:
+        target_ams = 3.5
+        target_sig = 20
+
+    all_binnings = []
+    with tqdm(total=n_trials, desc="testing binnings (0 valid)") as pbar:
+        for i in range(n_trials):
+            array = random_bins(obs_name, n_bins_min, n_bins_max, step_size, target_ams, target_sig)
+            sig, mig, con = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(array), doubleDiff, opt.PRINT)
+            if meets_significance(obs_name, sig, low=3, high=4.5):
+                all_binnings.append((array, mig/con))
+                pbar.set_description(f"testing binnings ({len(all_binnings)} valid)")
+
+            pbar.update(1)
+
+    if len(all_binnings) == 0:
+        print("No valid binning found, try more iterations")
+    else:
+        max_len = max(len(a[0]) for a in all_binnings) 
+        max_nbins_binnings = [a for a in all_binnings if len(a[0]) == max_len]
+        best_bins = max(max_nbins_binnings, key=lambda x: x[1])[0]
+
+        print("\n" + "-"*100)
+        print("OPTIMAL BINNING:", best_bins)
+        do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(best_bins), doubleDiff, True)
+        print("-"*100)
+
 else:
     do_binning(dfs_sig, dfs_bkg, years, obs_name, obs_bins, doubleDiff, True)

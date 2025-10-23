@@ -162,7 +162,7 @@ def impactPlots():
             K1 = frac4e/frac4e_sm
             K2 = frac4mu/frac4mu_sm * (1.0-frac4e_sm)/(1.0-frac4e)
 
-            cmd_BR += 'K1Bin'+str(obsBin)+'='+str(K1)+',K2Bin'+str(obsBin)+'='+str(K2)+','
+            #cmd_BR += 'K1Bin'+str(obsBin)+'='+str(K1)+',K2Bin'+str(obsBin)+'='+str(K2)+',' # SPENCER 10 2025
         #print(cmd_BR)
 
         cmd_sigma = ''
@@ -280,7 +280,7 @@ def impactPlots():
             cmd += ':r2e2muBin' + str(obsBin) + '=0,'+max_sigma+':r4lBin' + str(obsBin) + '=0,'+max_sigma
     if (not opt.UNBLIND):
         if opt.PHYSICSMODEL=='v3':
-            cmd = cmd + ' -t -1 --setParameters MH=125.38,' + cmd_BR[:-1] + ',' + cmd_XSEC
+            cmd = cmd + ' -t -1 --setParameters MH=125.38' + cmd_BR[:-1] + ',' + cmd_XSEC
         elif opt.PHYSICSMODEL=='v2':
             cmd = cmd + ' -t -1 --setParameters MH=125.38,' + cmd_XSEC
         elif opt.PHYSICSMODEL=='v4':
@@ -294,7 +294,7 @@ def impactPlots():
     ### Third step
     if opt.PHYSICSMODEL=='v3':
         # for obsBin in range(nBins-1):
-        cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)+'.root -m 125.38 --setParameters MH=125.38,'+cmd_BR[:-1]+','+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
+        cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)+'.root -m 125.38 --setParameters MH=125.38'+cmd_BR[:-1]+','+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
         #cmd += ' -o impacts_v3_'+obsName+'_'
         if (not opt.UNBLIND):
             cmd += ' -t -1 -o impacts_'+opt.YEAR+'_v3_'+obsName+'_' # spencer
