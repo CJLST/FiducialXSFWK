@@ -109,6 +109,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
         lumi['2022EE'] = '1.014'
         lumi['2023preBPix'] = '1.013'
         lumi['2023postBPix'] = '1.013'
+        lumi['2024'] = '1.013' # USING 2023postBPix VALUE AS PLACEHOLDER
 
     # Lepton efficiency
     # Values taken from:
@@ -132,6 +133,9 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     eff_mu['2023preBPix_4mu'] = '0.981/1.01' #spencer
     eff_mu['2023postBPix_2e2mu'] = '0.986/1.008' # spencer
     eff_mu['2023postBPix_4mu'] = '0.981/1.01' # spencer
+
+    eff_mu['2024_2e2mu'] = '0.986/1.008' # spencer
+    eff_mu['2024_4mu'] = '0.981/1.01' # spencer
     
     eff_e = {}
     eff_e['2016_2e2mu'] = '0.934/1.062'
@@ -151,6 +155,9 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     eff_e['2023preBPix_4e'] = '0.884/1.103' # spencer
     eff_e['2023postBPix_2e2mu'] = '0.927/1.069' # spencer
     eff_e['2023postBPix_4e'] = '0.884/1.103' # spencer
+
+    eff_e['2024_2e2mu'] = '0.927/1.069' # spencer using 2023post
+    eff_e['2024_4e'] = '0.884/1.103' # spencer using 2023post
     
 
     # ZX
@@ -164,19 +171,26 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     ZX['2018_2e2mu'] = '0.7660052/1.235647'
     ZX['2018_4e'] = '0.650486/1.35893'
     ZX['2018_4mu'] = '0.69554/1.30465'
+
     ZX['2022_2e2mu'] = '0.724/1.263'
     ZX['2022_4e'] = '0.495/1.451'
     ZX['2022_4mu'] = '0.677/1.321'
+
     ZX['2022EE_2e2mu'] = '0.748/1.245'
     ZX['2022EE_4e'] = '0.575/1.398'
     ZX['2022EE_4mu'] = '0.690/1.310'
 
-    ZX['2023preBPix_2e2mu'] = '0.724/1.263' # spencer
-    ZX['2023preBPix_4e'] = '0.575/1.398' # spencer
-    ZX['2023preBPix_4mu'] = '0.677/1.321' # spencer
-    ZX['2023postBPix_2e2mu'] = '0.724/1.263' # spencer
-    ZX['2023postBPix_4e'] = '0.575/1.398' # spencer
-    ZX['2023postBPix_4mu'] = '0.677/1.321' # spencer 
+    ZX['2023preBPix_2e2mu'] = '0.734/1.256' # spencer
+    ZX['2023preBPix_4e'] = '0.516/1.438' # spencer
+    ZX['2023preBPix_4mu'] = '0.685/1.314' # spencer
+
+    ZX['2023postBPix_2e2mu'] = '0.709/1.272' # spencer
+    ZX['2023postBPix_4e'] = '0.467/1.470' # spencer
+    ZX['2023postBPix_4mu'] = '0.667/1.329' # spencer 
+
+    ZX['2024_2e2mu'] = '0.761/1.237' # spencer w/ 2023post DY
+    ZX['2024_4e'] = '0.654/1.339' # spencer w/ 2023post DY
+    ZX['2024_4mu'] = '0.697/1.303' # spencer w/ 2023post DY
     
     
     # -------------------------------------------------------------------------------------------------
@@ -447,6 +461,7 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
         lumi['2022EE'] = '1.014'
         lumi['2023preBPix'] = '1.013'
         lumi['2023postBPix'] = '1.013'
+        lumi['2024'] = '1.013' # using 2023postBPix value as placeholder
     else:
         lumi = {}
         lumi['2016'] = '1.026'
@@ -456,7 +471,7 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
         lumi['2022EE'] = '1.014'
         lumi['2023preBPix'] = '1.013'
         lumi['2023postBPix'] = '1.013'
-
+        lumi['2024'] = '1.013' # using 2023postBPix value as placeholder
         
     # Lepton efficiency
     # Values taken from:
@@ -475,7 +490,10 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     eff_mu['2023preBPix_4mu'] = '0.981/1.01' #spencer
     eff_mu['2023postBPix_2e2mu'] = '0.986/1.008' # spencer
     eff_mu['2023postBPix_4mu'] = '0.981/1.01' # spencer
-    
+
+    eff_mu['2024_2e2mu'] = '0.986/1.008' # spencer using 2023post values
+    eff_mu['2024_4mu'] = '0.981/1.01' # spencer using 2023post values
+
     eff_e = {}
     eff_e['2016_2e2mu'] = '0.934/1.062'
     eff_e['2016_4e'] = '0.891/1.093'
@@ -488,6 +506,11 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     eff_e['2023preBPix_4e'] = '0.884/1.103' # spencer
     eff_e['2023postBPix_2e2mu'] = '0.927/1.069' # spencer
     eff_e['2023postBPix_4e'] = '0.884/1.103' # spencer
+
+    eff_e['2024_2e2mu'] = '0.927/1.069' # spencer using 2023post values
+    eff_e['2024_4e'] = '0.884/1.103' # spencer  using 2023post values
+
+
     
     # ZX
     # Values taken from:
@@ -511,6 +534,10 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     ZX['2023postBPix_2e2mu'] = '0.724/1.263' # spencer
     ZX['2023postBPix_4e'] = '0.575/1.398' # spencer
     ZX['2023postBPix_4mu'] = '0.677/1.321' # spencer
+
+    ZX['2024_2e2mu'] = '0.761/1.237' # spencer w/ 2023post DY
+    ZX['2024_4e'] = '0.654/1.339' # spencer w/ 2023post DY
+    ZX['2024_4mu'] = '0.697/1.303' # spencer w/ 2023post DY
     
     # -------------------------------------------------------------------------------------------------
 

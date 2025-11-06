@@ -1023,10 +1023,15 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
 
     # Data Obs
     #data_obs_file = ROOT.TFile("/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/Data/reducedTree_AllData_"+year+".root")
-    if (year=="2022"): data_obs_file =  ROOT.TFile("/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/062025/2022_Data/Data_eraCD_preEE_SKIMMED.root")
-    if (year=="2022EE"): data_obs_file =  ROOT.TFile("/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/062025/2022_Data/Data_eraEFG_postEE_SKIMMED.root")
-    if (year=="2023preBPix"): data_obs_file =  ROOT.TFile("/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/062025/2023_Data/Data_eraC_preBPix_SKIMMED.root")
-    if (year=="2023postBPix"): data_obs_file =  ROOT.TFile("/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/062025/2023_Data/Data_eraD_postBPix_SKIMMED.root")
+
+    PATH = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/LATEST_PROD/'
+
+    if (year=="2022"): data_obs_file = ROOT.TFile(PATH + '2022_Data/Data_eraCD_preEE_SKIMMED.root')
+    if (year=="2022EE"): data_obs_file = ROOT.TFile(PATH + '2022_Data/Data_eraEFG_postEE_SKIMMED.root')
+    if (year=="2023preBPix"): data_obs_file = ROOT.TFile(PATH + '2023_Data/Data_eraC_preBPix_SKIMMED.root')
+    if (year=="2023postBPix"): data_obs_file = ROOT.TFile(PATH + '2023_Data/Data_eraD_postBPix_SKIMMED.root')
+    if (year=="2024"): data_obs_file = ROOT.TFile(PATH + '2024_Data/ZZ4lAnalysis_SKIMMED.root')
+
     #data_obs_tree = data_obs_file.Get("SR")
     data_obs_tree = data_obs_file.Get("ZZTree/candTree")
 

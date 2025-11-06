@@ -496,8 +496,8 @@ class InclusiveFiducialV3( PhysicsModel ):
             self.modelBuilder.doVar("K2[1,%s,%s]" % (0.0, (1.0-fracSM4e)/fracSM4mu))
 
         POIs+="Sigma,"
-        #POIs+="K1,"
-        #POIs+="K2"
+        POIs+="K1,"
+        POIs+="K2"
 
         poiNames=[]
         if self.modelBuilder.out.var("MH"):
@@ -593,7 +593,6 @@ class DifferentialFiducialV3( PhysicsModel ):
             else :
                 self.modelBuilder.doVar("SigmaBin%d[1, %s,%s]" % (iBi, self.SigmaRange[0],self.SigmaRange[1]))
 
-            '''
             if self.modelBuilder.out.var("K1Bin%d" % (iBin)):
                 self.modelBuilder.out.var("K1Bin%d" % (iBin)).setRange(0.0, 1.0/fracSM4e)
                 self.modelBuilder.out.var("K1Bin%d" % (iBin)).setConstant(False)
@@ -605,11 +604,11 @@ class DifferentialFiducialV3( PhysicsModel ):
                 self.modelBuilder.out.var("K2Bin%d" % (iBin)).setConstant(False)
             else :
                 self.modelBuilder.doVar("K2Bin%d[1.0,%s,%s]" % (iBin, 0.0, (1.0-fracSM4e)/fracSM4mu))
-            '''
+
             if iBin>=0:
                 POIs+="SigmaBin%d,"%iBin
-                #POIs+="K1Bin%d,"%iBin
-                #POIs+="K2Bin%d,"%iBin
+                POIs+="K1Bin%d,"%iBin
+                POIs+="K2Bin%d,"%iBin
                 if self.debug>0:print "Added Bin%d to the POIs"%iBin
 
         poiNames=[]

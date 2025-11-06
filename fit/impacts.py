@@ -162,15 +162,15 @@ def impactPlots():
             K1 = frac4e/frac4e_sm
             K2 = frac4mu/frac4mu_sm * (1.0-frac4e_sm)/(1.0-frac4e)
 
-            #cmd_BR += 'K1Bin'+str(obsBin)+'='+str(K1)+',K2Bin'+str(obsBin)+'='+str(K2)+',' # SPENCER 10 2025
-        #print(cmd_BR)
+            cmd_BR += 'K1Bin'+str(obsBin)+'='+str(K1)+',K2Bin'+str(obsBin)+'='+str(K2)+',' # SPENCER 10 2025
+        print(cmd_BR)
 
         cmd_sigma = ''
         for obsBin in range(nBins):
             # cmd_sigma += 'SigmaBin'+str(obsBin)+','
             cmd_sigma += 'r_smH_' + obsName_poi + '_' + str(obsBin) + ','
         cmd_sigma = cmd_sigma[:-1]
-        #print(cmd_sigma)
+        print(cmd_sigma)
     
     elif opt.PHYSICSMODEL=='v2': #This model is used only for mass4l
         for channel in ['4e','4mu','2e2mu']:
@@ -223,7 +223,8 @@ def impactPlots():
     else: max_sigma = '5'
 
     ### First step (Files from asimov and data have the same name)
-    cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_'+opt.PHYSICSMODEL+'_'+str(opt.YEAR)+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --doInitialFit --robustFit 1 --redefineSignalPOIs '
+    cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_'+opt.PHYSICSMODEL+'_'+str(opt.YEAR)+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --doInitialFit --robustFit 1 '#--redefineSignalPOIs '
+    cmd += ' --freezeParameters _paramFit_Test_K1Bin0,_paramFit_Test_K2Bin0 --redefineSignalPOIs ' # SPENCER 11 2025
     for obsBin in range(nBins):
         if opt.PHYSICSMODEL=='v3':
             # cmd += 'SigmaBin' + str(obsBin) + ','
@@ -259,7 +260,8 @@ def impactPlots():
     output = processCmd(cmd)
 
     ### Second step (Files from asimov and data have the same name)
-    cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_'+opt.PHYSICSMODEL+'_'+str(opt.YEAR)+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --doFits --robustFit 1 --parallel 10 --redefineSignalPOIs '
+    cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_'+opt.PHYSICSMODEL+'_'+str(opt.YEAR)+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --doFits --robustFit 1 --parallel 10 '#--redefineSignalPOIs '
+    cmd += ' --freezeParameters _paramFit_Test_K1Bin0,_paramFit_Test_K2Bin0 --redefineSignalPOIs ' # SPENCER 11 2025
     for obsBin in range(nBins):
         if opt.PHYSICSMODEL=='v3':
             # cmd += 'SigmaBin' + str(obsBin) + ','
@@ -280,7 +282,7 @@ def impactPlots():
             cmd += ':r2e2muBin' + str(obsBin) + '=0,'+max_sigma+':r4lBin' + str(obsBin) + '=0,'+max_sigma
     if (not opt.UNBLIND):
         if opt.PHYSICSMODEL=='v3':
-            cmd = cmd + ' -t -1 --setParameters MH=125.38' + cmd_BR[:-1] + ',' + cmd_XSEC
+            cmd = cmd + ' -t -1 --setParameters MH=125.38,' + cmd_BR[:-1] + ',' + cmd_XSEC
         elif opt.PHYSICSMODEL=='v2':
             cmd = cmd + ' -t -1 --setParameters MH=125.38,' + cmd_XSEC
         elif opt.PHYSICSMODEL=='v4':
@@ -294,8 +296,11 @@ def impactPlots():
     ### Third step
     if opt.PHYSICSMODEL=='v3':
         # for obsBin in range(nBins-1):
-        cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)+'.root -m 125.38 --setParameters MH=125.38'+cmd_BR[:-1]+','+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
+        cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)+'.root -m 125.38 --setParameters MH=125.38,'+cmd_BR[:-1]+','+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
         #cmd += ' -o impacts_v3_'+obsName+'_'
+
+        cmd += ' --freezeParameters _paramFit_Test_K1Bin0,_paramFit_Test_K2Bin0' # SPENCER 11 2025
+
         if (not opt.UNBLIND):
             cmd += ' -t -1 -o impacts_'+opt.YEAR+'_v3_'+obsName+'_' # spencer
             cmd = cmd + 'asimov.json'
@@ -367,6 +372,9 @@ def impactPlots():
             # for obsBin in ['2e2muBin'+str(nBin),'4lBin'+str(nBin)]:
             cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v4_'+str(opt.YEAR)+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --setParameters MH=125.38,'+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
             #cmd += ' -o impacts_v4_'
+
+            cmd += ' --freezeParameters _paramFit_Test_K1Bin0,_paramFit_Test_K2Bin0' # SPENCER 11 2025
+
             if (not opt.UNBLIND):
                 cmd += ' -t -1 o impacts_v4_'
                 cmd = cmd + 'asimov.json'

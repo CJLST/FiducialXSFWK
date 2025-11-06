@@ -1,0 +1,2 @@
+observableBins = [0.0, 10000.0];
+fractionsBackground = {"qqzz_2e2mu_pT4l_recobin0": 1.0, "qqzz_4e_pT4l_recobin0": 1.0, "qqzz_4mu_pT4l_recobin0": 1.0, "ggzz_2e2mu_pT4l_recobin0": 1.0, "ggzz_4e_pT4l_recobin0": 1.0, "ggzz_4mu_pT4l_recobin0": 1.0, "ZJetsCR_2e2mu_pT4l_recobin0": 1.0, "ZJetsCR_4e_pT4l_recobin0": 1.0, "ZJetsCR_4mu_pT4l_recobin0": 1.0}

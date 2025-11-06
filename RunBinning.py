@@ -247,10 +247,8 @@ def findFSZX(df):
 
 def openFR(year):
     
-    if (year == "2022" or year == "2022EE" or year == "2023preBPix" or year == "2023postBPix"):
-        fnameFR = "/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/FAKERATES/%s/FakeRates_SS_%s.root" % (year, year)
-    elif (year == "2024"):
-        fnameFR = "/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303/FAKERATES/2023postBPix/FakeRates_SS_2023postBPix.root" # using 2023postBPix for 2024
+    if (year == "2022" or year == "2022EE" or year == "2023preBPix" or year == "2023postBPix" or year == "2024"):
+        fnameFR = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/LATEST_PROD/FAKERATES/%s/FakeRates_SS_%s.root" % (year, year)
     else:
         raise ValueError(f"ERROR: Unsupported year")
 
@@ -318,10 +316,10 @@ def comb(year):
         ])
     elif year == "2024": # using 2023postBPix
         cb_SS = np.array([
-            0.795, # 4e
-            1.025, # 4mu
-            1.074, # 2e2mu
-            1.078, # 2mu2e
+            0.782, # 4e
+            0.838, # 4mu
+            0.845, # 2e2mu
+            0.747, # 2mu2e
         ])
     return cb_SS
 
@@ -356,9 +354,9 @@ def ratio(year): # 2022 from HIG 24 13, 2023 from SPENCER
             ])
     elif year == "2024": # using 2023postBPix
         OS_SS = np.array([
-            1.006,   # 4e
-            1.040,  # 4mu
-            1.078,   # 2e2mu
+            1.001,   # 4e
+            1.047,  # 4mu
+            1.068,   # 2e2mu
             1.025,  # 2mu2e
             ])
     return OS_SS
@@ -380,15 +378,13 @@ def do_ZX(df_skim, year, year_mc):
 
     keyZX = 'CRZLLTree/candTree'
 
-    #if (year=="2022"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/062025/2022_Data/Data_eraCD_preEE_SKIMMED.root'
-    #if (year=="2022EE"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/062025/2022_Data/Data_eraEFG_postEE_SKIMMED.root'
-    #if (year=="2023preBPix"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/062025/2023_Data/Data_eraC_preBPix_SKIMMED.root'
-    #if (year=="2023postBPix"): data = '/eos/home-s/sellissp/HZZ/SAMPLES/062025/2023_Data/Data_eraD_postBPix_SKIMMED.root'
-    if (year=="2022"): data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/062025/2022_Data/Data_eraCD_preEE_SKIMMED.root'
-    if (year=="2022EE"): data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/062025/2022_Data/Data_eraEFG_postEE_SKIMMED.root'
-    if (year=="2023preBPix"): data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/062025/2023_Data/Data_eraC_preBPix_SKIMMED.root'
-    if (year=="2023postBPix"): data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/062025/2023_Data/Data_eraD_postBPix_SKIMMED.root'
-    if (year=="2024"): data = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/062025/2024_Data/2024_Data.root'
+    PATH = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/LATEST_PROD/'
+
+    if (year=="2022"): data = PATH + '2022_Data/Data_eraCD_preEE_SKIMMED.root'
+    if (year=="2022EE"): data = PATH + '2022_Data/Data_eraEFG_postEE_SKIMMED.root'
+    if (year=="2023preBPix"): data = PATH + '2023_Data/Data_eraC_preBPix_SKIMMED.root'
+    if (year=="2023postBPix"): data = PATH + '2023_Data/Data_eraD_postBPix_SKIMMED.root'
+    if (year=="2024"): data = PATH + '2024_Data/ZZ4lAnalysis_SKIMMED.root'
 
     ttreeZX = uproot.open(data)[keyZX]
     ttreeZX = ttreeZX.arrays(zx_vars, library="np")
@@ -585,7 +581,7 @@ def do_migration(dfs_sig, years, obs_name, obsBins, doubleDiff, doprint):
         print(f"migration score: {mig_score}")
         print(f"condition number: {con_number}")
 
-    return mig_score, con_number
+    return mig_score, con_number, matrix
 
 
 def do_migration_score(matrix):
@@ -824,9 +820,9 @@ def do_binning(dfs_sig, dfs_bkg, years, obs_name, obsBins, doubleDiff, doprint):
         print(f"AMS per bin: {AMS}")
         print()
 
-    migration_score, condition_number = do_migration(dfs_sig, years, obs_name, obsBins, doubleDiff, doprint)
+    migration_score, condition_number, matrix = do_migration(dfs_sig, years, obs_name, obsBins, doubleDiff, doprint)
 
-    return AMS, migration_score, condition_number
+    return total_sig_weighted_counts, AMS, migration_score, condition_number, matrix
 
 # ------------------------------------------------- FUNCTIONS TO AUTOMATICALLY OPTIMIZE BINNING ---------------------------------------------------
 
@@ -864,14 +860,22 @@ def get_init_binning_soversqrtb(obs_name, dfs_sig, dfs_bkg, step_size, targetams
     bkg_values = bkg_values.to_numpy()
     bkg_weights = bkg_weights.to_numpy()
 
-    # restrict to range [xmin, xmax]
+    # restrict range [xmin, xmax]
     if obs_name == 'pTj1' or obs_name == 'pTj2':
         xmin = 30.0  # jets must have pT > 30 GeV
+        xmax = max(sig_values.max(), bkg_values.max())
     elif obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
-        xmin = 0.0   # mjj, detajj, mHj, pTHj, pTHjj must be positive
+        xmin = 0.0 # mjj, detajj, mHj, pTHj, pTHjj must be positive
+        xmax = max(sig_values.max(), bkg_values.max())
+    elif obs_name == 'massZ1':
+        xmin = 40
+        xmax = 120
+    elif obs_name == 'massZ2':
+        xmin = 12
+        xmax = 65
     else:
         xmin = min(sig_values.min(), bkg_values.min())
-    xmax = max(sig_values.max(), bkg_values.max())
+        xmax = max(sig_values.max(), bkg_values.max())
 
     # scan from xmin to xmax
     scan_points = np.arange(xmin, xmax + step_size, step_size)
@@ -901,10 +905,14 @@ def get_init_binning_soversqrtb(obs_name, dfs_sig, dfs_bkg, step_size, targetams
     if abs(edges[-1] - xmax) > eps:
         edges.append(xmax)
 
+    if obs_name == 'pTj1' or obs_name == 'pTj2' or obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
+        if edges[0] != -100:
+            edges = [-100] + edges
+
     return edges
 
 
-def perturb_bins(bins, n_bins, var_min, var_max, max_shift):
+def perturb_bins(bins, var_min, var_max, max_shift):
     """
     Perturb a random number of bin edges while keeping order and number of bins fixed.
     
@@ -975,7 +983,7 @@ def get_init_binning(obs_name, dfs_sig, doubleDiff, nbins, xmin=None, xmax=None,
 
     return array
 
-def random_bins(obs_name, n_bins_min, n_bins_max, step_size, targetams, targetsig):
+def randomize_bins(obs_name, array_init):
 
     sig_values, sig_weights = flatten_dfs(dfs_sig, obs_name)
     bkg_values, bkg_weights = flatten_dfs(dfs_bkg, obs_name)
@@ -989,89 +997,102 @@ def random_bins(obs_name, n_bins_min, n_bins_max, step_size, targetams, targetsi
     xmin = min(sig_values.min(), bkg_values.min())
     xmax = max(sig_values.max(), bkg_values.max())
 
-    # Randomly pick number of bins
-    n_bins = random.randint(n_bins_min, n_bins_max)
-
-    #array = get_init_binning(obs_name, dfs_sig, doubleDiff, n_bins, xmin, xmax)
-    array = get_init_binning_soversqrtb(obs_name, dfs_sig, dfs_bkg, step_size, targetams, targetsig, eps=1e-3)
-    
-    array = perturb_bins(array, n_bins, xmin, xmax, max_shift=2)
+    array = perturb_bins(array_init, xmin, xmax, max_shift=0.1)
 
     if obs_name == 'pTj1' or obs_name == 'pTj2' or obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
-        array = [-100] + array
+        if array[0] != -100:
+            array = [-100] + array
 
     return array
 
 
-def meets_significance(obs_name, sig, low=3, high=4.5):
+def meets_sig_and_counts(obs_name, sig, events, lowsig, lowevents):
     """
     Check significance conditions:
     - All bins except the last must be >= low
     - All bins must be <= high
     """
-    cond1 = all(x >= low for x in sig[:-1])
-    if obs_name == 'pTj1' or obs_name == 'pTj2' or obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
-        cond2 = all(x <= high for x in sig[1:])  # all but first bin
-    else:
-        cond2 = all(x <= high for x in sig)       # all bins
+
+    cond1 = all(x >= lowsig for x in sig[:-1])
+    cond2 = all(x >= lowevents for x in events[:-1]) and (events[-1] >= lowevents/2)
+
     return cond1 and cond2
 
-'''
-def optimize_binning(initial_bins_str, dfs_sig, dfs_bkg, years, obs_name, doubleDiff, steps=1000):
+def check_matrix(array, matrix, threshold):
+    """
+    Iteratively adjusts binning based on a migration matrix.
+    Merges bins if the diagonal purity (matrix[i,i]) is below a threshold.
+    """
+    import numpy as np
+    matrix = np.flipud(matrix)
 
-    solutions = []
+    new_array = [array[0]]
 
-    initial_bins = parse_bins(initial_bins_str)
-    n_bins = len(initial_bins) - 1
-
-    print("INITIAL BINNING")
-    sig, mig, con = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(initial_bins), doubleDiff, True)
-    ams_score = np.sqrt(np.sum(np.array(sig)**2))
-    solutions.append(((ams_score, con, mig), bins_to_string(initial_bins), sig))
-
-    if obs_name == 'pTj1' or obs_name == 'pTj2':
-        var_min, var_max = 30, initial_bins[-1]
-        bins = initial_bins[1:]
-    elif obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
-        var_min, var_max = 0, initial_bins[-1]
-        bins = initial_bins[1:]
-    else:
-        var_min, var_max = initial_bins[0], initial_bins[-1]
-        bins = initial_bins
-
-    for step in range(steps):
-
-        # propose new bins
-        if obs_name == 'pTj1' or obs_name == 'pTj2' or obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
-            new_bins = perturb_bins(bins, var_min, var_max, n_bins-1)
-            new_bins = [-100] + new_bins  # keep first bin fixed
+    # Loop through all diagonal elements
+    for i in range(len(matrix)):
+        if matrix[i, i] > threshold:
+            # Keep the corresponding upper bin edge
+            new_array.append(array[i + 1])
         else:
-            new_bins = perturb_bins(bins, var_min, var_max, n_bins)
-
-        new_bins_str = bins_to_string(new_bins)
-        sig, mig, con = do_binning(dfs_sig, dfs_bkg, years, obs_name, new_bins_str, doubleDiff, opt.PRINT)
-
-        # reject invalid proposals
-        if not is_valid_sig(sig) or not meets_significance(sig):
+            # Merge current bin with the next one
+            # (Skip adding array[i+1] to merge bins)
             continue
+
+    # If the number of bins has changed, recompute and recheck recursively
+    if len(new_array) < len(array):
+        events, sig, mig, con, new_matrix = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(new_array), doubleDiff, False)
+        return check_matrix(new_array, new_matrix, threshold)
+
+    return new_array
+
+import numpy as np
+from math import erf, sqrt
+
+from math import sqrt, erf
+
+def check_matrix_dynamic(array, matrix, eff, res, threshold_base=0.0):
+
+    matrix = np.flipud(matrix)  # keep your convention
+
+    new_array = [array[0]]
+    i = 0
+    merged = False
+
+    while i < len(matrix):
+        delta = array[i+1] - array[i]
+
+        # expected diagonal purity for this bin
+        P_expected = eff #* erf(delta / (2 * sqrt(2) * res))
+
+        print(f"Bin [{array[i]:.2f}, {array[i+1]:.2f}]: eff = {eff:.2f}, res = {res:.2f}, delta = {delta:.2f} => P_expected = {P_expected:.2f}")
+
+        # impose a floor
+        P_target = max(P_expected, threshold_base)
+
+        if matrix[i, i] > P_target:
+            new_array.append(array[i+1])
+            i += 1
         else:
-            ams_score = np.sqrt(np.sum(np.array(sig)**2))
-            # accept if not dominated
-            if not any(pareto_dominates(other[0], (ams_score, con, mig)) for other in solutions):
-                bins = new_bins
-                solutions.append(((ams_score, con, mig), new_bins_str, sig))
+            # merge this bin with the next by skipping appending upper edge
+            if i + 1 < len(array) - 1:
+                array = array[:i+1] + array[i+2:]  # merge with next bin
+                merged = True
+                break  # stop loop and recompute matrix
+            else:
+                # last bin, just keep it
+                new_array.append(array[i+1])
+                i += 1
 
-    # extract Pareto front
-    front = pareto_front(solutions)
+    # if any merge happened, recompute matrix and re-run recursively
+    if merged:
+        events, sig, mig, con, new_matrix = do_binning(
+            dfs_sig, dfs_bkg, years, obs_name, bins_to_string(array), doubleDiff, False
+        )
+        return check_matrix_dynamic(array, new_matrix, eff, res, threshold_base)
 
-    # pick best by tie-breaker
-    best_metrics, best_bins, best_sig = max(
-        front, key=lambda x: (x[0][2]) / (x[0][1] + 1e-6)
-    )
+    return new_array
 
-    best_ams, best_cond, best_mig = best_metrics
-    return best_bins, best_sig, best_cond, best_mig, front
-'''
+
 # -----------------------------------------------------------------------------------------                                                                                                                                                                                                                                                 
 # ------------------------------- MAIN ----------------------------------------------------                                                                                                                                                                                                                                                 
 # -----------------------------------------------------------------------------------------
@@ -1155,6 +1176,9 @@ dfs_bkg = {}
 for year, year_mc in zip(years, years_MC):
     FR_mu_EB, FR_mu_EE, FR_e_EB, FR_e_EE = openFR(year_mc)
     df_bkg = skim_df(bkgs, year, year_mc, treepass, 'bkg')
+    if obs_name == 'rapidity4l':
+        for key in df_bkg.keys(): 
+            df_bkg[key]['ZZy'] = df_bkg[key]['ZZy'].abs()
     dfs_bkg[year] = df_bkg
     #for key, df in dfs_bkg[year].items(): # TO MAKE CSV #
     #    df.to_csv(os.path.join(save_dir, f"bkg_{year}_{key}.csv"), index=False) # TO MAKE CSV #
@@ -1170,6 +1194,10 @@ if doubleDiff:
 
 for year, year_mc in zip(years, years_MC):
     df_sig_pass = skim_df(sigs, year, year_mc, treepass, 'sig')
+    if obs_name == 'rapidity4l':
+        for key in df_sig_pass.keys(): 
+            df_sig_pass[key]['ZZy'] = df_sig_pass[key]['ZZy'].abs()
+            df_sig_pass[key]['GENrapidity4l'] = df_sig_pass[key]['GENrapidity4l'].abs()
     #df_sig_fail = skim_df(sigs, year, year_mc, treefail, 'sig')
     #df_sig = pd.concat([df_sig_pass, df_sig_fail], ignore_index=True)
     dfs_sig[year] = df_sig_pass
@@ -1203,109 +1231,56 @@ if opt.AUTO:
 
     best_bins = None
 
-    '''
-    if obs_name in ("pTj1", "pTj2"):
-        xmin, xmax = 30, 2000
-        step_size = 1
-    elif obs_name in ("mjj", "absdetajj", "pTHj", "pTHjj", "mHj"):
-        xmin, xmax = 0, 10000
-        step_size = 1
-    elif obs_name in ("rapidity4l"):
-        xmin, xmax = 0, 2.5
-        step_size = 0.01
-    elif obs_name in ("massZ1"):
-        xmin, xmax = 40, 120
-        step_size = 1
-    elif obs_name in ("massZ2"):
-        xmin, xmax = 12, 65
-        step_size = 1
-    else:
-        step_size = 0.1
-
-
-    # PERCENTILES
-    idx = 0
-    binnings = []
-
-    for n_bins in range(3, 20+1):
-
-        init_binning = get_init_binning(obs_name, dfs_sig, doubleDiff, n_bins+1, xmin, xmax, eps=1e-3)
-
-        if obs_name in ("pTj1", "pTj2", "mjj", "absdetajj", "pTHj", "pTHjj", "mHj"):
-            print("NBINS = ", n_bins+1)
-            init_binning = [-100] + [xmin] + init_binning.tolist() + [xmax]
-        else:
-            print("NBINS = ", n_bins)
-            init_binning = [xmin] + init_binning.tolist() + [xmax]
-
-        binnings.append(init_binning)
-        sig, mig, con = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(init_binning), doubleDiff, opt.PRINT)
-
-        if obs_name in ("pTj1", "pTj2"):
-            sig = np.array(sig[1:], dtype=float)  # ignore first bin
-        else:
-            sig = np.array(sig, dtype=float)
-
-        if np.sum(sig) > 3.5*n_bins:
-            idx += 1
-            continue
-
-        else:
-
-            if obs_name in ("pTj1", "pTj2", "mjj", "absdetajj", "pTHj", "pTHjj", "mHj"):
-                print("IDEAL NUMBER OF BINS = ", n_bins)
-                best_bins, sig, con, mig, front = optimize_binning(bins_to_string(binnings[idx-1]), dfs_sig, dfs_bkg, years, obs_name, doubleDiff, steps=100)
-            else:
-                print("IDEAL NUMBER OF BINS = ", n_bins-1)
-                best_bins, sig, con, mig, front = optimize_binning(bins_to_string(binnings[idx-1]), dfs_sig, dfs_bkg, years, obs_name, doubleDiff, steps=100)
-
-            #try:
-            #best_bins, score = optimize_binning(dfs_sig, dfs_bkg, years, obs_name, doubleDiff, xmin, xmax, bins_to_string(init_binning))
-
-            #except Exception as e:
-            #    print(f"n_bins={n_bins-1}: optimization exception: {e}")
-            
-
-            break
-        
-    
-    # AMS
-    init_binning = get_init_binning_soversqrtb(obs_name, dfs_sig, dfs_bkg, step_size, eps=0)
-
-    if obs_name in ("pTj1", "pTj2", "mjj", "absdetajj", "pTHj", "pTHjj", "mHj"):
-            print("IDEAL NUMBER OF BINS = ", len(parse_bins(bins_to_string(init_binning))))
-            init_binning = [-100] + init_binning.tolist()
-    else:
-        print("IDEAL NUMBER OF BINS = ", len(parse_bins(bins_to_string(init_binning)))-1)
-        init_binning = init_binning.tolist()
-
-
-    best_bins, sig, con, mig, front = optimize_binning(bins_to_string(init_binning), dfs_sig, dfs_bkg, years, obs_name, doubleDiff, steps=5)
-    '''
-
-    n_bins_min = 99
-    n_bins_max = 99
-
     step_size = 0.1
 
-    n_trials = 1000
+    n_trials = 100
 
-    if obs_name in ("pTj1", "pTj2", "mjj", "absdetajj", "pTHj", "pTHjj", "mHj"):
-        target_ams = 3.5
-        target_sig = 25
+    target_ams = 3
+    target_sig = 0
+
+    eff_4lep = 0.95**4/4 + 0.85**4/4 + 0.95**2*0.85**2/2
+    eff_jet = 0.8
+    
+    res_lep = 0.02 * 30 # 30 GeV typical lepton pT
+    res_jet = 0.15 * 50 # 50 GeV typical jet pT
+
+    res = 0
+
+    if obs_name in ("pTj1", "pTHj", "mHj"): 
+        eff = eff_4lep * eff_jet
+        #res =  sqrt(res_lep**2 + res_jet**2)
+    elif obs_name in ("pTj2", "mjj", "absdetajj", "pTHjj"): 
+        eff = eff_4lep * eff_jet**2
+        #res = sqrt(res_lep**2 + 2*res_jet**2)
+    #elif obs_name in ("rapidity4l"):
+    #   eff = eff_lep
+    #    #res = 2*0.02
+    #elif obs_name in ("absdetajj"):
+    #    eff = eff_jet**2
+    #    #res = sqrt(2)*0.15
     else:
-        target_ams = 3.5
-        target_sig = 20
+        eff = eff_4lep
+        #res = 2*res_lep
 
     all_binnings = []
+
+    array = get_init_binning_soversqrtb(obs_name, dfs_sig, dfs_bkg, step_size, target_ams, target_sig, eps=1e-3)
+    events, sig, mig, con, matrix = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(array), doubleDiff, True)
+
+    array_init = check_matrix_dynamic(array, matrix, eff, res)
+    events, sig, mig, con, matrix = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(array_init), doubleDiff, True)
+
+    if meets_sig_and_counts(obs_name, sig, events, target_ams, target_sig):
+        all_binnings.append((array_init, mig/con))
+
     with tqdm(total=n_trials, desc="testing binnings (0 valid)") as pbar:
+        
         for i in range(n_trials):
-            array = random_bins(obs_name, n_bins_min, n_bins_max, step_size, target_ams, target_sig)
-            sig, mig, con = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(array), doubleDiff, opt.PRINT)
-            if meets_significance(obs_name, sig, low=3, high=4.5):
+            array = randomize_bins(obs_name, array_init)
+            events, sig, mig, con, matrix = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(array), doubleDiff, opt.PRINT)
+            if meets_sig_and_counts(obs_name, sig, events, target_ams, target_sig):
                 all_binnings.append((array, mig/con))
                 pbar.set_description(f"testing binnings ({len(all_binnings)} valid)")
-
             pbar.update(1)
 
     if len(all_binnings) == 0:

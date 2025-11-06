@@ -7,9 +7,9 @@
 
 path = {
     #'eos_path_sig': '/eos/home-s/sellissp/HZZ/SAMPLES/062025/',
-    'eos_path_sig': '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/062025/',
+    'eos_path_sig': '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/LATEST_PROD/',
     'eos_path': '/eos/user/s/sellissp/',
-    'eos_path_FR': '/eos/user/l/lurda/CMS/HZZ/XS_analysis/250303',
+    'eos_path_FR': '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/LATEST_PROD/',
 }
 
 #/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data
