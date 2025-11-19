@@ -8,6 +8,8 @@ from array import array
 import random
 import math
 from tqdm import tqdm
+from math import erf, sqrt
+
 
 from observables import observables
 from binning import binning
@@ -662,9 +664,6 @@ def do_binning(dfs_sig, dfs_bkg, years, obs_name, obsBins, doubleDiff, doprint):
 
             if not doubleDiff:
                 hist = ROOT.TH1F(f"hist_sig_{sig}_{year}", "", nbins, bin_array) 
-                if obs_name == 'rapidity4l': 
-                    col = observables[obs_name]['obs_reco']
-                    df_sel.loc[:, col] = df_sel[col].abs()
                 for x, w in zip(df_sel[observables[obs_name]['obs_reco']], df_sel['weight']):
                     hist.Fill(x, w)
 
@@ -745,9 +744,6 @@ def do_binning(dfs_sig, dfs_bkg, years, obs_name, obsBins, doubleDiff, doprint):
                 
             if not doubleDiff:
                 hist = ROOT.TH1F(f"hist_bkg_{bkg}_{year}", "", nbins, bin_array)
-                if obs_name == 'rapidity4l': 
-                    col = observables[obs_name]['obs_reco']
-                    df_sel.loc[:, col] = df_sel[col].abs()
                 for x, w in zip(df_sel[observables[obs_name]['obs_reco']], df_weights):
                     hist.Fill(x, w)
 
@@ -827,7 +823,6 @@ def do_binning(dfs_sig, dfs_bkg, years, obs_name, obsBins, doubleDiff, doprint):
 # ------------------------------------------------- FUNCTIONS TO AUTOMATICALLY OPTIMIZE BINNING ---------------------------------------------------
 
 
-
 def parse_bins(obs_bins):
     return [float(x) for x in obs_bins.strip('|').split('|') if x]
 
@@ -839,7 +834,8 @@ def flatten_dfs(dfs_sig, obs_name):
     wts  = []
     for year_dict in dfs_sig.values():
         for name, df in year_dict.items():
-            df = df[(df['ZZMass'] >= opt.m4lLower) & (df['ZZMass'] <= opt.m4lUpper)]
+            df = df[(df['ZZMass'] >= opt.m4lLower) & (df['ZZMass'] <= opt.m4lUpper)] 
+            #& (df['passedFullSelection'] == 1) & (df['cuth4l_reco'] == True)]
             obs_val = df[observables[obs_name]['obs_reco']]
             if name == 'ZX':
                 weight = df['ZX_yield']
@@ -849,7 +845,42 @@ def flatten_dfs(dfs_sig, obs_name):
             wts.append(weight)
     return pd.concat(vals, ignore_index=True), pd.concat(wts, ignore_index=True)
 
-def get_init_binning_soversqrtb(obs_name, dfs_sig, dfs_bkg, step_size, targetams, targetsig, eps=1e-3):
+def get_init_binning_percentiles(obs_name, dfs_sig, doubleDiff, nbins, xmin=None, xmax=None, eps=1e-3):
+    values, weights = flatten_dfs(dfs_sig, obs_name)
+    values = values.to_numpy()
+    weights = weights.to_numpy()
+
+    # restrict to range [xmin, xmax]
+    if xmin is not None:
+        mask_min = values >= xmin
+    else:
+        mask_min = np.ones_like(values, dtype=bool)
+
+    if xmax is not None:
+        mask_max = values <= xmax
+    else:
+        mask_max = np.ones_like(values, dtype=bool)
+
+    mask = mask_min & mask_max
+    values = values[mask]
+    weights = weights[mask]
+
+    # sort and compute weighted CDF
+    sorter = np.argsort(values)
+    values_sorted = values[sorter]
+    weights_sorted = weights[sorter]
+
+    cdf = np.cumsum(weights_sorted)
+    cdf /= cdf[-1]  # normalize to 1
+
+    # compute percentiles between xmin and xmax
+    percentiles = np.linspace(0, 1, nbins)
+    array = np.interp(percentiles, cdf, values_sorted)[1:-1]  # exclude first & last edges
+
+
+    return array
+
+def get_init_binning_AMS(obs_name, dfs_sig, dfs_bkg, step_size, targetams, targetsig, eps=1e-3):
 
     # flatten signal and background
     sig_values, sig_weights = flatten_dfs(dfs_sig, obs_name)
@@ -898,7 +929,6 @@ def get_init_binning_soversqrtb(obs_name, dfs_sig, dfs_bkg, step_size, targetams
 
         if B > 0 and current_ams >= targetams and S>targetsig:
             edges.append(hi)   # cut bin here
-            #print(f"--> Bin closed at {hi:.2f} (AMS reached {current_ams:.2f})")
             S, B = 0.0, 0.0    # reset accumulators
 
     # make sure last bin closes at xmax
@@ -911,77 +941,37 @@ def get_init_binning_soversqrtb(obs_name, dfs_sig, dfs_bkg, step_size, targetams
 
     return edges
 
+def bifurcate_gaussian(mu, sigma1, sigma2):
 
-def perturb_bins(bins, var_min, var_max, max_shift):
-    """
-    Perturb a random number of bin edges while keeping order and number of bins fixed.
-    
-    bins      : current list of bin edges
-    var_min   : minimum allowed value
-    var_max   : maximum allowed value
-    n_bins    : desired number of bins
-    max_shift : maximum fraction of bin width to shift an edge
-    """
+    if np.random.rand() < sigma1 / (sigma1 + sigma2):
+        return mu - abs(np.random.randn()) * sigma1
+    else:
+        return mu + abs(np.random.randn()) * sigma2
+
+def perturb_bins(bins, var_min, var_max):
+
     new_bins = bins[:]
-    n_edges = len(new_bins) - 2  # exclude first and last edges
+    n_edges = len(new_bins) - 2  # exclude first and last edges (min/max)
 
-    # Randomly decide how many edges to shift (at least 1)
     num_edges_to_shift = random.randint(1, n_edges)
-
-    # Randomly pick edges to shift
     edges_to_shift = random.sample(range(1, len(new_bins) - 1), num_edges_to_shift)
 
     for idx in edges_to_shift:
-        left = new_bins[idx - 1]
-        right = new_bins[idx + 1]
-        
-        # fractional shift relative to local bin width
-        shift = random.uniform(-max_shift, max_shift) * (right - new_bins[idx])
-        new_edge = new_bins[idx] + shift
+        left = new_bins[idx - 1] + 1e-2
+        right = new_bins[idx + 1] - 1e-2
 
-        # Clamp to maintain ascending order
+        sigmaL = (new_bins[idx] - left) / 2
+        sigmaR = (right - new_bins[idx]) / 2
+        mu = new_bins[idx]
+
+        new_edge = bifurcate_gaussian(mu, sigmaL, sigmaR)
+
         new_edge = max(left + 1e-6, min(right - 1e-6, new_edge))
+        new_edge = max(var_min, min(var_max, new_edge))
+
         new_bins[idx] = new_edge
 
-    #new_bins = [var_min] + list(new_bins) + [var_max]
-
     return new_bins
-
-
-def get_init_binning(obs_name, dfs_sig, doubleDiff, nbins, xmin=None, xmax=None, eps=1e-3):
-    values, weights = flatten_dfs(dfs_sig, obs_name)
-    values = values.to_numpy()
-    weights = weights.to_numpy()
-
-    # restrict to range [xmin, xmax]
-    if xmin is not None:
-        mask_min = values >= xmin
-    else:
-        mask_min = np.ones_like(values, dtype=bool)
-
-    if xmax is not None:
-        mask_max = values <= xmax
-    else:
-        mask_max = np.ones_like(values, dtype=bool)
-
-    mask = mask_min & mask_max
-    values = values[mask]
-    weights = weights[mask]
-
-    # sort and compute weighted CDF
-    sorter = np.argsort(values)
-    values_sorted = values[sorter]
-    weights_sorted = weights[sorter]
-
-    cdf = np.cumsum(weights_sorted)
-    cdf /= cdf[-1]  # normalize to 1
-
-    # compute percentiles between xmin and xmax
-    percentiles = np.linspace(0, 1, nbins)
-    array = np.interp(percentiles, cdf, values_sorted)[1:-1]  # exclude first & last edges
-
-
-    return array
 
 def randomize_bins(obs_name, array_init):
 
@@ -997,7 +987,18 @@ def randomize_bins(obs_name, array_init):
     xmin = min(sig_values.min(), bkg_values.min())
     xmax = max(sig_values.max(), bkg_values.max())
 
-    array = perturb_bins(array_init, xmin, xmax, max_shift=0.1)
+    if obs_name == 'pTj1' or obs_name == 'pTj2':
+        xmin = 30.0  # jets must have pT > 30 GeV
+    elif obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
+        xmin = 0.0 # mjj, detajj, mHj, pTHj, pTHjj must be positive
+    elif obs_name == 'massZ1':
+        xmin = 40
+        xmax = 120
+    elif obs_name == 'massZ2':
+        xmin = 12
+        xmax = 65
+
+    array = perturb_bins(array_init, xmin, xmax)
 
     if obs_name == 'pTj1' or obs_name == 'pTj2' or obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
         if array[0] != -100:
@@ -1005,52 +1006,14 @@ def randomize_bins(obs_name, array_init):
 
     return array
 
-
 def meets_sig_and_counts(obs_name, sig, events, lowsig, lowevents):
-    """
-    Check significance conditions:
-    - All bins except the last must be >= low
-    - All bins must be <= high
-    """
 
     cond1 = all(x >= lowsig for x in sig[:-1])
-    cond2 = all(x >= lowevents for x in events[:-1]) and (events[-1] >= lowevents/2)
+    cond2 = all(x >= lowevents for x in events[:-1]) and (events[-1] >= events[-2]/2)
 
     return cond1 and cond2
 
-def check_matrix(array, matrix, threshold):
-    """
-    Iteratively adjusts binning based on a migration matrix.
-    Merges bins if the diagonal purity (matrix[i,i]) is below a threshold.
-    """
-    import numpy as np
-    matrix = np.flipud(matrix)
-
-    new_array = [array[0]]
-
-    # Loop through all diagonal elements
-    for i in range(len(matrix)):
-        if matrix[i, i] > threshold:
-            # Keep the corresponding upper bin edge
-            new_array.append(array[i + 1])
-        else:
-            # Merge current bin with the next one
-            # (Skip adding array[i+1] to merge bins)
-            continue
-
-    # If the number of bins has changed, recompute and recheck recursively
-    if len(new_array) < len(array):
-        events, sig, mig, con, new_matrix = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(new_array), doubleDiff, False)
-        return check_matrix(new_array, new_matrix, threshold)
-
-    return new_array
-
-import numpy as np
-from math import erf, sqrt
-
-from math import sqrt, erf
-
-def check_matrix_dynamic(array, matrix, eff, res, threshold_base=0.0):
+def check_matrix(array, matrix, eff, res, threshold_base=0.0):
 
     matrix = np.flipud(matrix)  # keep your convention
 
@@ -1059,12 +1022,12 @@ def check_matrix_dynamic(array, matrix, eff, res, threshold_base=0.0):
     merged = False
 
     while i < len(matrix):
+
         delta = array[i+1] - array[i]
 
-        # expected diagonal purity for this bin
-        P_expected = eff #* erf(delta / (2 * sqrt(2) * res))
+        P_expected = eff * erf(delta / (2 * sqrt(2) * res[i]))
 
-        print(f"Bin [{array[i]:.2f}, {array[i+1]:.2f}]: eff = {eff:.2f}, res = {res:.2f}, delta = {delta:.2f} => P_expected = {P_expected:.2f}")
+        #print(f"Bin [{array[i]:.2f}, {array[i+1]:.2f}]: eff = {eff:.2f}, res = {res[i]:.2f}, delta = {delta:.2f} => P_expected = {P_expected:.2f}")
 
         # impose a floor
         P_target = max(P_expected, threshold_base)
@@ -1088,9 +1051,47 @@ def check_matrix_dynamic(array, matrix, eff, res, threshold_base=0.0):
         events, sig, mig, con, new_matrix = do_binning(
             dfs_sig, dfs_bkg, years, obs_name, bins_to_string(array), doubleDiff, False
         )
-        return check_matrix_dynamic(array, new_matrix, eff, res, threshold_base)
+        return check_matrix(array, new_matrix, eff, res, threshold_base)
 
     return new_array
+
+def get_res(obs_name, obs_bins, dfs_sig):
+
+    # flatten over years
+
+    vals, m4l_gen, m4l_reco = [], [], []
+
+    for year_dict in dfs_sig.values():
+        for name, df in year_dict.items():
+
+            df = df[(df['ZZMass'] >= opt.m4lLower) & (df['ZZMass'] <= opt.m4lUpper) & 
+                    (df['GENmass4l'] >= opt.m4lLower) & (df['GENmass4l'] <= opt.m4lUpper) & 
+                    (df['passedFullSelection'] == 1) & (df['cuth4l_reco'] == True)]
+
+            m4l_gen_val = df['GENmass4l']
+            m4l_reco_val = df['ZZMass']
+            obs_val = df[observables[obs_name]['obs_reco']]
+
+            vals.append(obs_val)
+            m4l_gen.append(m4l_gen_val)
+            m4l_reco.append(m4l_reco_val)
+
+    vals = pd.concat(vals, ignore_index=True)
+    m4l_gen = pd.concat(m4l_gen, ignore_index=True)
+    m4l_reco = pd.concat(m4l_reco, ignore_index=True)
+
+    res = []
+
+    for i in range(len(obs_bins)-1):
+
+        mask = (vals >= obs_bins[i]) & (vals < obs_bins[i+1])
+
+        x = ( m4l_gen[mask] - m4l_reco[mask] ) / m4l_gen[mask]
+        rms = np.sqrt(np.nanmean(x**2, axis=0))
+    
+        res.append(rms)
+
+    return res
 
 
 # -----------------------------------------------------------------------------------------                                                                                                                                                                                                                                                 
@@ -1231,43 +1232,27 @@ if opt.AUTO:
 
     best_bins = None
 
-    step_size = 0.1
-
+    step_size = 0.01
     n_trials = 100
 
     target_ams = 3
     target_sig = 0
 
     eff_4lep = 0.95**4/4 + 0.85**4/4 + 0.95**2*0.85**2/2
-    eff_jet = 0.8
+    eff_jet = 0.6
     
-    res_lep = 0.02 * 30 # 30 GeV typical lepton pT
-    res_jet = 0.15 * 50 # 50 GeV typical jet pT
-
-    res = 0
-
-    if obs_name in ("pTj1", "pTHj", "mHj"): 
-        eff = eff_4lep * eff_jet
-        #res =  sqrt(res_lep**2 + res_jet**2)
-    elif obs_name in ("pTj2", "mjj", "absdetajj", "pTHjj"): 
-        eff = eff_4lep * eff_jet**2
-        #res = sqrt(res_lep**2 + 2*res_jet**2)
-    #elif obs_name in ("rapidity4l"):
-    #   eff = eff_lep
-    #    #res = 2*0.02
-    #elif obs_name in ("absdetajj"):
-    #    eff = eff_jet**2
-    #    #res = sqrt(2)*0.15
-    else:
-        eff = eff_4lep
-        #res = 2*res_lep
+    if obs_name in ("pTj1", "pTHj", "mHj"):  eff = eff_4lep * eff_jet
+    elif obs_name in ("pTj2", "mjj", "absdetajj", "pTHjj"): eff = eff_4lep * eff_jet**2
+    else: eff = eff_4lep
 
     all_binnings = []
 
-    array = get_init_binning_soversqrtb(obs_name, dfs_sig, dfs_bkg, step_size, target_ams, target_sig, eps=1e-3)
+    array = get_init_binning_AMS(obs_name, dfs_sig, dfs_bkg, step_size, target_ams, target_sig, eps=1e-3)
     events, sig, mig, con, matrix = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(array), doubleDiff, True)
 
-    array_init = check_matrix_dynamic(array, matrix, eff, res)
+    res = get_res(obs_name, array, dfs_sig)
+
+    array_init = check_matrix(array, matrix, eff, res)
     events, sig, mig, con, matrix = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(array_init), doubleDiff, True)
 
     if meets_sig_and_counts(obs_name, sig, events, target_ams, target_sig):
