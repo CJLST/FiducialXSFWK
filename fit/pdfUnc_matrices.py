@@ -441,6 +441,11 @@ def run_pdf_unc_matrices(input_file):
     percent_diffs = compute_percent_variations(matrices, matrices_all)
     append_uncertainties(input_file, transpose_all(percent_diffs)['allH125'])
 
+    #plot_and_save_matrices(matrices_all, genbins, recobins, input_file, "all")
+    #plot_and_save_matrices(matrices, genbins, recobins, input_file, "variations")
+    #plot_and_save_matrices(percent_diffs, genbins, recobins, input_file, "percent_diffs")
+
+
     print("Processing complete.")
 
 if __name__ == "__main__":

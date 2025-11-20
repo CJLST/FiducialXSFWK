@@ -131,7 +131,7 @@ def weight_uncs(year, process, scale):
     w_var = {}
 
     for proc in processes:
-        fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/062025/{year}_MC/{proc}/ZZ4lAnalysis.root"
+        fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/{year}_MC/{proc}/ZZ4lAnalysis.root"
         with uproot.open(fname) as f:
             tree = f["AllEvents"].arrays()
 
@@ -362,15 +362,6 @@ def generators(year):
     gen = {}
     
     for sample in signals_original:
-
-        if year == "2024" and sample == "ZZTo4l":
-            year = "2023postBPix" # use 2023postBPix for 2024 ZZTo4l sample
-        elif year == "2024" and sample.startswith("ggTo"):
-            year = "2023postBPix" # use 2023postBPix for 2024 ggZZ samples
-        elif year == "2024" and sample == "ZH125":
-            year = "2023postBPix" # use 2023postBPix for 2024 ZH samples
-
-
         fname = path['eos_path_sig']+year+"_MC/"+sample+"/ZZ4lAnalysis_SKIMMED.root"
         gen[sample] = uproot.open(fname)["Counters"].values()[39] 
     return gen
@@ -479,6 +470,14 @@ def dataframes(year, doubleDiff):
         lumi = 9.451 #+109.08
     elif year == '2024':
         lumi = 109.08
+    elif year == '2024_1':
+        lumi = 109.08/4
+    elif year == '2024_2':
+        lumi = 109.08/4
+    elif year == '2024_3':
+        lumi = 109.08/4
+    elif year == '2024_4':
+        lumi = 109.08/4
 
     d_df_sig = {}
     d_df_sig_failed = {}
@@ -928,6 +927,8 @@ elif opt.INTER:
 else:
     signals_original = ['ggH125', 'VBFH125', 'WminusH125', 'WplusH125', 'ttH125', 'ZH125']
     signals = ['ggH125', 'VBFH125', 'WH125', 'ttH125', 'ZH125']
+
+
 eos_path_sig = path['eos_path_sig']
 #key = 'candTree'
 #key_failed = 'candTree_failed'
@@ -944,10 +945,16 @@ if (opt.YEAR == '2022'): years = ['2022']
 if (opt.YEAR == '2022EE'): years = ['2022EE']
 if (opt.YEAR == '2023preBPix'): years = ['2023preBPix']
 if (opt.YEAR == '2023postBPix'): years = ['2023postBPix']
-if (opt.YEAR == '2024'): years = ['2024']
+#if (opt.YEAR == '2024'): years = ['2024']
+if (opt.YEAR == '2024_1'): years = ['2024_1']
+if (opt.YEAR == '2024_2'): years = ['2024_2']
+if (opt.YEAR == '2024_3'): years = ['2024_3']
+if (opt.YEAR == '2024_4'): years = ['2024_4']
+
 
 if (opt.YEAR == '2022full'): years = ['2022', '2022EE']
 if (opt.YEAR == '2023full'): years = ['2023preBPix', '2023postBPix']
+if (opt.YEAR == '2024'): years = ['2024_1', '2024_2', '2024_3', '2024_4']
 
 print(years)
 
