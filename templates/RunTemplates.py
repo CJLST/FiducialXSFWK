@@ -616,7 +616,9 @@ if (opt.YEAR == '2022full'):
 if (opt.YEAR == '2023full'):
     years_MC = ['2023preBPix', '2023postBPix']
     years = ["2023preBPix", "2023postBPix"]
-
+if (opt.YEAR == '2022_2023'):
+    years_MC = ['2022', '2022EE', '2023preBPix', '2023postBPix']
+    years = ["2022", "2022EE", "2023preBPix", "2023postBPix"]
 obs_bins, doubleDiff = binning(opt.OBSNAME)
 
 obs_name = opt.OBSNAME
@@ -682,7 +684,12 @@ if (opt.YEAR == '2022full'):
 if (opt.YEAR == '2023full'):
     d_bkg['2023preBPix'] = d_bkg_tmp['2023preBPix']
     d_bkg['2023postBPix'] = d_bkg_tmp['2023postBPix']
-    
+if (opt.YEAR == '2022_2023'):
+    d_bkg['2022'] = d_bkg_tmp['2022']
+    d_bkg['2022EE'] = d_bkg_tmp['2022EE']
+    d_bkg['2023preBPix'] = d_bkg_tmp['2023preBPix']
+    d_bkg['2023postBPix'] = d_bkg_tmp['2023postBPix']
+
 # Generate pandas for ZX
 branches_ZX = ['ZZMass', 'Z1Flav', 'Z2Flav', 'LepLepId', 'LepEta', 'LepPt', 'Z2Mass', 'Z1Mass', 'ZZPt', 'ZZy', 'pTj1', 'pTj2', 'Nj', 'absdetajj', 'mjj', 'dphijj', 'pTHj', 'pTHjj', 'mHj', 'costheta1', 'costheta2', 'Phi', 'Phi1', 'costhetastar'] #, 'TBMax', 'TCMax'] #
 

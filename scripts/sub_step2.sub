@@ -1,0 +1,14 @@
+universe   = vanilla
+executable = run_step2.sh
+arguments  = $(obsName) $(year)
+output     = logs/$(ClusterId).$(Process).out
+error      = logs/$(ClusterId).$(Process).err
+log        = logs/$(ClusterId).$(Process).log
+
++JobFlavour = "nextweek"
+
+transfer_input_files = /afs/cern.ch/user/s/sellissp/public/HZZ/CMSSW_14_1_0_pre4/src/FiducialXSFWK/coefficients/RunCoefficients.py
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+
+queue obsName, year from input_args.txt

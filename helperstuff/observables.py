@@ -124,11 +124,11 @@ observables = {
      'obs_gen': 'GENabsdetajj',
      'obs_reco_2nd': 'mjj',
      'obs_gen_2nd': 'GENmjj'},
-'pT4l vs Nj':
-    {'obs_reco': 'ZZPt',
-     'obs_gen': 'GENpT4l',
-     'obs_reco_2nd': 'Nj',
-     'obs_gen_2nd': 'GENNj'},
+'Nj vs pT4l':
+    {'obs_reco_2nd': 'ZZPt',
+     'obs_gen_2nd': 'GENpT4l',
+     'obs_reco': 'Nj',
+     'obs_gen': 'GENNj'},
 'rapidity4l vs pT4l':
     {'obs_reco': 'ZZy',
      'obs_gen': 'GENrapidity4l',

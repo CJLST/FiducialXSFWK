@@ -26,8 +26,9 @@ if [[ "$data_type" != "MC" && "$data_type" != "Data" ]]; then
 fi
 
 # Define paths
-base_path="/eos/user/m/mmanoni/HZZ_prod_300425_angles/$data_type"
-full_path="$base_path/$subdir"
+#base_path="/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/122025"
+base_path="/eos/home-s/sellissp/HZZ/SAMPLES/122025"
+full_path="$base_path/${subdir}_${data_type}"
 
 # Check directory
 if [ ! -d "$full_path" ]; then
@@ -40,23 +41,26 @@ if [ "$data_type" == "MC" ]; then
     sample_list="$full_path/sampleList.txt"
 
     echo "Generating sample list for MC (excluding *Chunk*)..."
-    find "$full_path" -mindepth 1 -maxdepth 1 -type d ! -name '*Chunk*' -exec basename {} \; | sort > "$sample_list"
-    echo "Sample list created with $(wc -l < "$sample_list") entries."
+    #find "$full_path" -mindepth 1 -maxdepth 1 -type d ! -name '*Chunk*' -exec basename {} \; | sort > "$sample_list"
+    find "$full_path" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort > "$sample_list"
+    echo "Sample list has $(wc -l < "$sample_list") entries."
     echo "Starting Run3Skimmer processing for MC..."
 
     while IFS= read -r sample; do
         sample=$(echo "$sample" | xargs)
         if [ -n "$sample" ]; then
             input_file="$full_path/$sample/ZZ4lAnalysis.root"
-            output_file="$full_path/$sample/ZZ4lAnalysis_SKIMMED.root"
-
+            #output_file="$full_path/$sample/ZZ4lAnalysis_SKIMMED.root"
+	    output_file="$full_path/$sample/ZZ4lAnalysis_FR.root" 
+	    
             if [ -f "$input_file" ]; then
                 if [ "$retry_mode" = true ] && [ -f "$output_file" ]; then
                     echo "-- Skipped (already skimmed): $sample"
                     continue
                 fi
                 echo "-> Skimming $sample"
-                python3 Run3Skimmer_MC.py --input "$input_file" --output "$output_file" --mc
+                #python3 Run3Skimmer.py --input "$input_file" --output "$output_file" --mc
+		python3 NanoConverter.py --input "$input_file" --output "$output_file" --mc --skipZL
             else
                 echo "!! Missing input file for sample: $sample"
             fi
@@ -85,7 +89,7 @@ else
 
         if [ -f "$input_file" ]; then
             echo "-> Skimming $file"
-            python3 Run3Skimmer_Data.py --input "$input_file" --output "$output_file"
+            python3 Run3Skimmer.py --input "$input_file" --output "$output_file"
         else
             echo "!! Missing file: $input_file"
         fi

@@ -19,6 +19,8 @@ plt.style.use(hep.style.CMS)
 import optparse # spencer
 
 sys.path.append('../helperstuff/') # spencer
+from paths import path
+from split import split
 from observables import observables # spencer
 from binning import binning # spencer
 
@@ -36,6 +38,8 @@ def parseOptions():
 
     parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='pT4l',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
     parser.add_option('',   '--year',  dest='YEAR',  type='string', default='2022',   help='Year -> 2016 or 2017 or 2018 or Full')
+    parser.add_option('',   '--split', action='store_true', dest='SPLIT', default=False,   help='split eras')
+    parser.add_option('',   '--merge', action='store_true', dest='MERGE', default=False,   help='2022full - 2023full - Run3')
 
     global opt, args
     (opt, args) = parser.parse_args()
@@ -159,8 +163,8 @@ def get_scale_unc(process, channel, tree, scale, observable, nnlops = False):
 
     full_sel = cutm4l_gen & cutobs_gen & cutchan_gen & tree['passedFiducial'] == 1
     
-    fname = f"/eos/home-s/sellissp/HZZ/SAMPLES/062025/{year}_MC/{process}/ZZ4lAnalysis.root" # spencer 
-    #f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/{year}/{process}/ZZ4lAnalysis.root" # spencer
+    fname = path['eos_path_sig']+year+"_MC/"+process+"/ZZ4lAnalysis.root"
+
     with uproot.open(f'{fname}') as f: # spencer
         tree = f['AllEvents'].arrays() # spencer
 
@@ -349,10 +353,8 @@ def get_uncerainties(obs_gen, year, process, channel, bins, nnlops, doubleDiff, 
     unc = {}
     h = {}
 
-    #fname = f"/eos/user/m/mbonanom/Run3RedTrees/lheWeights/2022EE/{process}_MC_2022EE_skimmed.root"
-    #fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/{year}/{process}/{process}_reducedTree_MC_{year}_skimmed_nnlops.root" # spencer
-    fname = f"/eos/home-s/sellissp/HZZ/SAMPLES/062025/{year}_MC/{process}/ZZ4lAnalysis_SKIMMED.root" # spencer
-    
+    fname = path['eos_path_sig']+year+"_MC/"+process+"/ZZ4lAnalysis_SKIMMED.root"
+
     if (process == "ggH125") and nnlops:
         suffix = "NNLOPS_"
     else:
@@ -375,6 +377,8 @@ def get_uncerainties(obs_gen, year, process, channel, bins, nnlops, doubleDiff, 
 def save_uncertainties(process, obs_gen, nnlops, year, years, unc, h, doubleDiff, obs_gen_2nd=None):
 
     pname = process.split("125")[0]
+
+    if (pname == "ZH"): pname = "VH"
 
     if doubleDiff:
         obs_1 = opt.OBSNAME.split(' vs ')[0]
@@ -463,23 +467,43 @@ if __name__ == '__main__':
         obs_gen_2nd = None
         length = len(bins)-1
 
-    if (opt.YEAR == 'Run3'): years = ['2022', '2022EE', '2023preBPix', '2023postBPix']
-            
     if (opt.YEAR == '2022'): years = ['2022']
     if (opt.YEAR == '2022EE'): years = ['2022EE']
     if (opt.YEAR == '2023preBPix'): years = ['2023preBPix']
     if (opt.YEAR == '2023postBPix'): years = ['2023postBPix']
+    if (opt.YEAR == '2024'): years = ['2024']
 
     if (opt.YEAR == '2022full'): years = ['2022', '2022EE']
     if (opt.YEAR == '2023full'): years = ['2023preBPix', '2023postBPix']
+    if (opt.YEAR == '2022_2023'): years = ['2022', '2022EE', '2023preBPix', '2023postBPix']
+    if (opt.YEAR == 'Run3'): years = ['2022', '2022EE', '2023preBPix', '2023postBPix', '2024']
 
 
-    if (opt.YEAR == '2022full' or opt.YEAR == '2023full' or opt.YEAR == 'Run3'):
+    if opt.SPLIT:
+        YEAR_SPLIT = opt.YEAR.split("_")[0]
+        nSplit = split[YEAR_SPLIT]
+        years = [opt.YEAR]
+    else:
+        nSplit = 0
+
+    if opt.MERGE:
+        if nSplit != 0:
+            years = []
+            for i in range(0,nSplit):
+                years.append(opt.YEAR+"_"+str(i+1))
+        else:
+            years = years
+
+
+    print(years)
+
+
+    if opt.MERGE:
 
         unc = {}
         h = {}
 
-        processes = ["NNLOPS_ggH125", "ggH125", "VBFH125", "ttH125"]#, "ZH125"]
+        processes = ["NNLOPS_ggH125", "ggH125", "VBFH125", "ttH125", "ZH125"]
 
         for process in processes:
 
@@ -512,11 +536,14 @@ if __name__ == '__main__':
             else:
                 fname_ALL = f'../inputs/fidXS_{suffix}{obs_name}_{pname}_{opt.YEAR}.py'
 
-            if os.path.exists(fname_ALL):
-                th_xs = get_th_xsec(pname, obs_gen, suffix, opt.YEAR, doubleDiff, obs_gen_2nd)
-            else:
-                print(f'{fname_ALL} does not exist!')
-                continue
+
+            th_xs = get_th_xsec(pname, obs_gen, suffix, opt.YEAR, doubleDiff, obs_gen_2nd)
+
+            #if os.path.exists(fname_ALL):
+            #    th_xs = get_th_xsec(pname, obs_gen, suffix, opt.YEAR, doubleDiff, obs_gen_2nd)
+            #else:
+            #    print(f'{fname_ALL} does not exist!')
+            #    continue
 
             for year in years:
 

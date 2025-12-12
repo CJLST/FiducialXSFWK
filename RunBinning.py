@@ -81,14 +81,6 @@ def weight(df, xsec, gen, lumi, type, additional = None):
 def prepareTrees(samples, year, treename):
     df = {}
     for sample in samples:
-
-        if year == "2024" and sample == "ZZTo4l":
-            year = "2023postBPix" # use 2023postBPix for 2024 ZZTo4l sample
-        elif year == "2024" and sample.startswith("ggTo"):
-            year = "2023postBPix" # use 2023postBPix for 2024 ggZZ samples
-        elif year == "2024" and sample == "ZH125":
-            year = "2023postBPix" # use 2023postBPix for 2024 ZH samples
-
         fname = path['eos_path_sig']+year+"_MC/"+sample+"/ZZ4lAnalysis_SKIMMED.root"
         df[sample] = uproot.open(fname)[treename]
     return df
@@ -125,15 +117,6 @@ def generators(samples, year, df):
     gen = {}
     
     for sample in samples:
-
-        if year == "2024" and sample == "ZZTo4l":
-            year = "2023postBPix" # use 2023postBPix for 2024 ZZTo4l sample
-        elif year == "2024" and sample.startswith("ggTo"):
-            year = "2023postBPix" # use 2023postBPix for 2024 ggZZ samples
-        elif year == "2024" and sample == "ZH125":
-            year = "2023postBPix" # use 2023postBPix for 2024 ZH samples
-
-
         fname = path['eos_path_sig']+year+"_MC/"+sample+"/ZZ4lAnalysis_SKIMMED.root"
         gen[sample] = uproot.open(fname)["Counters"].values()[39] 
     return gen
@@ -576,6 +559,12 @@ def do_migration(dfs_sig, years, obs_name, obsBins, doubleDiff, doprint):
         con_number = 99
 
     if doprint:
+        np.set_printoptions(
+        threshold=np.inf,
+        suppress=True,
+        linewidth=200,
+        formatter={'float_kind': '{:.2f}'.format}
+        )
         print(f"migration matrix:")
         print(matrix)
         #print(f"{np.round(recoonly_, 2)} - nonfid = {np.sum(recoonly):.2f}")
@@ -820,14 +809,21 @@ def do_binning(dfs_sig, dfs_bkg, years, obs_name, obsBins, doubleDiff, doprint):
 
     return total_sig_weighted_counts, AMS, migration_score, condition_number, matrix
 
-# ------------------------------------------------- FUNCTIONS TO AUTOMATICALLY OPTIMIZE BINNING ---------------------------------------------------
+
+# ------------------------------------------------- FUNCTIONS TO AUTOMATICALLY OPTIMIZE 1D BINNING ---------------------------------------------------
 
 
-def parse_bins(obs_bins):
-    return [float(x) for x in obs_bins.strip('|').split('|') if x]
+def bins_to_array(bins):
+    if isinstance(bins, str):
+        return [float(x) for x in bins.split('|') if x]
+    else:
+        return bins
 
 def bins_to_string(bins):
-    return "|" + "|".join(str(x) for x in bins) + "|"
+    if isinstance(bins, list):
+        return "|" + "|".join(str(x) for x in bins) + "|"
+    else:
+        return bins
 
 def flatten_dfs(dfs_sig, obs_name):
     vals = []
@@ -845,99 +841,119 @@ def flatten_dfs(dfs_sig, obs_name):
             wts.append(weight)
     return pd.concat(vals, ignore_index=True), pd.concat(wts, ignore_index=True)
 
-def get_init_binning_percentiles(obs_name, dfs_sig, doubleDiff, nbins, xmin=None, xmax=None, eps=1e-3):
-    values, weights = flatten_dfs(dfs_sig, obs_name)
-    values = values.to_numpy()
-    weights = weights.to_numpy()
 
-    # restrict to range [xmin, xmax]
-    if xmin is not None:
-        mask_min = values >= xmin
+def get_init_binning_AMS(obs_name, dfs_sig, dfs_bkg, step_size, targetams, targetsig, doubleDiff, eps=1e-3):
+
+    if doubleDiff:
+
+        obs_name_1st = obs_name.split('vs')[0].strip()
+        obs_name_2nd = obs_name.split('vs')[1].strip()
+
+        obs1_values, obs1_weights = flatten_dfs(dfs_sig, obs_name_1st)
+        obs2_values, obs2_weights = flatten_dfs(dfs_sig, obs_name_2nd)
+
+        bkg1_values, bkg1_weights = flatten_dfs(dfs_bkg, obs_name_1st)
+        bkg2_values, bkg2_weights = flatten_dfs(dfs_bkg, obs_name_2nd)
+
+        obs1_values = obs1_values.to_numpy()
+        obs1_weights = obs1_weights.to_numpy()
+        obs2_values = obs2_values.to_numpy()
+        obs2_weights = obs2_weights.to_numpy()
+
+        bkg1_values = bkg1_values.to_numpy()
+        bkg1_weights = bkg1_weights.to_numpy()
+        bkg2_values = bkg2_values.to_numpy()
+        bkg2_weights = bkg2_weights.to_numpy()
+
+        bin0 = 'null'
+        if obs_name == 'absdetajj vs mjj':
+            xmin, ymin = 0, 0
+            xmax, ymax = max(obs1_values.max(), bkg1_values.max()), max(obs2_values.max(), bkg2_values.max())
+            bin0 = '|-100|0| vs |-100|0|'
+        elif obs_name == 'pTj1 vs pTj2':
+            xmin, ymin = 30, 30
+            xmax, ymax = max(obs1_values.max(), bkg1_values.max()), max(obs2_values.max(), bkg2_values.max())
+            bin0 = '|-100|30| vs |-100|30|'
+        elif obs_name == 'massZ1 vs massZ2':
+            xmin, ymin = 40, 12
+            xmax, ymax = 120, 65
+        else:
+            xmin, ymin = 0, 0
+            xmax, ymax = max(obs1_values.max(), bkg1_values.max()), max(obs2_values.max(), bkg2_values.max())
+
+        step_size = 1
+
+        x_vals = np.arange(xmin, xmax + step_size, step_size)
+        y_vals = np.arange(ymin, ymax + step_size, step_size)
+
+        edges = get_init_binning_2D_AMS(xmin, xmax, ymin, ymax,
+                     obs1_values, obs2_values, obs1_weights,
+                     bkg1_values, bkg2_values, bkg1_weights,
+                     targetams=3.0, targetsig=0.0, step_size=1,
+                     rng_seed=None)
+
+        edges = bins_to_string_2d(edges)
+        print(edges)
+
     else:
-        mask_min = np.ones_like(values, dtype=bool)
 
-    if xmax is not None:
-        mask_max = values <= xmax
-    else:
-        mask_max = np.ones_like(values, dtype=bool)
+        sig_values, sig_weights = flatten_dfs(dfs_sig, obs_name)
+        bkg_values, bkg_weights = flatten_dfs(dfs_bkg, obs_name)
 
-    mask = mask_min & mask_max
-    values = values[mask]
-    weights = weights[mask]
+        sig_values = sig_values.to_numpy()
+        sig_weights = sig_weights.to_numpy()
+        bkg_values = bkg_values.to_numpy()
+        bkg_weights = bkg_weights.to_numpy()
 
-    # sort and compute weighted CDF
-    sorter = np.argsort(values)
-    values_sorted = values[sorter]
-    weights_sorted = weights[sorter]
+        # restrict range [xmin, xmax]
+        if obs_name == 'pTj1' or obs_name == 'pTj2':
+            xmin = 30.0  # jets must have pT > 30 GeV
+            xmax = max(sig_values.max(), bkg_values.max())
+        elif obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
+            xmin = 0.0 # mjj, detajj, mHj, pTHj, pTHjj must be positive
+            xmax = max(sig_values.max(), bkg_values.max())
+        elif obs_name == 'massZ1':
+            xmin = 40
+            xmax = 120
+        elif obs_name == 'massZ2':
+            xmin = 12
+            xmax = 65
+        else:
+            xmin = min(sig_values.min(), bkg_values.min())
+            xmax = max(sig_values.max(), bkg_values.max())
 
-    cdf = np.cumsum(weights_sorted)
-    cdf /= cdf[-1]  # normalize to 1
+        # scan from xmin to xmax
+        scan_points = np.arange(xmin, xmax + step_size, step_size)
 
-    # compute percentiles between xmin and xmax
-    percentiles = np.linspace(0, 1, nbins)
-    array = np.interp(percentiles, cdf, values_sorted)[1:-1]  # exclude first & last edges
+        edges = [xmin]   # always start at xmin
 
+        S, B = 0.0, 0.0  # running sums
 
-    return array
+        for i in range(len(scan_points) - 1):
+            lo, hi = scan_points[i], scan_points[i + 1]
 
-def get_init_binning_AMS(obs_name, dfs_sig, dfs_bkg, step_size, targetams, targetsig, eps=1e-3):
+            mask_sig = (sig_values >= lo) & (sig_values < hi)
+            mask_bkg = (bkg_values >= lo) & (bkg_values < hi)
 
-    # flatten signal and background
-    sig_values, sig_weights = flatten_dfs(dfs_sig, obs_name)
-    bkg_values, bkg_weights = flatten_dfs(dfs_bkg, obs_name)
+            S += sig_weights[mask_sig].sum()
+            B += bkg_weights[mask_bkg].sum()
 
-    sig_values = sig_values.to_numpy()
-    sig_weights = sig_weights.to_numpy()
-    bkg_values = bkg_values.to_numpy()
-    bkg_weights = bkg_weights.to_numpy()
+            current_ams = do_AMS_simple(S, B, np.sqrt(B)) if B > 0 else 0.0
+            #print(f"scanning [{lo:.2f}, {hi:.2f}]: S = {S:.2f}, B = {B:.2f}, AMS = {current_ams:.2f}")
 
-    # restrict range [xmin, xmax]
-    if obs_name == 'pTj1' or obs_name == 'pTj2':
-        xmin = 30.0  # jets must have pT > 30 GeV
-        xmax = max(sig_values.max(), bkg_values.max())
-    elif obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
-        xmin = 0.0 # mjj, detajj, mHj, pTHj, pTHjj must be positive
-        xmax = max(sig_values.max(), bkg_values.max())
-    elif obs_name == 'massZ1':
-        xmin = 40
-        xmax = 120
-    elif obs_name == 'massZ2':
-        xmin = 12
-        xmax = 65
-    else:
-        xmin = min(sig_values.min(), bkg_values.min())
-        xmax = max(sig_values.max(), bkg_values.max())
+            if B > 0 and current_ams >= targetams and S>targetsig:
+                edges.append(hi)   # cut bin here
+                S, B = 0.0, 0.0    # reset accumulators
 
-    # scan from xmin to xmax
-    scan_points = np.arange(xmin, xmax + step_size, step_size)
+        # make sure last bin closes at xmax
+        if abs(edges[-1] - xmax) > eps:
+            edges.append(xmax)
 
-    edges = [xmin]   # always start at xmin
+        if obs_name == 'pTj1' or obs_name == 'pTj2' or obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
+            if edges[0] != -100:
+                edges = [-100] + edges
 
-    S, B = 0.0, 0.0  # running sums
-
-    for i in range(len(scan_points) - 1):
-        lo, hi = scan_points[i], scan_points[i + 1]
-
-        mask_sig = (sig_values >= lo) & (sig_values < hi)
-        mask_bkg = (bkg_values >= lo) & (bkg_values < hi)
-
-        S += sig_weights[mask_sig].sum()
-        B += bkg_weights[mask_bkg].sum()
-
-        current_ams = do_AMS_simple(S, B, np.sqrt(B)) if B > 0 else 0.0
-        #print(f"scanning [{lo:.2f}, {hi:.2f}]: S = {S:.2f}, B = {B:.2f}, AMS = {current_ams:.2f}")
-
-        if B > 0 and current_ams >= targetams and S>targetsig:
-            edges.append(hi)   # cut bin here
-            S, B = 0.0, 0.0    # reset accumulators
-
-    # make sure last bin closes at xmax
-    if abs(edges[-1] - xmax) > eps:
-        edges.append(xmax)
-
-    if obs_name == 'pTj1' or obs_name == 'pTj2' or obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
-        if edges[0] != -100:
-            edges = [-100] + edges
+        edges = bins_to_string(edges)
 
     return edges
 
@@ -975,6 +991,8 @@ def perturb_bins(bins, var_min, var_max):
 
 def randomize_bins(obs_name, array_init):
 
+    bins = bins_to_array(array_init)
+
     sig_values, sig_weights = flatten_dfs(dfs_sig, obs_name)
     bkg_values, bkg_weights = flatten_dfs(dfs_bkg, obs_name)
 
@@ -998,7 +1016,7 @@ def randomize_bins(obs_name, array_init):
         xmin = 12
         xmax = 65
 
-    array = perturb_bins(array_init, xmin, xmax)
+    array = perturb_bins(bins, xmin, xmax)
 
     if obs_name == 'pTj1' or obs_name == 'pTj2' or obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
         if array[0] != -100:
@@ -1013,7 +1031,9 @@ def meets_sig_and_counts(obs_name, sig, events, lowsig, lowevents):
 
     return cond1 and cond2
 
-def check_matrix(array, matrix, eff, res, threshold_base=0.0):
+def check_matrix(obs_name, array, matrix, eff, res, threshold_base=0.0):
+
+    array = bins_to_array(array)
 
     matrix = np.flipud(matrix)  # keep your convention
 
@@ -1027,7 +1047,7 @@ def check_matrix(array, matrix, eff, res, threshold_base=0.0):
 
         P_expected = eff * erf(delta / (2 * sqrt(2) * res[i]))
 
-        #print(f"Bin [{array[i]:.2f}, {array[i+1]:.2f}]: eff = {eff:.2f}, res = {res[i]:.2f}, delta = {delta:.2f} => P_expected = {P_expected:.2f}")
+        print(f"Bin [{array[i]:.2f}, {array[i+1]:.2f}]: eff = {eff:.2f}, res = {res[i]:.2f}, delta = {delta:.2f} => P_expected = {P_expected:.2f}")
 
         # impose a floor
         P_target = max(P_expected, threshold_base)
@@ -1051,47 +1071,485 @@ def check_matrix(array, matrix, eff, res, threshold_base=0.0):
         events, sig, mig, con, new_matrix = do_binning(
             dfs_sig, dfs_bkg, years, obs_name, bins_to_string(array), doubleDiff, False
         )
+        res = get_res(obs_name, array, dfs_sig)
         return check_matrix(array, new_matrix, eff, res, threshold_base)
 
-    return new_array
+    return bins_to_string(new_array)
 
 def get_res(obs_name, obs_bins, dfs_sig):
 
+    obs_bins = bins_to_array(obs_bins)  # make sure it's float array
+    print("Bins:", obs_bins)
+
+    obs_gen, obs_reco = [], []
+
     # flatten over years
-
-    vals, m4l_gen, m4l_reco = [], [], []
-
     for year_dict in dfs_sig.values():
         for name, df in year_dict.items():
+            df = df[
+                (df['ZZMass'] >= opt.m4lLower) & (df['ZZMass'] <= opt.m4lUpper) &
+                (df['GENmass4l'] >= opt.m4lLower) & (df['GENmass4l'] <= opt.m4lUpper) &
+                (df['passedFullSelection'] == 1) & (df['cuth4l_reco'] == True)
+            ]
 
-            df = df[(df['ZZMass'] >= opt.m4lLower) & (df['ZZMass'] <= opt.m4lUpper) & 
-                    (df['GENmass4l'] >= opt.m4lLower) & (df['GENmass4l'] <= opt.m4lUpper) & 
-                    (df['passedFullSelection'] == 1) & (df['cuth4l_reco'] == True)]
+            obs_gen_val = df[observables[obs_name]['obs_gen']]
+            obs_reco_val = df[observables[obs_name]['obs_reco']]
 
-            m4l_gen_val = df['GENmass4l']
-            m4l_reco_val = df['ZZMass']
-            obs_val = df[observables[obs_name]['obs_reco']]
+            obs_gen.append(obs_gen_val)
+            obs_reco.append(obs_reco_val)
 
-            vals.append(obs_val)
-            m4l_gen.append(m4l_gen_val)
-            m4l_reco.append(m4l_reco_val)
-
-    vals = pd.concat(vals, ignore_index=True)
-    m4l_gen = pd.concat(m4l_gen, ignore_index=True)
-    m4l_reco = pd.concat(m4l_reco, ignore_index=True)
+    obs_gen = pd.concat(obs_gen, ignore_index=True).astype(float)
+    obs_reco = pd.concat(obs_reco, ignore_index=True).astype(float)
 
     res = []
 
+    # jet-related variables
+    jet_vars = {"pTj1", "pTj2", "mjj", "absdetajj", "mHj", "pTHj", "pTHjj"}
+
     for i in range(len(obs_bins)-1):
+        # if first bin and jet variable, assign tiny value
+        if i == 0 and obs_name in jet_vars:
+            res.append(1e-8)
+            continue
 
-        mask = (vals >= obs_bins[i]) & (vals < obs_bins[i+1])
+        mask = (obs_reco >= obs_bins[i]) & (obs_reco < obs_bins[i+1])
 
-        x = ( m4l_gen[mask] - m4l_reco[mask] ) / m4l_gen[mask]
-        rms = np.sqrt(np.nanmean(x**2, axis=0))
-    
+        if obs_name in jet_vars:
+            mask &= (obs_reco != -99) & (obs_gen != -99)
+
+        x = obs_gen[mask] - obs_reco[mask]
+        rms = np.sqrt(np.nanmean(x**2)) if len(x) > 0 else np.nan
         res.append(rms)
 
     return res
+
+
+# ------------------------------------------------- FUNCTIONS TO AUTOMATICALLY OPTIMIZE 2D BINNING ---------------------------------------------------
+
+
+def bins_to_array_2d(bins_2d):
+    """
+    Convert a 2D bin string into a list of rectangles.
+    Output format: [(xlow, xhigh, ylow, yhigh), ...]
+    """
+    if not isinstance(bins_2d, str):
+        return bins_2d
+
+    rects = []
+    rect_strs = bins_2d.split(" / ")
+
+    for r in rect_strs:
+        x_str, y_str = r.split(" vs ")
+
+        # Extract values between pipes, ignoring empty tokens
+        x_vals = [float(v) for v in x_str.split("|") if v]
+        y_vals = [float(v) for v in y_str.split("|") if v]
+
+        if len(x_vals) != 2 or len(y_vals) != 2:
+            raise ValueError(f"Bad 2D bin format in rectangle: {r}")
+
+        rects.append((x_vals[0], x_vals[1], y_vals[0], y_vals[1]))
+
+    return rects
+
+def bins_to_string_2d(rects):
+    """
+    Convert list of rectangles into the canonical 2D bin string.
+    Input format: [(xlow, xhigh, ylow, yhigh), ...]
+    """
+    if not isinstance(rects, (list, tuple)):
+        return rects
+
+    rect_strs = []
+    for (x1, x2, y1, y2) in rects:
+        x_str = f"|{x1}|{x2}|"
+        y_str = f"|{y1}|{y2}|"
+        rect_strs.append(f"{x_str} vs {y_str}")
+
+    return " / ".join(rect_strs)
+
+
+def get_init_binning_2D_AMS(xmin, xmax, ymin, ymax,
+                     obs1_values, obs2_values, obs1_weights,
+                     bkg1_values, bkg2_values, bkg1_weights,
+                     targetams=3.0, targetsig=1.0, step_size=1,
+                     rng_seed=None):
+    """
+    Returns a list of rectangles (lo_x, hi_x, lo_y, hi_y) that tile the full grid
+    according to the rules described by the user.
+    Notes:
+      - Cells correspond to intervals [x_vals[i], x_vals[i+1]) x [y_vals[j], y_vals[j+1])
+      - Rectangles are returned using the original x/y coordinates (not cell indices).
+    """
+    if rng_seed is not None:
+        random.seed(rng_seed)
+        np.random.seed(rng_seed)
+
+    # grid points
+    x_vals = np.arange(xmin, xmax + step_size, step_size)
+    y_vals = np.arange(ymin, ymax + step_size, step_size)
+    n_x = len(x_vals)
+    n_y = len(y_vals)
+
+    # number of cells in each direction
+    Nx = n_x - 1
+    Ny = n_y - 1
+    if Nx <= 0 or Ny <= 0:
+        return []
+
+    occupied = np.zeros((Nx, Ny), dtype=bool)  # True = already covered by a rectangle
+    rectangles = []
+
+    def cell_to_coords(x0_idx, x1_idx, y0_idx, y1_idx):
+        lo_x = x_vals[x0_idx]
+        hi_x = x_vals[x1_idx + 1]   # x1_idx is last cell index, so use +1 for high edge
+        lo_y = y_vals[y0_idx]
+        hi_y = y_vals[y1_idx + 1]
+        return lo_x, hi_x, lo_y, hi_y
+
+    def compute_S_B(lo_x, hi_x, lo_y, hi_y):
+        mask_sig = (obs1_values >= lo_x) & (obs1_values < hi_x) & \
+                   (obs2_values >= lo_y) & (obs2_values < hi_y)
+        mask_bkg = (bkg1_values >= lo_x) & (bkg1_values < hi_x) & \
+                   (bkg2_values >= lo_y) & (bkg2_values < hi_y)
+        S_total = obs1_weights[mask_sig].sum()
+        B_total = bkg1_weights[mask_bkg].sum()
+        return float(S_total), float(B_total)
+
+    def mark_occupied(x0i, x1i, y0i, y1i):
+        occupied[x0i:x1i+1, y0i:y1i+1] = True
+
+    def any_free():
+        return not occupied.all()
+
+    # Helper: find any free cell adjacent to existing rectangles (prefer touching previous)
+    def find_free_adjacent():
+        # search for any free cell that has a neighbor occupied (4-neighborhood)
+        for xi in range(Nx):
+            for yi in range(Ny):
+                if occupied[xi, yi]:
+                    continue
+                neighbors = []
+                if xi > 0:
+                    neighbors.append(occupied[xi-1, yi])
+                if xi < Nx-1:
+                    neighbors.append(occupied[xi+1, yi])
+                if yi > 0:
+                    neighbors.append(occupied[xi, yi-1])
+                if yi < Ny-1:
+                    neighbors.append(occupied[xi, yi+1])
+                if any(neighbors):
+                    return xi, yi
+        # fallback: first free cell
+        for xi in range(Nx):
+            for yi in range(Ny):
+                if not occupied[xi, yi]:
+                    return xi, yi
+        return None
+
+    # Start with origin seed
+    seed = (0, 0)
+    first = True
+    last_rect_cell = None  # keep (x1i_last, y1i_last) for the "start next at X+1,0 or 0,Y+1" rule
+
+    while any_free():
+        # Choose seed:
+        if first:
+            x0i, y0i = seed
+            first = False
+        else:
+            # try to follow requested "start at X+1,0 or 0,Y+1"
+            # prefer valid and free; if chosen invalid, fallback to other; if both invalid, find adjacent free cell
+            if last_rect_cell is None:
+                pos = find_free_adjacent()
+                if pos is None:
+                    break
+                x0i, y0i = pos
+            else:
+                last_x1i, last_y1i = last_rect_cell
+                opt1 = (last_x1i + 1, 0)   # right-of-last at y=0
+                opt2 = (0, last_y1i + 1)   # above-last at x=0
+                choices = [opt1, opt2]
+                random.shuffle(choices)
+                chosen = None
+                for cx, cy in choices:
+                    if 0 <= cx < Nx and 0 <= cy < Ny and not occupied[cx, cy]:
+                        chosen = (cx, cy)
+                        break
+                if chosen is None:
+                    # find any free cell adjacent to existing rectangles
+                    pos = find_free_adjacent()
+                    if pos is None:
+                        break
+                    x0i, y0i = pos
+                else:
+                    x0i, y0i = chosen
+
+        # If seed is occupied (shouldn't happen), find adjacent
+        if occupied[x0i, y0i]:
+            pos = find_free_adjacent()
+            if pos is None:
+                break
+            x0i, y0i = pos
+
+        # initialize rectangle cell indices (inclusive)
+        x1i, y1i = x0i, y0i
+
+        # grow until AMS+targetsig satisfied OR no more growth possible
+        while True:
+            lo_x, hi_x, lo_y, hi_y = cell_to_coords(x0i, x1i, y0i, y1i)
+            S_total, B_total = compute_S_B(lo_x, hi_x, lo_y, hi_y)
+            current_ams = do_AMS_simple(S_total, B_total, np.sqrt(B_total) if B_total > 0 else 0.0) if B_total > 0 else 0.0
+
+            #print(f"scanning [{lo_x:.2f},{hi_x:.2f} x {lo_y:.2f},{hi_y:.2f}] "
+            #      f"cells=({x0i},{x1i},{y0i},{y1i}) S={S_total:.2f} B={B_total:.2f} AMS={current_ams:.3f}")
+
+            # check stopping condition:
+            # - if rectangle meets both AMS and signal targets -> stop
+            # - otherwise, if no growth direction is possible -> accept (last bin allowed)
+            if (B_total > 0 and current_ams >= targetams and S_total >= targetsig):
+                accepted = True
+            else:
+                accepted = False
+
+            # Determine allowed expansions (directions that preserve rectangle shape and don't overlap
+            # and stay inside grid). Directions are encoded as strings.
+            allowed_dirs = []
+
+            # If rectangle at origin (x0i==0 and y0i==0) only allow +x or +y (cannot go negative)
+            # For all rectangles, expand only by 1 cell per step.
+            # Check +x
+            if x1i + 1 < Nx:
+                # new column x = x1i+1 would be cells x1i+1, y0i..y1i ; must be all free
+                if not occupied[x1i + 1, y0i:y1i+1].any():
+                    allowed_dirs.append("+x")
+            # Check -x
+            if x0i - 1 >= 0:
+                if not occupied[x0i - 1, y0i:y1i+1].any():
+                    allowed_dirs.append("-x")
+            # Check +y
+            if y1i + 1 < Ny:
+                if not occupied[x0i:x1i+1, y1i + 1].any():
+                    allowed_dirs.append("+y")
+            # Check -y
+            if y0i - 1 >= 0:
+                if not occupied[x0i:x1i+1, y0i - 1].any():
+                    allowed_dirs.append("-y")
+
+            # enforce origin constraint: if this rectangle started at (0,0) we should not expand negative
+            if x0i == 0 and y0i == 0:
+                # remove negative options if present (they shouldn't be)
+                allowed_dirs = [d for d in allowed_dirs if d in ("+x", "+y")]
+
+            # If we already accepted because AMS+S satisfied, stop without further growth.
+            if accepted:
+                break
+
+            # If no allowed directions -> accept rectangle (last-bin rule), even if AMS not met
+            if not allowed_dirs:
+                #print("No allowed expansions left for this rectangle -> accepting (may be last bin).")
+                break
+
+            # choose a direction by flipping a coin among allowed directions
+            dir_choice = random.choice(allowed_dirs)
+
+            # apply the chosen expansion (grow rectangle by 1 cell)
+            if dir_choice == "+x":
+                x1i += 1
+            elif dir_choice == "-x":
+                x0i -= 1
+            elif dir_choice == "+y":
+                y1i += 1
+            elif dir_choice == "-y":
+                y0i -= 1
+            else:
+                # shouldn't happen
+                pass
+
+            # After growing, loop goes back and recomputes AMS and check stopping.
+
+        # Accept rectangle: mark occupied and save
+        mark_occupied(x0i, x1i, y0i, y1i)
+        lo_x, hi_x, lo_y, hi_y = cell_to_coords(x0i, x1i, y0i, y1i)
+        rectangles.append((lo_x, hi_x, lo_y, hi_y))
+        #print("ACCEPTED rectangle:", (lo_x, hi_x, lo_y, hi_y), "cells:", (x0i, x1i, y0i, y1i))
+
+        last_rect_cell = (x1i, y1i)
+
+    # Final coverage check (should be fully covered)
+    '''
+    if not occupied.all():
+        print("Warning: tiling did not fully cover the grid. Remaining free cells:",
+              np.argwhere(~occupied).tolist())
+    else:
+        print("Tiling complete: fully covered.")
+    '''
+
+    return rectangles   
+
+import numpy as np
+from math import erf, sqrt
+
+def get_res_2D(obs_name, binning_string, dfs_sig):
+    """
+    Compute RMS(gen - reco) in x and y for each 2D bin defined by binning_string.
+    
+    RETURNS:
+        res_list -- list of tuples [(res_x_bin1, res_y_bin1), ...]
+        rects    -- list of rectangles [(x1,x2,y1,y2), ...]
+    """
+    # --- Convert bin string to rectangles ---
+    rects = bins_to_array_2d(binning_string)
+
+    obs_name_1st, obs_name_2nd = [o.strip() for o in obs_name.split("vs")]
+
+    # --- Collect all reco and gen values ---
+    reco_x_list, reco_y_list, gen_x_list, gen_y_list = [], [], [], []
+
+    for year_dict in dfs_sig.values():
+        for df in year_dict.values():
+            # Apply selection
+            df_sel = df[
+                (df['ZZMass'] >= opt.m4lLower) & (df['ZZMass'] <= opt.m4lUpper) &
+                (df['GENmass4l'] >= opt.m4lLower) & (df['GENmass4l'] <= opt.m4lUpper) &
+                (df['passedFullSelection'] == 1) & (df['cuth4l_reco'] == True)
+            ]
+
+            reco_x_list.append(df_sel[observables[obs_name_1st]['obs_reco']].astype(float))
+            reco_y_list.append(df_sel[observables[obs_name_2nd]['obs_reco']].astype(float))
+            gen_x_list.append(df_sel[observables[obs_name_1st]['obs_gen']].astype(float))
+            gen_y_list.append(df_sel[observables[obs_name_2nd]['obs_gen']].astype(float))
+
+    reco_x = pd.concat(reco_x_list, ignore_index=True)
+    reco_y = pd.concat(reco_y_list, ignore_index=True)
+    gen_x = pd.concat(gen_x_list, ignore_index=True)
+    gen_y = pd.concat(gen_y_list, ignore_index=True)
+
+    # --- Compute RMS for each rectangle ---
+    res = []
+
+    for x1, x2, y1, y2 in rects:
+        mask = (
+            (reco_x >= x1) & (reco_x < x2) &
+            (reco_y >= y1) & (reco_y < y2)
+        )
+        dx = gen_x[mask] - reco_x[mask]
+        dy = gen_y[mask] - reco_y[mask]
+
+        # Fallback for empty bins
+        res_x = np.sqrt(np.mean(dx**2)) if len(dx) > 0 else 1e-6
+        res_y = np.sqrt(np.mean(dy**2)) if len(dy) > 0 else 1e-6
+
+        res.append((res_x, res_y))
+
+    return res
+
+def resolve_overlaps(rects):
+    """
+    Merge any overlapping rectangles into single larger rectangles.
+    Deterministic and very fast.
+    """
+    changed = True
+    rects = rects[:]
+
+    while changed:
+        changed = False
+        new_rects = []
+        skip = set()
+
+        for i in range(len(rects)):
+            if i in skip:
+                continue
+            x0a, x1a, y0a, y1a = rects[i]
+            merged_rect = (x0a, x1a, y0a, y1a)
+
+            for j in range(i+1, len(rects)):
+                if j in skip:
+                    continue
+                x0b, x1b, y0b, y1b = rects[j]
+
+                # overlap check
+                if not (x1a <= x0b or x1b <= x0a or y1a <= y0b or y1b <= y0a):
+                    # merge them
+                    merged_rect = (
+                        min(merged_rect[0], x0b),
+                        max(merged_rect[1], x1b),
+                        min(merged_rect[2], y0b),
+                        max(merged_rect[3], y1b)
+                    )
+                    skip.add(j)
+                    changed = True
+
+            new_rects.append(merged_rect)
+
+        rects = new_rects
+
+    return rects
+
+def check_matrix_2D(obs_name, binning_string, matrix, eff, res, dfs_sig, dfs_bkg, doubleDiff, threshold_base=0.0):
+    """
+    Deterministic 2D bin merging along diagonal of migration matrix.
+    Works with res_x, res_y keyed by (i,j) from get_res_2D.
+    """
+
+    rects = bins_to_array_2d(binning_string)
+
+    while True:
+
+        matrix = np.flipud(matrix)
+        merged_any = False
+        rects = bins_to_array_2d(binning_string)
+
+        for i_diag in range(len(matrix)):
+            
+            # Diagonal rectangle
+            rect = rects[i_diag]
+            x0, x1, y0, y1 = rect
+
+            delta_x = x1 - x0
+            delta_y = y1 - y0
+            arg_x = delta_x / (2 * sqrt(2) * res[i_diag][0])
+            arg_y = delta_y / (2 * sqrt(2) * res[i_diag][1])
+            P_expected = eff * erf(arg_x) * erf(arg_y)
+            P_target = max(P_expected, threshold_base)
+            diag = matrix[i_diag, i_diag]
+
+            print(f"[Bin {i_diag}] Δx={delta_x:.2f} Δy={delta_y:.2f} "
+            f"res_x={res[i_diag][0]:.2f} res_y={res[i_diag][1]:.2f} "
+            f"P_expected={P_expected:.3f} diag={diag:.3f}")
+
+            if diag >= P_target:
+                continue  # bin is OK
+
+            # merge with next bin
+            if i_diag + 1 >= len(matrix):
+                continue
+
+            # merged rectangle
+            x0_new = x0
+            x1_new = rects[i_diag + 1][1]
+            y0_new = y0
+            y1_new = rects[i_diag + 1][3]
+            rects[i_diag] = (x0_new, x1_new, y0_new, y1_new)
+            rects.pop(i_diag + 1)
+
+            rects = resolve_overlaps(rects)
+
+            binning_string = bins_to_string_2d(rects)
+
+            events, sig, mig, con, matrix = do_binning(dfs_sig, dfs_bkg, years, obs_name, binning_string, doubleDiff, False)
+            
+            res = get_res_2D(obs_name, binning_string, dfs_sig)
+
+            merged_any = True
+            break  # restart from first bin
+
+        if not merged_any:
+            break
+
+    rects = resolve_overlaps(rects)
+    binning_string = bins_to_string_2d(rects)
+    return binning_string
 
 
 # -----------------------------------------------------------------------------------------                                                                                                                                                                                                                                                 
@@ -1235,38 +1693,73 @@ if opt.AUTO:
     step_size = 0.01
     n_trials = 100
 
-    target_ams = 3
-    target_sig = 0
-
     eff_4lep = 0.95**4/4 + 0.85**4/4 + 0.95**2*0.85**2/2
     eff_jet = 0.6
+
+    target_sig = 0.0
     
-    if obs_name in ("pTj1", "pTHj", "mHj"):  eff = eff_4lep * eff_jet
-    elif obs_name in ("pTj2", "mjj", "absdetajj", "pTHjj"): eff = eff_4lep * eff_jet**2
-    else: eff = eff_4lep
+    if doubleDiff:
+
+        if obs_name_1st in ("pTj1", "pTHj", "mHj"):  eff1 = eff_4lep * eff_jet
+        elif obs_name_1st in ("pTj2", "mjj", "absdetajj", "pTHjj"): eff1 = eff_4lep * eff_jet**2
+        else: eff1 = eff_4lep
+
+        if obs_name_2nd in ("pTj1", "pTHj", "mHj"):  eff2 = eff_4lep * eff_jet
+        elif obs_name_2nd in ("pTj2", "mjj", "absdetajj", "pTHjj"): eff2 = eff_4lep * eff_jet**2
+        else: eff2 = eff_4lep
+
+        eff = eff1*eff2
+        target_ams = 3
+
+    else:
+
+        if obs_name in ("pTj1", "pTHj", "mHj"):  
+            eff = eff_4lep * eff_jet
+            target_ams = 2.5
+        elif obs_name in ("pTj2", "mjj", "absdetajj", "pTHjj"): 
+            eff = eff_4lep * eff_jet**2
+            target_ams = 2
+        else: 
+            eff = eff_4lep
+            target_ams = 3
+
 
     all_binnings = []
 
-    array = get_init_binning_AMS(obs_name, dfs_sig, dfs_bkg, step_size, target_ams, target_sig, eps=1e-3)
-    events, sig, mig, con, matrix = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(array), doubleDiff, True)
+    if doubleDiff:
 
-    res = get_res(obs_name, array, dfs_sig)
+        with tqdm(total=n_trials, desc="testing binnings (0 valid)") as pbar: 
+            for i in range(n_trials):
 
-    array_init = check_matrix(array, matrix, eff, res)
-    events, sig, mig, con, matrix = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(array_init), doubleDiff, True)
+                array_init = get_init_binning_AMS(obs_name, dfs_sig, dfs_bkg, step_size, target_ams, target_sig, doubleDiff)
+                events, sig, mig, con, matrix = do_binning(dfs_sig, dfs_bkg, years, obs_name, array_init, doubleDiff, opt.PRINT)
+                res = get_res_2D(obs_name, array_init, dfs_sig)
+                array = check_matrix_2D(obs_name, array_init, matrix, eff, res, dfs_sig, dfs_bkg, doubleDiff)
+                events, sig, mig, con, matrix = do_binning(dfs_sig, dfs_bkg, years, obs_name, array, doubleDiff, opt.PRINT)
 
-    if meets_sig_and_counts(obs_name, sig, events, target_ams, target_sig):
-        all_binnings.append((array_init, mig/con))
+                all_binnings.append((bins_to_array_2d(array), mig/con))
+                
+    else:
 
-    with tqdm(total=n_trials, desc="testing binnings (0 valid)") as pbar:
-        
-        for i in range(n_trials):
-            array = randomize_bins(obs_name, array_init)
-            events, sig, mig, con, matrix = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(array), doubleDiff, opt.PRINT)
-            if meets_sig_and_counts(obs_name, sig, events, target_ams, target_sig):
-                all_binnings.append((array, mig/con))
-                pbar.set_description(f"testing binnings ({len(all_binnings)} valid)")
-            pbar.update(1)
+        array_init = get_init_binning_AMS(obs_name, dfs_sig, dfs_bkg, step_size, target_ams, target_sig, doubleDiff)
+        events, sig, mig, con, matrix = do_binning(dfs_sig, dfs_bkg, years, obs_name, array_init, doubleDiff, True)
+
+        res = get_res(obs_name, array_init, dfs_sig)
+        array = check_matrix(obs_name, array_init, matrix, eff, res)
+        events, sig, mig, con, matrix = do_binning(dfs_sig, dfs_bkg, years, obs_name, array, doubleDiff, True)
+
+        if meets_sig_and_counts(obs_name, sig, events, target_ams, target_sig):
+            all_binnings.append((array, mig/con))
+
+        with tqdm(total=n_trials, desc="testing binnings (0 valid)") as pbar:
+            
+            for i in range(n_trials):
+                array = randomize_bins(obs_name, array)
+                events, sig, mig, con, matrix = do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(array), doubleDiff, opt.PRINT)
+                if meets_sig_and_counts(obs_name, sig, events, target_ams, target_sig):
+                    all_binnings.append((array, mig/con))
+                    pbar.set_description(f"testing binnings ({len(all_binnings)} valid)")
+                pbar.update(1)
 
     if len(all_binnings) == 0:
         print("No valid binning found, try more iterations")
@@ -1275,10 +1768,14 @@ if opt.AUTO:
         max_nbins_binnings = [a for a in all_binnings if len(a[0]) == max_len]
         best_bins = max(max_nbins_binnings, key=lambda x: x[1])[0]
 
-        print("\n" + "-"*100)
-        print("OPTIMAL BINNING:", best_bins)
-        do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(best_bins), doubleDiff, True)
-        print("-"*100)
+    print("\n" + "-"*100)
+    print("OPTIMAL BINNING:", best_bins)
+    if best_bins is not None:
+        if doubleDiff:
+            do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string_2d(best_bins), doubleDiff, True)
+        else:
+            do_binning(dfs_sig, dfs_bkg, years, obs_name, bins_to_string(best_bins), doubleDiff, True)
+    print("-"*100)
 
 else:
     do_binning(dfs_sig, dfs_bkg, years, obs_name, obs_bins, doubleDiff, True)

@@ -4,6 +4,9 @@ import sys
 import os
 import matplotlib.pyplot as plt
 
+sys.path.append('../helperstuff/')
+from paths import path
+
 def load_module_from_file(filepath):
     """Load a Python module from a given .py file path."""
     module_name = os.path.splitext(os.path.basename(filepath))[0]
@@ -245,7 +248,7 @@ def compute_percent_variations(matrices, matrices_all):
                         if var == "pdf":
                             diff = (mat / nominal_matrix) * 100.0
                         else:
-                            diff = (mat - nominal_matrix) / nominal_matrix * 100.0
+                            diff = ((mat - nominal_matrix) / nominal_matrix) * 100.0
 
                         diff[np.isnan(nominal_matrix)] = np.nan
 
@@ -304,12 +307,12 @@ def plot_and_save_matrices(matrices, genbins, recobins, input_file, dir):
                     plt.yticks(ticks=np.arange(len(genbins)), labels=genbins)
                     plt.tight_layout()
 
-                    filename = f"pdfUnc_matrices/{name}/{dir}/{base_name}_{prod}_{fs}_{var}_varIdx{idx}.png"
+                    filename = f"{path['plots_path']}UNC_MATRICES/{name}/{dir}/{base_name}_{prod}_{fs}_{var}_varIdx{idx}.png"
                     os.makedirs(os.path.dirname(filename), exist_ok=True)
                     plt.savefig(filename)
                     plt.close()
 
-    print(f"Saved matrices to directory: pdfUnc_matrices/{name}/{dir}")
+    #print(f"Saved matrices to directory: pdfUnc_matrices/{name}/{dir}")
 
 import numpy as np
 
@@ -341,7 +344,29 @@ import importlib.util
 import numpy as np
 from pathlib import Path
 
-def append_uncertainties(input_file, percent_diffs_all):
+def safe_get(x, j):
+    """Return x[j] unless missing/NaN/None, else return 0."""
+    try:
+        val = x[j]
+    except (IndexError, TypeError):
+        return 0  # j out of range or x not indexable
+    
+    # If it's a list with one element, unwrap it
+    if isinstance(val, (list, tuple)) and len(val) == 1:
+        val = val[0]
+    
+    # Convert to float and handle NaN/None
+    try:
+        val = float(val)
+    except (ValueError, TypeError):
+        return 0
+    
+    if np.isnan(val):
+        return 0
+    
+    return val
+
+def append_uncertainties(input_file, physicalModel, percent_diffs_all):
  
     if "ORIG" in input_file:
         year = input_file.split('_')[-2].split('.')[0]
@@ -367,7 +392,7 @@ def append_uncertainties(input_file, percent_diffs_all):
 
         for i in range(recobins):
             # Prepare target file path
-            datacard_path = out_dir / f"hzz4l_{fs}S_13TeV_xs_{variable}_bin{i}_v3.txt"
+            datacard_path = out_dir / f"hzz4l_{fs}S_13TeV_xs_{variable}_bin{i}_{physicalModel}.txt"
             print(f"Processing datacard: {datacard_path}")
 
             # Build the lines
@@ -379,29 +404,35 @@ def append_uncertainties(input_file, percent_diffs_all):
 
             for j in range(genbins):
 
-                pdf_rms_scalar = np.nanmean(pdf_rms[j])
-                qcd_max_scalar = np.nanmean(qcd_max[j])
-                qcd_min_scalar = np.nanmean(qcd_min[j])
-                as_max_scalar  = np.nanmean(as_max[j])
-                as_min_scalar  = np.nanmean(as_min[j])
+                pdf_rms_scalar = safe_get(pdf_rms, j)
+                qcd_max_scalar = safe_get(qcd_max, j)
+                qcd_min_scalar = safe_get(qcd_min, j)
+                as_max_scalar  = safe_get(as_max, j)
+                as_min_scalar  = safe_get(as_min, j)
 
-                pdf_.append(f"{1+pdf_rms_scalar/100:.7f}/{1-pdf_rms_scalar/100:.7f}")
-                qcd_.append(f"{1+qcd_max_scalar/100:.7f}/{1-qcd_min_scalar/100:.7f}")
-                as_.append(f"{1+as_max_scalar/100:.7f}/{1-as_min_scalar/100:.7f}")
+                if pdf_rms_scalar == 100: 
+                    pdf_rms_scalar = 0
+                if qcd_max_scalar == 100: 
+                    qcd_max_scalar = 0
+                if qcd_min_scalar == 100:
+                    qcd_min_scalar = 0
+                if as_max_scalar == 100: 
+                    as_max_scalar = 0
+                if as_min_scalar == 100: 
+                    as_min_scalar = 0
+                    
+                pdf_.append(f"{1+(pdf_rms_scalar/100):.7f}/{1-(pdf_rms_scalar/100):.7f}")
+                qcd_.append(f"{1+(qcd_max_scalar/100):.7f}/{1-(qcd_min_scalar/100):.7f}")
+                as_.append(f"{1+(as_max_scalar/100):.7f}/{1-(as_min_scalar/100):.7f}")
 
                 pdf_.append(" ")
                 qcd_.append(" ")
                 as_.append(" ")
 
-            # Replace 'nan/nan' with '-'
-            pdf_clean = [x if not ("nan" in x) else "-" for x in pdf_]
-            qcd_clean = [x if not ("nan" in x) else "-" for x in qcd_]
-            as_clean  = [x if not ("nan" in x) else "-" for x in as_]
-
             # Join into strings
-            pdf_str = "pdf_sig lnN " + "".join(pdf_clean) + "- - - - -\n"
-            qcd_str = "qcd_sig lnN " + "".join(qcd_clean) + "- - - - -\n"
-            as_str  = "as_sig lnN " + "".join(as_clean) + "- - - - -\n"
+            pdf_str = "pdf_sig lnN " + "".join(pdf_) + "- - - - -\n"
+            qcd_str = "qcd_sig lnN " + "".join(qcd_) + "- - - - -\n"
+            as_str  = "as_sig lnN " + "".join(as_) + "- - - - -\n"
 
             new_lines = [pdf_str, qcd_str, as_str]
 
@@ -423,10 +454,8 @@ def append_uncertainties(input_file, percent_diffs_all):
 
             print(f"Appended uncertainties to {datacard_path}")
 
-# Example usage:
-# append_uncertainties()
 
-def run_pdf_unc_matrices(input_file):
+def run_pdf_unc_matrices(input_file, physicalModel):
     if "NNLOPS" in input_file:
         NNLOPS = True
     else:
@@ -439,7 +468,7 @@ def run_pdf_unc_matrices(input_file):
     matrices_all, genbins, recobins, keys = build_all_matrices(eff_num_var, eff_den_var, NNLOPS)
     matrices = build_matrices(matrices_all, genbins, recobins)
     percent_diffs = compute_percent_variations(matrices, matrices_all)
-    append_uncertainties(input_file, transpose_all(percent_diffs)['allH125'])
+    append_uncertainties(input_file, physicalModel, transpose_all(percent_diffs)['allH125'])
 
     #plot_and_save_matrices(matrices_all, genbins, recobins, input_file, "all")
     #plot_and_save_matrices(matrices, genbins, recobins, input_file, "variations")

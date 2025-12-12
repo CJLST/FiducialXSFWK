@@ -7,9 +7,12 @@ import math
 import time
 from decimal import *
 import json
+import importlib.util
 
+sys.path.append('../helperstuff/')
 from higgs_xsbr_13TeV import *
 from binning import binning
+from paths import path
 
 def parseOptions():
 
@@ -26,6 +29,7 @@ def parseOptions():
     parser.add_option('',   '--year',  dest='YEAR',  type='string',default='',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--doHIG', action='store_true', dest='DOHIG', default=False, help='use HIG 19 001 acceptances')
     parser.add_option('',   '--nnlops', action='store_true', dest='NNLOPS', default=False, help='nnlops prediction')
+    parser.add_option('',   '--split', action='store_true', dest='SPLIT', default=False, help='use HIG 19 001 acceptances')
 
     # store options and arguments as global variables
     global opt, args
@@ -64,18 +68,32 @@ def exp_xsec():
     else:
         higgs_xs = _temp.higgs_xs
     higgs4l_br = _temp.higgs4l_br
-    fname = 'inputs_sig_'+obsName+'_'+opt.YEAR
+
+
+    if opt.SPLIT:
+        fname = path['eos_path']+'inputs/inputs_sig_'+obsName+'_'+opt.YEAR+'.py'
+    else:
+        fname = '../inputs/inputs_sig_'+obsName+'_'+opt.YEAR+'.py'
+
     if opt.DOHIG: fname = fname + '_HIG19001'
 
-    #_temp = __import__(fname, globals(), locals(), ['acc'], -1)
-    _temp = __import__(fname, globals(), locals(), ['acc'], 0) # spencer
+    module_name = os.path.splitext(os.path.basename(fname))[0]
+    spec = importlib.util.spec_from_file_location(module_name, fname)
+    _temp = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(_temp)
     
     acc = _temp.acc
     if opt.NNLOPS:
-        fname = 'inputs_sig_'+obsName+'_NNLOPS_'+opt.YEAR
 
-        #_temp = __import__(fname, globals(), locals(), ['acc'], -1)
-        _temp = __import__(fname, globals(), locals(), ['acc'], 0) # spencer
+        if opt.SPLIT:
+            fname = path['eos_path']+'inputs/inputs_sig_'+obsName+'_NNLOPS_'+opt.YEAR+'.py'
+        else:
+            fname = '../inputs/inputs_sig_'+obsName+'_NNLOPS_'+opt.YEAR+'.py'
+
+        module_name = os.path.splitext(os.path.basename(fname))[0]
+        spec = importlib.util.spec_from_file_location(module_name, fname)
+        _temp = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_temp)
         
         acc_ggh = _temp.acc
     else:
@@ -89,7 +107,7 @@ def exp_xsec():
     XH = []
     XH_ggh = []
     XH_vbf = []
-    #XH_zh = []
+    XH_zh = []
     XH_wh = []
     XH_ttH = []
     nBins = len(observableBins)
@@ -97,7 +115,7 @@ def exp_xsec():
     xs = {}
     xs_ggh = {}
     xs_vbf = {}
-    #xs_zh = {}
+    xs_zh = {}
     xs_wh = {}
     xs_vh = {}
     xs_tth = {}
@@ -107,7 +125,7 @@ def exp_xsec():
         XH.append(0.0)
         XH_ggh.append(0.0)
         XH_vbf.append(0.0)
-        #XH_zh.append(0.0)
+        XH_zh.append(0.0)
         XH_wh.append(0.0)
         XH_ttH.append(0.0)
 
@@ -116,20 +134,20 @@ def exp_xsec():
             print(acc_ggh['ggH125_'+suffix+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)])
             xxs_ggh = higgs_xs['ggH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc_ggh['ggH125_'+suffix+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             xxs_vbf = higgs_xs['VBF_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['VBFH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
-            #xxs_zh = higgs_xs['ZH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['ZH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
+            xxs_zh = higgs_xs['ZH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['ZH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             xxs_tth = higgs_xs['ttH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['ttH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             xxs_wh = higgs_xs['WH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['WH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
 
             XH_fs = higgs_xs['ggH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc_ggh['ggH125_'+suffix+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             XH_fs += higgs_xs['VBF_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['VBFH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             XH_fs += higgs_xs['WH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['WH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
-            #XH_fs += higgs_xs['ZH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['ZH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
+            XH_fs += higgs_xs['ZH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['ZH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             XH_fs += higgs_xs['ttH_'+opt.THEORYMASS]*higgs4l_br[opt.THEORYMASS+'_'+channel]*acc['ttH125_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)]
             XH[obsBin]+=XH_fs
 
             XH_ggh[obsBin]+=xxs_ggh
             XH_vbf[obsBin]+=xxs_vbf
-            #XH_zh[obsBin]+=xxs_zh
+            XH_zh[obsBin]+=xxs_zh
             XH_wh[obsBin]+=xxs_wh
             XH_ttH[obsBin]+=xxs_tth
 
@@ -139,16 +157,16 @@ def exp_xsec():
         print('Bin ', obsBin, '\t SigmaBin', obsBin, ' = ', _obsxsec)
         print('Bin ', obsBin, '\t SigmaBin', obsBin, ' (ggh) = ', XH_ggh[obsBin])
         print('Bin ', obsBin, '\t SigmaBin', obsBin, ' (vbf) = ', XH_vbf[obsBin])
-        #print('Bin ', obsBin, '\t SigmaBin', obsBin, ' (zh) = ', XH_zh[obsBin])
+        print('Bin ', obsBin, '\t SigmaBin', obsBin, ' (zh) = ', XH_zh[obsBin])
         print('Bin ', obsBin, '\t SigmaBin', obsBin, ' (wh) = ', XH_wh[obsBin])
         print('Bin ', obsBin, '\t SigmaBin', obsBin, ' (tth) = ', XH_ttH[obsBin])
-        #print('(xcheck : ', XH_ggh[obsBin]+XH_vbf[obsBin]+XH_zh[obsBin]+XH_wh[obsBin]+XH_ttH[obsBin],')')
-        #print('(XH : ', XH_vbf[obsBin]+XH_zh[obsBin]+XH_wh[obsBin]+XH_ttH[obsBin],')')
+        print('(xcheck : ', XH_ggh[obsBin]+XH_vbf[obsBin]+XH_zh[obsBin]+XH_wh[obsBin]+XH_ttH[obsBin],')')
+        print('(XH : ', XH_vbf[obsBin]+XH_zh[obsBin]+XH_wh[obsBin]+XH_ttH[obsBin],')')
         print('\n\n')
         xs['SigmaBin'+str(obsBin)] = _obsxsec
         xs_ggh['SigmaBin'+str(obsBin)] = XH_ggh[obsBin]
         xs_vbf['SigmaBin'+str(obsBin)] = XH_vbf[obsBin]
-        xs_vh['SigmaBin'+str(obsBin)] = XH_wh[obsBin]#+XH_zh[obsBin]
+        xs_vh['SigmaBin'+str(obsBin)] = XH_wh[obsBin]+XH_zh[obsBin]
         xs_wh['SigmaBin'+str(obsBin)] = XH_wh[obsBin]
         xs_tth['SigmaBin'+str(obsBin)] = XH_ttH[obsBin]
         
@@ -253,7 +271,7 @@ def exp_xsec():
         f.write('fidXS_pdf_dn = '+str(list(xs_tth.values()))+'\n')
         f.write('fidXS_alpha_up = '+str(list(xs_tth.values()))+'\n')
         f.write('fidXS_alpha_dn = '+str(list(xs_tth.values()))+'\n')
-
+    
     with open('../inputs/fidXS_'+obsFull+'_xH_'+opt.YEAR+'.py', 'w') as f:
         f.write('Boundaries = '+str(observableBins)+'\n')
         f.write('fidXS = '+str(list(xs_xh.values()))+'\n')

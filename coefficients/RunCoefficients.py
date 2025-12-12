@@ -19,6 +19,7 @@ sys.path.append('../helperstuff/')
 from observables import observables
 from binning import binning
 from paths import path
+from split import split
 
 print('Welcome in RunCoefficients!')
 
@@ -44,8 +45,10 @@ def parseOptions():
     # The following option are used in case of interpolation to calculate acceptance at 125.38 GeV
     parser.add_option('',   '--interpolation', action='store_true', dest='INTER', default=False, help='Calculate acceptances at 124 and 126 GeV')
     parser.add_option('',   '--hypothesis', dest='HYP',  type='string',default='24', help='specify mass value: 24(124) or 26(126)')
+    parser.add_option('',   '--split', action='store_true', dest='SPLIT', default=False,   help='split eras')
     parser.add_option('',   '--merge', action='store_true', dest='MERGE', default=False,   help='2022full - 2023full - Run3')
     parser.add_option('',   '--nnlops', action='store_true', dest='NNLOPS', default=False,   help='ggH NNLOPS')
+    parser.add_option('',   '--eff_unc', action='store_true', dest='EFF_UNC', default=False,   help='theory uncertainites on matrices')
     # store options and arguments as global variables
     global opt, args
     (opt, args) = parser.parse_args()
@@ -98,69 +101,49 @@ import uproot
 import numpy as np
 import awkward as ak
 
-def merge_dicts_of_lists(d1, d2):
+def add_dict_values(d1, d2):
     result = {}
     all_keys = set(d1.keys()) | set(d2.keys())
     for k in all_keys:
-        v1 = d1.get(k)
-        v2 = d2.get(k)
-        if v1 is not None and v2 is not None:
-            # Handle awkward arrays and lists
-            result[k] = ak.concatenate([v1, v2])
-        elif v1 is not None:
-            result[k] = v1
-        else:
-            result[k] = v2
+        v1 = d1.get(k, 0)
+        v2 = d2.get(k, 0)
+        result[k] = v1 + v2
     return result
 
-def weight_uncs(year, process, scale):
+def get_weight_uncs(year, process, scale):
     """
     Load and combine uncertainty weights (qcd, pdf, as) for one or more processes.
     If process == 'WH125', both WplusH125 and WminusH125 are included.
     """
 
-    # Define which processes to include
-    if process == "WH125":
-        processes = ["WminusH125", "WplusH125"]
-        doW = True
-    else:
-        processes = [process]
-        doW = False
-
     w_nom = []
     w_var = {}
 
-    for proc in processes:
-        fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/{year}_MC/{proc}/ZZ4lAnalysis.root"
-        with uproot.open(fname) as f:
-            tree = f["AllEvents"].arrays()
+    fname = path['eos_path_sig'] + year + "_MC/" + process + "/ZZ4lAnalysis.root"
+    with uproot.open(fname) as f:
+        tree = f["AllEvents"].arrays()
 
         if scale == "qcd":
-            w_name = "LHEScaleWeight"
-            scale_weights = tree[w_name]
-            w_nom_i, w_scale_i = get_qcd_weights(scale_weights)
+            w_nom_i, w_scale_i = get_qcd_weights(tree["LHEScaleWeight"])
             w_var_i = w_scale_i
         elif scale in ("pdf", "as"):
-            w_name = "LHEPdfWeight"
-            scale_weights = tree[w_name]
-            w_nom_i, w_scale_i, w_as_i = get_pdf_weights(scale_weights)
+            w_nom_i, w_scale_i, w_as_i = get_pdf_weights(tree["LHEPdfWeight"])
             w_var_i = w_scale_i if scale == "pdf" else w_as_i
-        else:
-            raise ValueError('Unsupported scale type. Use "qcd", "pdf", or "as".')
 
-        # Combine nominal weights
-        w_nom.extend(w_nom_i)  # append array elements, not list of arrays
 
-        # Combine dictionaries (sum values with same keys)
-        if w_var:
-            w_var = merge_dicts_of_lists(w_var, w_var_i)
-        else:
-            w_var = w_var_i
+    #w_nom = [int(x) for x in w_nom] # these are always 1
 
-    # Convert w_nom to a single integer array
-    w_nom = [int(x) for x in w_nom]
+    weight_uncs_df = pd.DataFrame()
 
-    return w_nom, w_var
+    columns_dict = {
+        f"w_var_{key}": ([1] * len(values) if key == 0 and scale == "pdf" else values)
+        for key, values in w_var_i.items()
+    }
+
+    # Create the DataFrame in one step
+    weight_uncs_df = pd.DataFrame(columns_dict)
+
+    return weight_uncs_df
 
 #Calculates different types of event weights for histogram filling:
 #weight_gen: based on generator-level sign of event weights.
@@ -182,7 +165,7 @@ def get_qcd_weights(qcd_weights):
 def get_pdf_weights(pdf_weights):
     w_nom = pdf_weights[:, 0]
     w_scale = {}
-    for i in range(1,101):
+    for i in range(0,101):
         w_scale[i] = pdf_weights[:, i]
         
     w_as = {
@@ -195,39 +178,11 @@ def get_pdf_weights(pdf_weights):
 ################################################################################################################################
 
 
-# Uproot to generate pandas
-'''
-def prepareTrees(year):
-    d_sig = {}
-    d_sig_failed = {}
-    for signal in signals_original:
-        #if "ggH" in signal:
-        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
-        #else:
-        #    fname = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/"+signal+"/"+signal+"_reducedTree_MC_"+year+"_skimmed_nnlops.root"
-        fname = path['eos_path_sig']+year+"_MC/"+signal+"/ZZ4lAnalysis_SKIMMED.root"
-        print(fname)
-        d_sig[signal] = uproot.open(fname)[key]
-        d_sig_failed[signal] = uproot.open(fname)[key_failed]
-
-    return d_sig, d_sig_failed
-'''
-#Loads ROOT files using uproot and returns the TTree objects for each signal process for both:
-#Passed events
-#Failed events (didn’t pass fiducial/reco cuts)
-
 
 def prepareTrees(year):
     d_sig = {}
     d_sig_failed = {}
     for sample in signals_original:
-
-        if year == "2024" and sample == "ZZTo4l":
-            year = "2023postBPix" # use 2023postBPix for 2024 ZZTo4l sample
-        elif year == "2024" and sample.startswith("ggTo"):
-            year = "2023postBPix" # use 2023postBPix for 2024 ggZZ samples
-        elif year == "2024" and sample == "ZH125":
-            year = "2023postBPix" # use 2023postBPix for 2024 ZH samples
 
         fname = path['eos_path_sig']+year+"_MC/"+sample+"/ZZ4lAnalysis_SKIMMED.root"
 
@@ -451,33 +406,43 @@ def createDataframe(d_sig,fail,gen,xsec,signal,lumi,obs_reco,obs_gen,obs_reco_2n
 #Apply weights
 #Return a clean pandas DataFrame for further analysis
 
+def get_lumi(year, nSplit):
 
-# Set up data frames
-def dataframes(year, doubleDiff):
+    year = year.split("_")[0]
+
     if year == '2016post':
         lumi = 36.31
     elif year == '2017':
         lumi = 41.48
     elif year == '2018':
         lumi = 59.83
-    elif year == '2022EE':
-        lumi = 26.6728
+
+
     elif year == '2022':
         lumi = 7.9804
+    elif year == '2022EE':
+        lumi = 26.6728
     elif year == '2023preBPix':
         lumi = 17.794
     elif year == '2023postBPix':
         lumi = 9.451 #+109.08
     elif year == '2024':
         lumi = 109.08
-    elif year == '2024_1':
-        lumi = 109.08/4
-    elif year == '2024_2':
-        lumi = 109.08/4
-    elif year == '2024_3':
-        lumi = 109.08/4
-    elif year == '2024_4':
-        lumi = 109.08/4
+    else:
+        print("YEAR LUMI NOT FOUND")
+
+    if nSplit == 0:
+        lumi=lumi
+    else:
+        lumi=lumi/nSplit
+    
+    print(f"LUMI: {lumi}")
+    return lumi
+
+# Set up data frames
+def dataframes(year, nSplit, doubleDiff):
+
+    lumi = get_lumi(year, nSplit)
 
     d_df_sig = {}
     d_df_sig_failed = {}
@@ -530,8 +495,8 @@ def skim_df(year, doubleDiff):
 import re
 
 
-def skim_df(year, doubleDiff):
-    d_df_sig, d_df_sig_failed = dataframes(year, doubleDiff)
+def skim_df(year, nSplit, doubleDiff):
+    d_df_sig, d_df_sig_failed = dataframes(year, nSplit, doubleDiff)
     d_skim_sig = {}
     d_skim_sig_failed = {}
 
@@ -539,6 +504,8 @@ def skim_df(year, doubleDiff):
         match = re.search(r'H(\d+p?\d*)$', signal_name)
         return match.group(1) if match else 'UNKNOWN'
 
+    '''
+    # DO NOT SPLIT WPLUS AND WMINUS
     frames = []
     mass_suffix = None
     for signal in signals_original:
@@ -559,13 +526,56 @@ def skim_df(year, doubleDiff):
             d_skim_sig_failed[signal] = d_df_sig_failed[signal]
     if frames and mass_suffix:
         d_skim_sig_failed[f'WH{mass_suffix}'] = pd.concat(frames)
+    '''
+
+    for signal in signals_original:
+        # simply copy all signals as-is (including WplusH1* and WminusH1*)
+        d_skim_sig[signal] = d_df_sig[signal]
+        d_skim_sig_failed[signal] = d_df_sig_failed[signal]
 
     print(f'{year} SKIMMED df CREATED')
     return d_skim_sig, d_skim_sig_failed
 
+def recursive_add(d1, d2):
+    """Recursively add values in two nested dicts or numbers."""
+    # If both are dicts, recurse
+    if isinstance(d1, dict) and isinstance(d2, dict):
+        result = {}
+        for key in set(d1) | set(d2):
+            result[key] = recursive_add(d1.get(key, 0), d2.get(key, 0))
+        return result
+    else:
+        # At least one is a number → add them
+        return d1 + d2
+
+def merge_w_dicts(d):
+    """
+    Modify dict d in-place by adding 'WH...' entries which are the recursive sum
+    of corresponding 'Wplus...' and 'Wminus...' entries.
+    """
+
+    def recursive_add(v1, v2):
+        """Recursively add numbers or nested dicts."""
+        if isinstance(v1, dict) and isinstance(v2, dict):
+            result = {}
+            for key in set(v1) | set(v2):
+                result[key] = recursive_add(v1.get(key, 0), v2.get(key, 0))
+            return result
+        else:
+            return v1 + v2
+
+    # Find all Wplus/Wminus keys
+    wplus_keys = [k for k in d if k.startswith("Wplus")]
+    for k in wplus_keys:
+        suffix = k[5:]  # remove 'Wplus'
+        wminus_key = "Wminus" + suffix
+        if wminus_key in d:
+            new_key = "W" + suffix
+            d[new_key] = recursive_add(d[k], d[wminus_key])
+
 
 # ------------------------------- FUNCTIONS TO CALCULATE COEFFICIENTS ----------------------------------------------------
-def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, genbin, obs_name, type, year, obs_reco_2nd = 'None', obs_gen_2nd = 'None', obs_name_2nd = 'None'):
+def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, genbin, obs_name, type, year, weight_uncs, obs_reco_2nd = 'None', obs_gen_2nd = 'None', obs_name_2nd = 'None'):
     if not doubleDiff:
         #RecoBin limits I'm considering
         obs_reco_low = obs_bins[recobin]
@@ -694,26 +704,30 @@ def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, g
 
 
         ### THEORY UNCERTAINTY ON EFFICIENCY ###
-
-        # scale variations
-
+        
         eff_num_var[processBin] = {}
         eff_den_var[processBin] = {}
 
-        for scale in ["pdf", "qcd", "as"]:
+        if opt.EFF_UNC:
 
-            eff_num_var[processBin][scale] = {}
-            eff_den_var[processBin][scale] = {}
+            for scale in ["pdf", "qcd", "as"]:
 
-            w_nom, w_var = weight_uncs(year, signal, scale)
+                eff_num_var[processBin][scale] = {}
+                eff_den_var[processBin][scale] = {}
 
-            for w in w_var.keys():
+                w = 0
 
-                datafr['recoweight_var'] = datafr[recoweight] * w_var[w]
-                datafr['weight_var'] = datafr[genweight] * w_var[w]
+                for col in weight_uncs[year][signal][scale].columns:
 
-                eff_num_var[processBin][scale][w] = datafr[cutm4l_reco & cutobs_reco & passedFullSelection & cuth4l_reco & passedFiducialSelection & cuth4l_gen & cutm4l_gen & cutchan_gen & cutobs_gen]['recoweight_var'].sum()
-                eff_den_var[processBin][scale][w] = datafr[passedFiducialSelection & cutm4l_gen & cutobs_gen & cutchan_gen & cuth4l_gen]['weight_var'].sum()
+                    var_values = weight_uncs[year][signal][scale][col] 
+
+                    datafr['recoweight_var'] = datafr[recoweight] * var_values
+                    datafr['weight_var'] = datafr[genweight] * var_values
+
+                    eff_num_var[processBin][scale][w] = datafr[cutm4l_reco & cutobs_reco & passedFullSelection & cuth4l_reco & passedFiducialSelection & cuth4l_gen & cutm4l_gen & cutchan_gen & cutobs_gen]['recoweight_var'].sum()
+                    eff_den_var[processBin][scale][w] = datafr[passedFiducialSelection & cutm4l_gen & cutobs_gen & cutchan_gen & cuth4l_gen]['weight_var'].sum()
+
+                    w+=1
         
 
         if type=='fullNNLOPS' or type=='ACggH': continue # In case of fullNNLOPS we are interested in acceptance only
@@ -768,7 +782,7 @@ def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, g
             print(processBin,'acc',round(acceptance[processBin],4),'eff',round(effrecotofid[processBin],4),'outinratio',round(outinratio[processBin],4), '\n')
 
 
-def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None', obs_gen_2nd = 'None', obs_name_2nd = 'None',):
+def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, weight_uncs, obs_reco_2nd = 'None', obs_gen_2nd = 'None', obs_name_2nd = 'None'):
     if obs_reco != 'ZZMass':
         chans = ['4l', '4e', '4mu', '2e2mu'] 
     else:
@@ -787,8 +801,33 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
             for chan in chans:
                 for recobin in range(nBins):
                     for genbin in range(nBins):
-                        getCoeff(chan, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, genbin, obs_name, type, year, obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
+                        getCoeff(chan, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, genbin, obs_name, type, year, weight_uncs, obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
+
             # Write dictionaries
+            merge_w_dicts(acceptance)
+            merge_w_dicts(err_acceptance)
+            merge_w_dicts(effrecotofid)
+            merge_w_dicts(err_effrecotofid)
+            merge_w_dicts(outinratio)
+            merge_w_dicts(err_outinratio)
+            merge_w_dicts(wrongfrac)
+            merge_w_dicts(binfrac_wrongfrac)
+            merge_w_dicts(numberFake)
+            merge_w_dicts(lambdajesup)
+            merge_w_dicts(lambdajesdn)
+            merge_w_dicts(accnum)
+            merge_w_dicts(accden)
+            merge_w_dicts(effnum)
+            merge_w_dicts(effden)
+            merge_w_dicts(eff_num_var)
+            merge_w_dicts(eff_den_var)
+            merge_w_dicts(oirnum)
+            merge_w_dicts(oirden)
+            merge_w_dicts(wrongfracnum)
+            merge_w_dicts(wrongfracden)
+            merge_w_dicts(binwrongfracnum)
+            merge_w_dicts(binwrongfracden)
+
             if doubleDiff: obs_name_dic = obs_name+'_'+obs_name_2nd
             else: obs_name_dic = obs_name
             #Fix 2016post to 2016
@@ -796,9 +835,10 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
                 year_label = '2016'
             else:
                 year_label = year
-            if (os.path.exists('../inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+str(year_label)+'_ORIG.py')):
-                os.system('rm ../inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+str(year_label)+'_ORIG.py')
-            with open('../inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+str(year_label)+'.py', 'w') as f:
+            if (os.path.exists( path['eos_path']+'inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+str(year_label)+'_ORIG.py')):
+                os.system('rm '+ path['eos_path'] +'inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+str(year_label)+'_ORIG.py')
+            with open(path['eos_path']+'inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+str(year_label)+'.py', 'w') as f:
+
                 f.write('observableBins = '+str(obs_bins)+';\n')
                 f.write('acc = '+str(acceptance)+' \n')
                 f.write('err_acc = '+str(err_acceptance)+' \n')
@@ -830,7 +870,7 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
                 for recobin in range(nBins):
                     for genbin in range(nBins):
                         #getCoeff(chan, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, genbin, obs_name, type, 'None', obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
-                        getCoeff(chan, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, genbin, obs_name, type, year, obs_reco_2nd, obs_gen_2nd, obs_name_2nd) # SPENCER 15 10 2025
+                        getCoeff(chan, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, genbin, obs_name, type, year, weight_uncs, obs_reco_2nd, obs_gen_2nd, obs_name_2nd) # SPENCER 15 10 2025
 
         # Write dictionaries
         if doubleDiff: obs_name_dic = obs_name+'_'+obs_name_2nd
@@ -840,9 +880,9 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
             if type=='run3': year_label = 'Run3'
             if type=='2022full': year_label = '2022full'
             if type=='2023full': year_label = '2023full'
-            if (os.path.exists('../inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+year_label+'_ORIG.py')):
-                os.system('rm ../inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+year_label+'_ORIG.py')
-            with open('../inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+year_label+'.py', 'w') as f:
+            if (os.path.exists(path['eos_path']+'inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+year_label+'_ORIG.py')):
+                os.system('rm ' + path['eos_path']+ 'inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+year_label+'_ORIG.py')
+            with open(path['eos_path']+'inputs/inputs_sig_'+add_ac+obs_name_dic+'_'+year_label+'.py', 'w') as f:
                 f.write('observableBins = '+str(obs_bins)+';\n')
                 f.write('acc = '+str(acceptance)+' \n')
                 f.write('err_acc = '+str(err_acceptance)+' \n')
@@ -870,7 +910,7 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
                     f.write('binwf_den = '+str(binwrongfracden)+' \n')
         elif type=='fullNNLOPS':
             if(opt.YEAR == 'Full'):
-                with open('../inputs/inputs_sig_'+add_ac+obs_name_dic+'_NNLOPS_Full.py', 'w') as f:
+                with open(path['eos_path']+'inputs/inputs_sig_'+add_ac+obs_name_dic+'_NNLOPS_Full.py', 'w') as f:
                     f.write('observableBins = '+str(obs_bins)+';\n')
                     f.write('acc = '+str(acceptance)+' \n')
                     f.write('err_acc = '+str(err_acceptance)+' \n')
@@ -883,7 +923,7 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
                     f.write('eff_num_var = '+str(eff_num_var)+' \n')
                     f.write('eff_den_var = '+str(eff_den_var)+' \n')
             else:
-                with open('../inputs/inputs_sig_'+add_ac+obs_name_dic+'_NNLOPS_'+opt.YEAR+'.py', 'w') as f:
+                with open(path['eos_path']+'inputs/inputs_sig_'+add_ac+obs_name_dic+'_NNLOPS_'+opt.YEAR+'.py', 'w') as f:
                     f.write('observableBins = '+str(obs_bins)+';\n')
                     f.write('acc = '+str(acceptance)+' \n')
                     f.write('err_acc = '+str(err_acceptance)+' \n')
@@ -899,16 +939,6 @@ def doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, type, obs_reco_2nd = 'None
 
 from collections import defaultdict
 
-def recursive_add(d1, d2):
-    """Recursively add values in two nested dicts."""
-    result = {}
-    for key in set(d1) | set(d2):
-        if isinstance(d1.get(key), dict) and isinstance(d2.get(key), dict):
-            result[key] = recursive_add(d1.get(key, {}), d2.get(key, {}))
-        else:
-            result[key] = d1.get(key, 0) + d2.get(key, 0)
-    return result
-
 # -----------------------------------------------------------------------------------------
 # ------------------------------- MAIN ----------------------------------------------------
 # -----------------------------------------------------------------------------------------
@@ -921,12 +951,12 @@ if(opt.AC or opt.AC_ONLYACC):
     signals = signals_AC
 elif opt.INTER:
     signals_original = ['ggH1', 'VBFH1', 'WminusH1', 'WplusH1', 'ZH1', 'ttH1']
-    signals = ['ggH1', 'VBFH1', 'WH1', 'ZH1', 'ttH1']
+    signals = ['ggH1', 'VBFH1', 'WminusH1', 'WplusH1', 'ZH1', 'ttH1']
     signals_original = [root+opt.HYP for root in signals_original]
     signals = [root+opt.HYP for root in signals]
 else:
     signals_original = ['ggH125', 'VBFH125', 'WminusH125', 'WplusH125', 'ttH125', 'ZH125']
-    signals = ['ggH125', 'VBFH125', 'WH125', 'ttH125', 'ZH125']
+    signals = ['ggH125', 'VBFH125', 'WminusH125', 'WplusH125', 'ttH125', 'ZH125']
 
 
 eos_path_sig = path['eos_path_sig']
@@ -938,23 +968,35 @@ key_failed = 'ZZTree/candTree_failed' # spencer
 if (opt.YEAR == '2016'): years = ['2016post']
 if (opt.YEAR == '2017'): years = ['2017']
 if (opt.YEAR == '2018'): years = ['2018']
-if (opt.YEAR == 'Run3'): years = ['2022', '2022EE', '2023preBPix', '2023postBPix', '2024']
 if (opt.YEAR == 'Full'): years = ['2016post','2017','2018']
 
 if (opt.YEAR == '2022'): years = ['2022']
 if (opt.YEAR == '2022EE'): years = ['2022EE']
 if (opt.YEAR == '2023preBPix'): years = ['2023preBPix']
 if (opt.YEAR == '2023postBPix'): years = ['2023postBPix']
-#if (opt.YEAR == '2024'): years = ['2024']
-if (opt.YEAR == '2024_1'): years = ['2024_1']
-if (opt.YEAR == '2024_2'): years = ['2024_2']
-if (opt.YEAR == '2024_3'): years = ['2024_3']
-if (opt.YEAR == '2024_4'): years = ['2024_4']
-
+if (opt.YEAR == '2024'): years = ['2024']
 
 if (opt.YEAR == '2022full'): years = ['2022', '2022EE']
 if (opt.YEAR == '2023full'): years = ['2023preBPix', '2023postBPix']
-if (opt.YEAR == '2024'): years = ['2024_1', '2024_2', '2024_3', '2024_4']
+if (opt.YEAR == '2022_2023'): years = ['2022', '2022EE', '2023preBPix', '2023postBPix']
+if (opt.YEAR == 'Run3'): years = ['2022', '2022EE', '2023preBPix', '2023postBPix', '2024']
+
+
+if opt.SPLIT:
+    YEAR_SPLIT = opt.YEAR.split("_")[0]
+    nSplit = split[YEAR_SPLIT]
+    years = [opt.YEAR]
+else:
+    nSplit = 0
+
+if opt.MERGE:
+    if nSplit != 0:
+        years = []
+        for i in range(0,nSplit):
+            years.append(opt.YEAR+"_"+str(i+1))
+    else:
+        years = years
+    
 
 print(years)
 
@@ -1007,14 +1049,25 @@ if opt.MERGE:
 
     eff_num_var_totals, eff_den_var_totals = {}, {}
 
+    if opt.INTER:
+        obs_name = "1" + opt.HYP + "_" + obs_name
+
     for year in years:
 
         #fname = f'../inputs/inputs_sig_{obs_name}_{suffix}{year}{orig}.py'
-        fname = f'../inputs/inputs_sig_{obs_name}_{suffix}{year}.py'
+        #fname = f'../inputs/inputs_sig_{obs_name}_{suffix}{year}.py'
 
+        if opt.SPLIT:
+            fname = path['eos_path']+"inputs/inputs_sig_"+obs_name+"_"+suffix+year+".py"
+        else:
+            fname = "../inputs/inputs_sig_"+obs_name+"_"+suffix+year+".py"
+
+        print( fname )
         if os.path.exists(fname):
-            #module_name = f'../inputs/inputs_sig_{obs_name}_{suffix}{year}{orig}.py'
-            module_name = f'../inputs/inputs_sig_{obs_name}_{suffix}{year}.py'
+            if opt.SPLIT:
+                module_name = path['eos_path']+"inputs/inputs_sig_"+obs_name+"_"+suffix+year+".py"
+            else:
+                module_name = "../inputs/inputs_sig_"+obs_name+"_"+suffix+year+".py"
             spec = importlib.util.spec_from_file_location(module_name, fname)
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
@@ -1065,7 +1118,12 @@ if opt.MERGE:
         binfrac_wrongfrac = {k: (binwrongfracnum_totals[k] / binwrongfracden_totals[k]) if binwrongfracden_totals[k] != 0 else 0 for k in module.binfrac_wrongfrac.keys()}
         err_acceptance = { k: math.sqrt((acceptance[k] * (1 - acceptance[k])) / accden_totals[k]) if acceptance[k] != 0 and accden_totals[k] > 0 else 0 for k in acceptance }
         err_effrecotofid = { k: math.sqrt((effrecotofid[k] * (1 - effrecotofid[k])) / effden_totals[k]) if effrecotofid[k] != 0 and effden_totals[k] > 0 else 0 for k in effrecotofid }
-        err_outinratio = { k: math.sqrt((outinratio[k] * (1 - outinratio[k])) / oirden_totals[k]) if outinratio[k] != 0 and oirden_totals[k] > 0 else 0 for k in outinratio}
+        err_outinratio = {
+            k: math.sqrt(max(outinratio[k] * (1 - outinratio[k]), 0.0) / oirden_totals[k])
+            if 0 <= outinratio[k] <= 1 and oirden_totals[k] > 0
+            else 0
+            for k in outinratio
+        }
         numberFake   = {k: -1.0 for k in acceptance}
         lambdajesup  = {k:  0.0 for k in acceptance}
         lambdajesdn  = {k:  0.0 for k in acceptance}
@@ -1105,21 +1163,31 @@ if opt.MERGE:
         
 else:
 
+    weight_uncs = { }
+    if opt.EFF_UNC:
+
+        for year in years:
+            weight_uncs[year] = {}
+            for signal in signals:
+                weight_uncs[year][signal] = {}
+                for scale in ["pdf", "qcd", "as"]:
+                    weight_uncs[year][signal][scale] = get_weight_uncs(year, signal, scale)
+
+
     # Generate dataframes
     d_sig = {}
     d_sig_failed = {}
     for year in years:
-        sig, sig_failed = skim_df(year, doubleDiff)
+        sig, sig_failed = skim_df(year, nSplit, doubleDiff)
         d_sig[year] = sig
         d_sig_failed[year] = sig_failed
-            
+   
     # Create dataframe with all the events
     d_sig_tot = {}
     for year in years:
         d_sup = {}
         for signal in signals:
             print(year, signal)
-
             d_sup[signal] = pd.concat([d_sig[year][signal], d_sig_failed[year][signal]], ignore_index=True, sort=True)        
         d_sig_tot[year] = d_sup
 
@@ -1134,6 +1202,7 @@ else:
             d_sig_full = d_sig_tot[opt.YEAR+'post']
         else:
             d_sig_full = d_sig_tot[opt.YEAR]
+
     print('Dataframes created successfully')
 
     if not opt.AC_ONLYACC:
@@ -1164,22 +1233,22 @@ else:
         binwrongfracden = {}
         if doubleDiff:
             if (opt.YEAR == 'Run3'):
-                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'run3',  obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
+                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'run3', weight_uncs,  obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
             elif (opt.YEAR == '2022full'):
-                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, '2022full', obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
+                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, '2022full', weight_uncs, obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
             elif (opt.YEAR == '2023full'):
-                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, '2023full', obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
+                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, '2023full', weight_uncs, obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
             else:
-                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'std', obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
+                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'std', weight_uncs, obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
         else:
             if (opt.YEAR == 'Run3'):
-                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'run3')
+                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'run3', weight_uncs)
             elif (opt.YEAR == '2022full'):
-                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, '2022full') 
+                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, '2022full', weight_uncs)
             elif (opt.YEAR == '2023full'):
-                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, '2023full') 
+                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, '2023full', weight_uncs)
             else :
-                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'std')
+                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'std', weight_uncs)
             
         if (opt.YEAR == 'Full'):
             print('Coeff full')
@@ -1195,9 +1264,9 @@ else:
             lambdajesup = {}
             lambdajesdn = {}
             if doubleDiff:
-                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'full', obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
+                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'full', weight_uncs, obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
             else:
-                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'full')
+                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'full', weight_uncs)
 
         print('Coeff fullNNLOPS')
         acceptance = {}
@@ -1205,14 +1274,14 @@ else:
         # For AC there is no NNLOPS samples
         if not opt.AC:
             if doubleDiff:
-                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'fullNNLOPS', obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
+                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'fullNNLOPS', weight_uncs, obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
             else:
-                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'fullNNLOPS')
+                doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'fullNNLOPS', weight_uncs)
     else:
         print('Coeff full AC ggH')
         acceptance = {}
         err_acceptance = {}
         if doubleDiff:
-            doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'ACggH', obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
+            doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'ACggH', weight_uncs, obs_reco_2nd, obs_gen_2nd, obs_name_2nd)
         else:
-            doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'ACggH')
+            doGetCoeff(obs_reco, obs_gen, obs_name, obs_bins, 'ACggH', weight_uncs)

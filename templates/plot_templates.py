@@ -4,7 +4,9 @@ import ROOT
 from tdrStyle import *
 from binning import binning
 ROOT.gROOT.SetBatch(True)
-sPlotsStore = 'plots'
+
+sys.path.append('../helperstuff/')
+from paths import path
 
 print('Welcome in plot_templates!')
 
@@ -72,6 +74,8 @@ def parseOptions():
 
 global opt, args, runAllSteps
 parseOptions()
+
+sPlotsStore = path['plots_path']+"TEMPLATES/"+opt.OBSNAME
 
 def setHistProperties(hist, lineWidth, lineStyle, lineColor, fillStyle=0, fillColor=0, xAxisTitle = "skip", yAxisTitle = "skip"):
     if not hist: return
@@ -160,8 +164,10 @@ elif opt.YEAR == '2022full':
     year=['2022', '2022EE']
 elif opt.YEAR == '2023full':
     year=['2023preBPix', '2023postBPix']
-elif opt.YEAR == 'Run3':
+elif opt.YEAR == '2022_2023':
     year=['2022', '2022EE', '2023preBPix', '2023postBPix']
+elif opt.YEAR == 'Run3':
+    year=['2022', '2022EE', '2023preBPix', '2023postBPix', '2024']
 else:
     year=[opt.YEAR]
 print(year)

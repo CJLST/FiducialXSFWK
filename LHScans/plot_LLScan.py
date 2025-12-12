@@ -7,6 +7,9 @@ import json
 import argparse, optparse
 import os.path, sys
 
+sys.path.append('../helperstuff/')
+from paths import path
+
 from ROOT import *
 gROOT.SetBatch(True)
 
@@ -1099,7 +1102,8 @@ for i in range(nBins):
 
     c.Update()
     #c.SaveAs("plots/lhscan_compare_"+obsName+"_"+poi+".pdf")
-    c.SaveAs("plots/"+year+"_lhscan_compare_"+obsName+"_"+poi+".png")
+    #c.SaveAs("plots/"+year+"_lhscan_compare_"+obsName+"_"+poi+".png")
+    c.SaveAs(path['plots_path']+"SCANS/"+year+"_lhscan_compare_"+obsName+"_"+poi+".png")
 
 if v4_flag:
     if opt.UNBLIND:
