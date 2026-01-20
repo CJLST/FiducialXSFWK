@@ -439,9 +439,21 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
         lumi_corr_17_18['2017'] = '1.006'
         lumi_corr_17_18['2018'] = '1.002'
     elif yearSetting == 'Run3':
-        lumi = {}
-        lumi['2022'] = '1.014'
-        lumi['2022EE'] = '1.014'
+        # RUN III correlated luminosity scheme (2022/23/24)
+        lumi = {
+        '2022':'1.038',  # for lumi_1
+        '2023':'1.0017', # for lumi_1
+        '2024':'1.0020'  # for lumi_1
+        }
+        # Additional reduced nuisances for Run-3:
+        # lumi_2 applies to 2023 & 2024
+        # lumi_3 applies to 2024 only
+        lumi_extra = {
+        'lumi_2': {'2023': '1.0127', '2024': '1.0068'},
+        'lumi_3': {'2024': '1.0144'}
+        }
+        #lumi['2022'] = '1.014'
+        #lumi['2022EE'] = '1.014'
     else:
         lumi = {}
         lumi['2016'] = '1.026'
@@ -609,19 +621,34 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
                     file.write(lumi_corr_17_18[year]+' ')
                 file.write('-\n') # ZX
     elif yearSetting == 'Run3':
-        # lumi
-        file.write('lumi_13TeV_2022 lnN ')
-        # for i in range(nBins+4): # All except ZX
-        for i in range(2*nBins+4): # All except ZX
-            file.write(lumi['2022']+' ')
-        file.write('-\n') # ZX
-    else:
-        # lumi
-        file.write('lumi_13TeV_'+year+' lnN ')
-        # for i in range(nBins+4): # All except ZX
-        for i in range(2*nBins+4): # All except ZX
+        # correlated Run-3 lumi nuisances
+        # lumi_1 (2022,2023,2024)
+        file.write('lumi_1 lnN ')
+        for i in range(2*nBins+4): 
+            # All except ZX
             file.write(lumi[year]+' ')
-        file.write('-\n') # ZX
+        file.write('-\n')
+
+        # lumi_2 if applicable
+        if year in lumi_extra['lumi_2']:
+            file.write('lumi_2 lnN ')
+            for i in range(2*nBins+4):
+                file.write(lumi_extra['lumi_2'][year]+' ')
+            file.write('-\n')
+
+        # lumi_3 if applicable
+        if year in lumi_extra['lumi_3']:
+            file.write('lumi_3 lnN ')
+            for i in range(2*nBins+4):
+                file.write(lumi_extra['lumi_3'][year]+' ')
+            file.write('-\n')
+        else:
+            # lumi
+            file.write('lumi_13TeV_'+year+' lnN ')
+            # for i in range(nBins+4): # All except ZX
+            for i in range(2*nBins+4): # All except ZX
+                file.write(lumi[year]+' ')
+            file.write('-\n') # ZX
 
     # Lepton efficiency
     if channel == '4mu' or channel == '2e2mu':

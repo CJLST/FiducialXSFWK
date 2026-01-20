@@ -175,13 +175,35 @@ def runv3(years, observableBins, obsName, fitName, physicalModel, fStates=['4e',
     cmd_combCards += '> %s' %card_name
 
     cmd_addNuis = ''
-    
     if opt.YEAR == 'Run3':
+       # Base nuisances
+       base_nuis = [
+        'CMS_eff_e', 'CMS_eff_m',
+        'CMS_hzz2e2mu_Zjets_2022', 'CMS_hzz4e_Zjets_2022', 'CMS_hzz4mu_Zjets_2022',
+        'CMS_hzz2e2mu_Zjets_2023', 'CMS_hzz4e_Zjets_2023', 'CMS_hzz4mu_Zjets_2023',
+        'CMS_hzz2e2mu_Zjets_2024', 'CMS_hzz4e_Zjets_2024', 'CMS_hzz4mu_Zjets_2024',
+        'CMS_zz4l_sigma_e_sig', 'CMS_zz4l_sigma_m_sig',
+        'CMS_zz4l_n_sig_3_2022', 'CMS_zz4l_n_sig_2_2022', 'CMS_zz4l_n_sig_1_2022',
+        'CMS_zz4l_n_sig_3_2023', 'CMS_zz4l_n_sig_2_2023', 'CMS_zz4l_n_sig_1_2023',
+        'CMS_zz4l_n_sig_3_2024', 'CMS_zz4l_n_sig_2_2024', 'CMS_zz4l_n_sig_1_2024',
+        'CMS_zz4l_mean_e_sig', 'CMS_zz4l_mean_m_sig'
+        ]
+
+        # Run-3 correlated lumi nuisances
+        lumi_nuis = ['lumi_1', 'lumi_2', 'lumi_3']
+
         if 'zzfloating' in obsName:
-            cmd_addNuis = 'echo "nuis group = CMS_eff_e CMS_eff_m CMS_hzz2e2mu_Zjets_2022 CMS_hzz4e_Zjets_2022 CMS_hzz4mu_Zjets_2022 CMS_hzz2e2mu_Zjets_2022EE CMS_hzz4e_Zjets_2022EE CMS_hzz4mu_Zjets_2022EE CMS_hzz2e2mu_Zjets_2023preBPix CMS_hzz4e_Zjets_2023preBPix CMS_hzz4mu_Zjets_2023preBPix CMS_hzz2e2mu_Zjets_2023postBPix CMS_hzz4e_Zjets_2023postBPix CMS_hzz4mu_Zjets_2023postBPix lumi_13TeV_2022 lumi_13TeV_2022EE lumi_13TeV_2023preBPix lumi_13TeV_2023postBPix CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2022 CMS_zz4l_n_sig_2_2022 CMS_zz4l_n_sig_1_2022 CMS_zz4l_n_sig_3_2022EE CMS_zz4l_n_sig_2_2022EE CMS_zz4l_n_sig_1_2022EE CMS_zz4l_n_sig_3_2023preBPix CMS_zz4l_n_sig_2_2023preBPix CMS_zz4l_n_sig_1_2023preBPix CMS_zz4l_n_sig_3_2023postBPix CMS_zz4l_n_sig_2_2023postBPix CMS_zz4l_n_sig_1_2023postBPix CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+            cmd_addNuis = 'echo "nuis group = {} {}"'.format(
+                ' '.join(base_nuis),
+                ' '.join(lumi_nuis)
+            )
         else:
-            cmd_addNuis = 'echo "nuis group = CMS_eff_e CMS_eff_m CMS_hzz2e2mu_Zjets_2022 CMS_hzz4e_Zjets_2022 CMS_hzz4mu_Zjets_2022 CMS_hzz2e2mu_Zjets_2022EE CMS_hzz4e_Zjets_2022EE CMS_hzz4mu_Zjets_2022EE CMS_hzz2e2mu_Zjets_2023preBPix CMS_hzz4e_Zjets_2023preBPix CMS_hzz4mu_Zjets_2023preBPix CMS_hzz2e2mu_Zjets_2023postBPix CMS_hzz4e_Zjets_2023postBPix CMS_hzz4mu_Zjets_2023postBPix QCDscale_VV QCDscale_ggVV kfactor_ggzz lumi_13TeV_2022 lumi_13TeV_2022EE lumi_13TeV_2023preBPix lumi_13TeV_2023postBPix pdf_gg pdf_qqbar CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2022 CMS_zz4l_n_sig_2_2022 CMS_zz4l_n_sig_1_2022 CMS_zz4l_n_sig_3_2022EE CMS_zz4l_n_sig_2_2022EE CMS_zz4l_n_sig_1_2022EE CMS_zz4l_n_sig_3_2023preBPix CMS_zz4l_n_sig_2_2023preBPix CMS_zz4l_n_sig_1_2023preBPix CMS_zz4l_n_sig_3_2023postBPix CMS_zz4l_n_sig_2_2023postBPix CMS_zz4l_n_sig_1_2023postBPix CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
-    
+            other_nuis = ['QCDscale_VV', 'QCDscale_ggVV', 'kfactor_ggzz', 'pdf_gg', 'pdf_qqbar']
+            cmd_addNuis = 'echo "nuis group = {} {}"'.format(
+                ' '.join(base_nuis + other_nuis),
+                ' '.join(lumi_nuis)
+            )
+
     if opt.YEAR == '2022full':
         if 'zzfloating' in obsName:
             cmd_addNuis = 'echo "nuis group = CMS_eff_e CMS_eff_m CMS_hzz2e2mu_Zjets_2022 CMS_hzz4e_Zjets_2022 CMS_hzz4mu_Zjets_2022 CMS_hzz2e2mu_Zjets_2022EE CMS_hzz4e_Zjets_2022EE CMS_hzz4mu_Zjets_2022EE lumi_13TeV_2022 lumi_13TeV_2022EE CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2022 CMS_zz4l_n_sig_2_2022 CMS_zz4l_n_sig_1_2022 CMS_zz4l_n_sig_3_2022EE CMS_zz4l_n_sig_2_2022EE CMS_zz4l_n_sig_1_2022EE CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
