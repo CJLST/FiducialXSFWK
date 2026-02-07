@@ -41,8 +41,53 @@ class InclusiveFiducialV2( PhysicsModel ):
                                 self.debug = 1
 
         def doParametersOfInterest(self):
+                if self.debug > 0:
+                        print("Setting pois - v2")
+
+                # Build POIs as a list (no comma bugs)
+                poi_list = []
+
+                # For your mass4l Run3 cards, the r's are r{finalstate}Bin{b}
+                for b in range(self.nBin):
+                        for ch in ["2e2mu", "4e", "4mu"]:
+                                name = f"r{ch}Bin{b}"
+                                self.modelBuilder.doVar(f"{name}[1,{self.Range[0]},{self.Range[1]}]")
+                                poi_list.append(name)
+
+                # --- Higgs mass handling (keep your existing behavior) ---
+                if self.modelBuilder.out.var("MH"):
+                        if len(self.mHRange) == 2:
+                                print("MH will be left floating within", self.mHRange[0], "and", self.mHRange[1])
+                                self.modelBuilder.out.var("MH").setRange(float(self.mHRange[0]), float(self.mHRange[1]))
+                                self.modelBuilder.out.var("MH").setConstant(False)
+                                poi_list.append("MH")
+                        else:
+                                print("MH will be assumed to be", self.mass)
+                                self.modelBuilder.out.var("MH").removeRange()
+                                self.modelBuilder.out.var("MH").setVal(self.mass)
+                else:
+                        if len(self.mHRange) == 2:
+                                print("MH will be left floating within", self.mHRange[0], "and", self.mHRange[1])
+                                self.modelBuilder.doVar("MH[%s,%s]" % (self.mHRange[0], self.mHRange[1]))
+                                poi_list.append("MH")
+                        else:
+                                print("MH (not there before) will be assumed to be", self.mass)
+                                self.modelBuilder.doVar("MH[%g]" % self.mass)
+
+                # Safety: drop empties + define POI set
+                poi_list = [p for p in poi_list if p]
+                if self.debug > 0:
+                        print("POIs:", poi_list)
+
+                self.modelBuilder.doSet("POI", ",".join(poi_list))
+                print("set up pois")
+                
+'''
+        def doParametersOfInterest(self):
                 POIs=""
                 if self.debug>0:print("Setting pois")
+
+                print(self.nBin)
                 
                 self.modelBuilder.doVar("r2e2mu[1,%s,%s]" % (self.Range[0], self.Range[1]))
                 self.modelBuilder.doVar("r4e[1,%s,%s]" % (self.Range[0], self.Range[1]))
@@ -78,9 +123,15 @@ class InclusiveFiducialV2( PhysicsModel ):
                     else:
                         print('MH (not there before) will be assumed to be', self.mass)
                         self.modelBuilder.doVar("MH[%g]" % self.mass)
+#                for poi in poiNames:
+#                        POIs += ",%s"%poi
+#                self.modelBuilder.doSet("POI",POIs)
+                # SPENCER 07/01/2026
+                print(poiNames)
                 for poi in poiNames:
-                        POIs += ",%s"%poi
-                self.modelBuilder.doSet("POI",POIs)
+                        POIs += "%s," % poi   # NOTE: no leading comma
+                POIs = POIs.rstrip(",")       # strip trailing comma at the end
+                self.modelBuilder.doSet("POI", POIs)
                 print("set up pois")
 
                 self.setup()
@@ -102,7 +153,7 @@ class InclusiveFiducialV2( PhysicsModel ):
              if process in [ "trueH2e2mu", "trueH4e","trueH4mu"]: 
                 return name
              else : return 1
-
+'''
             
 
 class DifferentialFiducialV2( PhysicsModel ):
@@ -202,6 +253,10 @@ class DifferentialFiducialV2( PhysicsModel ):
                         self.modelBuilder.doVar("MH[%g]" % self.mass)
                 for poi in poiNames:
                         POIs += ",%s"%poi
+                # SPENCER 07/01/2026
+                POIs = POIs.strip(",")
+                POIs = ",".join([p for p in POIs.split(",") if p])  # drops empty tokens
+                # SPENCER 07/01/2026
                 self.modelBuilder.doSet("POI",POIs)
                 self.setup()
 

@@ -154,7 +154,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
         if int(observableBins[obsBin+1]) > 1000:
             _recobin = 'GT'+str(int(observableBins[obsBin]))
 
-    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
+    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'NJ'}
     if obsName not in _obsName:
         _obsName[obsName] = obsName
 
@@ -914,43 +914,58 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
             fracXH4muBin[str(genbin)] = ROOT.RooRealVar('fracXH4muBin'+str(genbin), 'fracXH4muBin'+str(genbin), fidxs_xH['4mu']/fidxs_xH['4l'])
             fracXH4muBin[str(genbin)].setConstant(True)
 
-            K1Bin[str(genbin)] = ROOT.RooRealVar('K1Bin'+str(genbin), 'K1Bin'+str(genbin), 1.0, 0.0,  1.0/fracSM4eBin[str(genbin)].getVal())
-            K2Bin[str(genbin)] = ROOT.RooRealVar('K2Bin'+str(genbin), 'K2Bin'+str(genbin), 1.0, 0.0, (1.0-fracSM4eBin[str(genbin)].getVal())/fracSM4muBin[str(genbin)].getVal())
-
-            K1GGHBin[str(genbin)] = ROOT.RooRealVar('K1GGHBin'+str(genbin), 'K1GGHBin'+str(genbin), 1.0, 0.0,  1.0/fracGGH4eBin[str(genbin)].getVal())
-            K2GGHBin[str(genbin)] = ROOT.RooRealVar('K2GGHBin'+str(genbin), 'K2GGHBin'+str(genbin), 1.0, 0.0, (1.0-fracGGH4eBin[str(genbin)].getVal())/fracGGH4muBin[str(genbin)].getVal())
-
-            K1XHBin[str(genbin)] = ROOT.RooRealVar('K1XHBin'+str(genbin), 'K1XHBin'+str(genbin), 1.0, 0.0,  1.0/fracXH4eBin[str(genbin)].getVal())
-            K2XHBin[str(genbin)] = ROOT.RooRealVar('K2XHBin'+str(genbin), 'K2XHBin'+str(genbin), 1.0, 0.0, (1.0-fracXH4eBin[str(genbin)].getVal())/fracXH4muBin[str(genbin)].getVal())
+            #K1Bin[str(genbin)] = ROOT.RooRealVar('K1Bin'+str(genbin), 'K1Bin'+str(genbin), 1.0, 0.0,  1.0/fracSM4eBin[str(genbin)].getVal())
+            #K2Bin[str(genbin)] = ROOT.RooRealVar('K2Bin'+str(genbin), 'K2Bin'+str(genbin), 1.0, 0.0, (1.0-fracSM4eBin[str(genbin)].getVal())/fracSM4muBin[str(genbin)].getVal())
+            #K1GGHBin[str(genbin)] = ROOT.RooRealVar('K1GGHBin'+str(genbin), 'K1GGHBin'+str(genbin), 1.0, 0.0,  1.0/fracGGH4eBin[str(genbin)].getVal())
+            #K2GGHBin[str(genbin)] = ROOT.RooRealVar('K2GGHBin'+str(genbin), 'K2GGHBin'+str(genbin), 1.0, 0.0, (1.0-fracGGH4eBin[str(genbin)].getVal())/fracGGH4muBin[str(genbin)].getVal())
+            #K1XHBin[str(genbin)] = ROOT.RooRealVar('K1XHBin'+str(genbin), 'K1XHBin'+str(genbin), 1.0, 0.0,  1.0/fracXH4eBin[str(genbin)].getVal())
+            #K2XHBin[str(genbin)] = ROOT.RooRealVar('K2XHBin'+str(genbin), 'K2XHBin'+str(genbin), 1.0, 0.0, (1.0-fracXH4eBin[str(genbin)].getVal())/fracXH4muBin[str(genbin)].getVal())
 
             if not doubleDiff:
                 SigmaBin[str(genbin)] = ROOT.RooRealVar('xs_hzz_'+sig_name+'_'+_obsName[obsName]+'_'+str(observableBins[genbin]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin+1]).replace('.', 'p').replace('-','m'), 'xs_hzz_'+sig_name+'_'+_obsName[obsName]+'_'+str(observableBins[genbin]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin+1]).replace('.', 'p').replace('-','m'), fidxs['4l'], 0.0, 10.0)
             else:
                 SigmaBin[str(genbin)] = ROOT.RooRealVar('xs_hzz_'+sig_name+'_'+_obsName[obsName]+'_'+str(observableBins[genbin][0]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin][1]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin][2]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin][3]).replace('.', 'p').replace('-','m'), 'xs_hzz_'+sig_name+'_'+_obsName[obsName]+'_'+str(observableBins[genbin][0]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin][1])+'_'+str(observableBins[genbin][2]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin][3]), fidxs['4l'], 0.0, 10.0)
             SigmaBin[str(genbin)].setConstant(True)
-            SigmaHBin['4e'+str(genbin)] = ROOT.RooFormulaVar("Sigma4eBin"+str(genbin),"(@0*@1*@2)", ROOT.RooArgList(SigmaBin[str(genbin)], fracSM4eBin[str(genbin)], K1Bin[str(genbin)]))
-            SigmaHBin['4mu'+str(genbin)] = ROOT.RooFormulaVar("Sigma4muBin"+str(genbin),"(@0*(1.0-@1*@2)*@3*@4/(1.0-@1))", ROOT.RooArgList(SigmaBin[str(genbin)], fracSM4eBin[str(genbin)], K1Bin[str(genbin)], K2Bin[str(genbin)], fracSM4muBin[str(genbin)]))
-            SigmaHBin['2e2mu'+str(genbin)] = ROOT.RooFormulaVar("Sigma2e2muBin"+str(genbin),"(@0*(1.0-@1*@2)*(1.0-@3*@4/(1.0-@1)))", ROOT.RooArgList(SigmaBin[str(genbin)], fracSM4eBin[str(genbin)], K1Bin[str(genbin)], K2Bin[str(genbin)], fracSM4muBin[str(genbin)]))
+
+            # SPENCER 10 01 2026
+            #SigmaHBin['4e'+str(genbin)] = ROOT.RooFormulaVar("Sigma4eBin"+str(genbin),"(@0*@1*@2)", ROOT.RooArgList(SigmaBin[str(genbin)], fracSM4eBin[str(genbin)], K1Bin[str(genbin)]))
+            #SigmaHBin['4mu'+str(genbin)] = ROOT.RooFormulaVar("Sigma4muBin"+str(genbin),"(@0*(1.0-@1*@2)*@3*@4/(1.0-@1))", ROOT.RooArgList(SigmaBin[str(genbin)], fracSM4eBin[str(genbin)], K1Bin[str(genbin)], K2Bin[str(genbin)], fracSM4muBin[str(genbin)]))
+            #SigmaHBin['2e2mu'+str(genbin)] = ROOT.RooFormulaVar("Sigma2e2muBin"+str(genbin),"(@0*(1.0-@1*@2)*(1.0-@3*@4/(1.0-@1)))", ROOT.RooArgList(SigmaBin[str(genbin)], fracSM4eBin[str(genbin)], K1Bin[str(genbin)], K2Bin[str(genbin)], fracSM4muBin[str(genbin)]))
+            SigmaHBin['4e'+str(genbin)] = ROOT.RooFormulaVar("Sigma4eBin"+str(genbin),"(@0*@1)",ROOT.RooArgList(SigmaBin[str(genbin)], fracSM4eBin[str(genbin)]))
+            SigmaHBin['4mu'+str(genbin)] = ROOT.RooFormulaVar("Sigma4muBin"+str(genbin),"(@0*@1)",ROOT.RooArgList(SigmaBin[str(genbin)], fracSM4muBin[str(genbin)]))
+            SigmaHBin['2e2mu'+str(genbin)] = ROOT.RooFormulaVar("Sigma2e2muBin"+str(genbin),"(@0*(1.0-@1-@2))",ROOT.RooArgList(SigmaBin[str(genbin)],fracSM4eBin[str(genbin)],fracSM4muBin[str(genbin)]))
+            # SPENCER 10 01 2026
 
             if not doubleDiff:
                 SigmaBin_ggH[str(genbin)] = ROOT.RooRealVar('xs_hzz_ggH_'+_obsName[obsName]+'_'+str(observableBins[genbin]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin+1]).replace('.', 'p').replace('-','m'), 'xs_hzz_ggH_'+_obsName[obsName]+'_'+str(observableBins[genbin]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin+1]).replace('.', 'p').replace('-','m'), fidxs_ggH['4l'], 0.0, 10.0)
             else:
                 SigmaBin_ggH[str(genbin)] = ROOT.RooRealVar('xs_hzz_ggH_'+_obsName[obsName]+'_'+str(observableBins[genbin][0]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin][1]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin][2]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin][3]).replace('.', 'p').replace('-','m'), 'xs_hzz_ggH_'+_obsName[obsName]+'_'+str(observableBins[genbin][0]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin][1]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin][2]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin][3]).replace('.', 'p'), fidxs_ggH['4l'], 0.0, 10.0)
             SigmaBin_ggH[str(genbin)].setConstant(True)
-            SigmaHBin_ggH['4e'+str(genbin)] = ROOT.RooFormulaVar("SigmaGGH4eBin"+str(genbin),"(@0*@1*@2)", ROOT.RooArgList(SigmaBin_ggH[str(genbin)], fracGGH4eBin[str(genbin)], K1GGHBin[str(genbin)]))
-            SigmaHBin_ggH['4mu'+str(genbin)] = ROOT.RooFormulaVar("SigmaGGH4muBin"+str(genbin),"(@0*(1.0-@1*@2)*@3*@4/(1.0-@1))", ROOT.RooArgList(SigmaBin_ggH[str(genbin)], fracGGH4eBin[str(genbin)], K1GGHBin[str(genbin)], K2GGHBin[str(genbin)], fracGGH4muBin[str(genbin)]))
-            SigmaHBin_ggH['2e2mu'+str(genbin)] = ROOT.RooFormulaVar("SigmaGGH2e2muBin"+str(genbin),"(@0*(1.0-@1*@2)*(1.0-@3*@4/(1.0-@1)))", ROOT.RooArgList(SigmaBin_ggH[str(genbin)], fracGGH4eBin[str(genbin)], K1GGHBin[str(genbin)], K2GGHBin[str(genbin)], fracGGH4muBin[str(genbin)]))
             
+            # SPENCER 10 01 2026
+            #SigmaHBin_ggH['4e'+str(genbin)] = ROOT.RooFormulaVar("SigmaGGH4eBin"+str(genbin),"(@0*@1*@2)", ROOT.RooArgList(SigmaBin_ggH[str(genbin)], fracGGH4eBin[str(genbin)], K1GGHBin[str(genbin)]))
+            #SigmaHBin_ggH['4mu'+str(genbin)] = ROOT.RooFormulaVar("SigmaGGH4muBin"+str(genbin),"(@0*(1.0-@1*@2)*@3*@4/(1.0-@1))", ROOT.RooArgList(SigmaBin_ggH[str(genbin)], fracGGH4eBin[str(genbin)], K1GGHBin[str(genbin)], K2GGHBin[str(genbin)], fracGGH4muBin[str(genbin)]))
+            #SigmaHBin_ggH['2e2mu'+str(genbin)] = ROOT.RooFormulaVar("SigmaGGH2e2muBin"+str(genbin),"(@0*(1.0-@1*@2)*(1.0-@3*@4/(1.0-@1)))", ROOT.RooArgList(SigmaBin_ggH[str(genbin)], fracGGH4eBin[str(genbin)], K1GGHBin[str(genbin)], K2GGHBin[str(genbin)], fracGGH4muBin[str(genbin)]))
+            SigmaHBin_ggH['4e'+str(genbin)] = ROOT.RooFormulaVar("SigmaGGH4eBin"+str(genbin),"(@0*@1)",ROOT.RooArgList(SigmaBin_ggH[str(genbin)], fracGGH4eBin[str(genbin)]))
+            SigmaHBin_ggH['4mu'+str(genbin)] = ROOT.RooFormulaVar("SigmaGGH4muBin"+str(genbin),"(@0*@1)",ROOT.RooArgList(SigmaBin_ggH[str(genbin)], fracGGH4muBin[str(genbin)]))
+            SigmaHBin_ggH['2e2mu'+str(genbin)] = ROOT.RooFormulaVar("SigmaGGH2e2muBin"+str(genbin),"(@0*(1.0-@1-@2))",ROOT.RooArgList(SigmaBin_ggH[str(genbin)],fracGGH4eBin[str(genbin)],fracGGH4muBin[str(genbin)]))
+            # SPENCER 10 01 2026
+
             if not doubleDiff:
                 SigmaBin_xH[str(genbin)] = ROOT.RooRealVar('xs_hzz_xH_'+_obsName[obsName]+'_'+str(observableBins[genbin]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin+1]).replace('.', 'p').replace('-','m'), 'xs_hzz_xH_'+_obsName[obsName]+'_'+str(observableBins[genbin]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin+1]).replace('.', 'p').replace('-','m'), fidxs_xH['4l'], 0.0, 10.0)
             else:
                 SigmaBin_xH[str(genbin)] = ROOT.RooRealVar('xs_hzz_xH_'+_obsName[obsName]+'_'+str(observableBins[genbin][0]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin][1]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin][2]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin][3]).replace('.', 'p').replace('-','m'), 'xs_hzz_xH_'+_obsName[obsName]+'_'+str(observableBins[genbin][0]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin][1]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin][2]).replace('.', 'p').replace('-','m')+'_'+str(observableBins[genbin][3]).replace('.', 'p').replace('-','m'), fidxs_xH['4l'], 0.0, 10.0)
             SigmaBin_xH[str(genbin)].setConstant(True)
-            SigmaHBin_xH['4e'+str(genbin)] = ROOT.RooFormulaVar("SigmaXH4eBin"+str(genbin),"(@0*@1*@2)", ROOT.RooArgList(SigmaBin_xH[str(genbin)], fracXH4eBin[str(genbin)], K1XHBin[str(genbin)]))
-            SigmaHBin_xH['4mu'+str(genbin)] = ROOT.RooFormulaVar("SigmaXH4muBin"+str(genbin),"(@0*(1.0-@1*@2)*@3*@4/(1.0-@1))", ROOT.RooArgList(SigmaBin_xH[str(genbin)], fracXH4eBin[str(genbin)], K1XHBin[str(genbin)], K2XHBin[str(genbin)], fracXH4muBin[str(genbin)]))
-            SigmaHBin_xH['2e2mu'+str(genbin)] = ROOT.RooFormulaVar("SigmaXH2e2muBin"+str(genbin),"(@0*(1.0-@1*@2)*(1.0-@3*@4/(1.0-@1)))", ROOT.RooArgList(SigmaBin_xH[str(genbin)], fracXH4eBin[str(genbin)], K1XHBin[str(genbin)], K2XHBin[str(genbin)], fracXH4muBin[str(genbin)]))
-            
-            
+
+            # SPENCER 10 01 2026
+            #SigmaHBin_xH['4e'+str(genbin)] = ROOT.RooFormulaVar("SigmaXH4eBin"+str(genbin),"(@0*@1*@2)", ROOT.RooArgList(SigmaBin_xH[str(genbin)], fracXH4eBin[str(genbin)], K1XHBin[str(genbin)]))
+            #SigmaHBin_xH['4mu'+str(genbin)] = ROOT.RooFormulaVar("SigmaXH4muBin"+str(genbin),"(@0*(1.0-@1*@2)*@3*@4/(1.0-@1))", ROOT.RooArgList(SigmaBin_xH[str(genbin)], fracXH4eBin[str(genbin)], K1XHBin[str(genbin)], K2XHBin[str(genbin)], fracXH4muBin[str(genbin)]))
+            #SigmaHBin_xH['2e2mu'+str(genbin)] = ROOT.RooFormulaVar("SigmaXH2e2muBin"+str(genbin),"(@0*(1.0-@1*@2)*(1.0-@3*@4/(1.0-@1)))", ROOT.RooArgList(SigmaBin_xH[str(genbin)], fracXH4eBin[str(genbin)], K1XHBin[str(genbin)], K2XHBin[str(genbin)], fracXH4muBin[str(genbin)]))
+            SigmaHBin_xH['4e'+str(genbin)] = ROOT.RooFormulaVar("SigmaXH4eBin"+str(genbin),"(@0*@1)",ROOT.RooArgList(SigmaBin_xH[str(genbin)], fracXH4eBin[str(genbin)]))
+            SigmaHBin_xH['4mu'+str(genbin)] = ROOT.RooFormulaVar("SigmaXH4muBin"+str(genbin),"(@0*@1)",ROOT.RooArgList(SigmaBin_xH[str(genbin)], fracXH4muBin[str(genbin)]))
+            SigmaHBin_xH['2e2mu'+str(genbin)] = ROOT.RooFormulaVar("SigmaXH2e2muBin"+str(genbin),"(@0*(1.0-@1-@2))",ROOT.RooArgList(SigmaBin_xH[str(genbin)],fracXH4eBin[str(genbin)],fracXH4muBin[str(genbin)]))
+            # SPENCER 10 01 2026
+
             # Here we define the scalings used for the Combination (and v3 measurements)
             # The POIs are now signal strenght modifiers, hence xsecSM is constant
             trueH_norm_final[genbin] = ROOT.RooFormulaVar(processName+"_"+recobin+"_final","@0*@1*@2" ,ROOT.RooArgList(SigmaHBin[channel+str(genbin)],fideff_var[genbin],lumi))
@@ -1082,13 +1097,13 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     # Data Obs
     #data_obs_file = ROOT.TFile("/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/RunIII_byZ1Z2/240820/"+year+"/Data/reducedTree_AllData_"+year+".root")
 
-    PATH = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/LATEST_PROD/'
+    PATH = path['eos_path_sig']
 
-    if (year=="2022"): data_obs_file = ROOT.TFile(PATH + '2022_Data/Data_eraCD_preEE_SKIMMED.root')
-    if (year=="2022EE"): data_obs_file = ROOT.TFile(PATH + '2022_Data/Data_eraEFG_postEE_SKIMMED.root')
-    if (year=="2023preBPix"): data_obs_file = ROOT.TFile(PATH + '2023_Data/Data_eraC_preBPix_SKIMMED.root')
-    if (year=="2023postBPix"): data_obs_file = ROOT.TFile(PATH + '2023_Data/Data_eraD_postBPix_SKIMMED.root')
-    if (year=="2024"): data_obs_file = ROOT.TFile(PATH + '2024_Data/ZZ4lAnalysis_SKIMMED.root')
+    if (year=="2022"): data_obs_file = ROOT.TFile(PATH + '/2022_Data/Data_eraCD_preEE_SKIMMED.root')
+    if (year=="2022EE"): data_obs_file = ROOT.TFile(PATH + '/2022_Data/Data_eraEFG_postEE_SKIMMED.root')
+    if (year=="2023preBPix"): data_obs_file = ROOT.TFile(PATH + '/2023_Data/Data_eraC_preBPix_SKIMMED.root')
+    if (year=="2023postBPix"): data_obs_file = ROOT.TFile(PATH + '/2023_Data/Data_eraD_postBPix_SKIMMED.root')
+    if (year=="2024"): data_obs_file = ROOT.TFile(PATH + '/2024_Data/ZZ4lAnalysis_SKIMMED.root')
 
     #data_obs_tree = data_obs_file.Get("SR")
     data_obs_tree = data_obs_file.Get("ZZTree/candTree")

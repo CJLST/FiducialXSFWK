@@ -12,24 +12,24 @@ class InclusiveFiducial( PhysicsModel ):
         self.debug=1
 
     def setPhysicsOptions(self,physOptions):
-        if self.debug>0:print "Setting PhysicsModel Options"
+        if self.debug>0:print("Setting PhysicsModel Options")
         for po in physOptions:
             if po.startswith("range="):
                 self.Range=po.replace("range=","").split(",")
                 if len(self.Range)!=2:
-                    raise RunTimeError, "Range require minimal and maximal values: range=min,max"
-                if self.debug>0:print "new Range is ", self.Range
+                    raise RuntimeError("Range require minimal and maximal values: range=min,max")
+                if self.debug>0:print("new Range is ", self.Range)
             if po.startswith("nBin="):
                 self.nBin=int(po.replace("nBin=",""))
-                if self.debug>0:print "new n. of bins is ",self.nBin
+                if self.debug>0:print("new n. of bins is ",self.nBin)
             if po.startswith("higgsMassRange="):
-                if self.debug>0: print "setting higgs mass range floating:",po.replace("higgsMassRange=","").split(",")
+                if self.debug>0: print("setting higgs mass range floating:",po.replace("higgsMassRange=","").split(","))
                 self.mHRange=po.replace("higgsMassRange=","").split(",")
                 #checks
                 if len(self.mHRange) != 2:
-                    raise RuntimeError, "Higgs mass range definition requires two extrema"
+                    raise RuntimeError("Higgs mass range definition requires two extrema")
                 elif float(self.mHRange[0]) >= float(self.mHRange[1]):
-                    raise RuntimeError, "Extrema for Higgs mass range defined with inverterd order. Second must be larger the first"
+                    raise RuntimeError("Extrema for Higgs mass range defined with inverterd order. Second must be larger the first")
             if po.startswith("mass="):
                 self.mass=float( po.replace('mass=','') )
 
@@ -39,7 +39,7 @@ class InclusiveFiducial( PhysicsModel ):
 
     def doParametersOfInterest(self):
         POIs=""
-        if self.debug>0:print "Setting pois"
+        if self.debug>0:print("Setting pois")
 
         self.modelBuilder.doVar("r[1,%s,%s]" % (self.Range[0], self.Range[1]))
         self.modelBuilder.doVar("frac4e[0.25,%s,%s]" % (self.fracRange[0], self.fracRange[1]))
@@ -52,26 +52,26 @@ class InclusiveFiducial( PhysicsModel ):
         poiNames=[]
         if self.modelBuilder.out.var("MH"):
             if len(self.mHRange) == 2:
-                print 'MH will be left floating within', self.mHRange[0], 'and', self.mHRange[1]
+                print('MH will be left floating within', self.mHRange[0], 'and', self.mHRange[1])
                 self.modelBuilder.out.var("MH").setRange(float(self.mHRange[0]),float(self.mHRange[1]))
                 self.modelBuilder.out.var("MH").setConstant(False)
                 poiNames += [ 'MH' ]
             else:
-                print 'MH will be assumed to be', self.mass
+                print('MH will be assumed to be', self.mass)
                 self.modelBuilder.out.var("MH").removeRange()
                 self.modelBuilder.out.var("MH").setVal(self.mass)
         else:
             if len(self.mHRange) == 2:
-                print 'MH will be left floating within', self.mHRange[0], 'and', self.mHRange[1]
+                print('MH will be left floating within', self.mHRange[0], 'and', self.mHRange[1])
                 self.modelBuilder.doVar("MH[%s,%s]" % (self.mHRange[0],self.mHRange[1]))
                 poiNames += [ 'MH' ]
             else:
-                print 'MH (not there before) will be assumed to be', self.mass
+                print('MH (not there before) will be assumed to be', self.mass)
                 self.modelBuilder.doVar("MH[%g]" % self.mass)
         for poi in poiNames:
                 POIs += ",%s"%poi
         self.modelBuilder.doSet("POI",POIs)
-        print "set up pois"
+        print("set up pois")
         self.setup()
 
     def setup(self):
@@ -103,24 +103,24 @@ class DifferentialFiducial( PhysicsModel ):
         self.mass=125.0
 
     def setPhysicsOptions(self,physOptions):
-        if self.debug>0:print "Setting PhysicsModel Options"
+        if self.debug>0:print("Setting PhysicsModel Options")
         for po in physOptions:
             if po.startswith("range="):
                 self.Range=po.replace("range=","").split(",")
                 if len(self.Range)!=2:
-                    raise RunTimeError, "Range require minimal and maximal values: range=min,max"
-                if self.debug>0:print "new Range is ", self.Range
+                    raise RuntimeError("Range require minimal and maximal values: range=min,max")
+                if self.debug>0:print("new Range is ", self.Range)
             if po.startswith("nBin="):
                 self.nBin=int(po.replace("nBin=",""))
-                if self.debug>0:print "new n. of bins is ",self.nBin
+                if self.debug>0:print("new n. of bins is ",self.nBin)
             if po.startswith("higgsMassRange="):
-                if self.debug>0: print "setting higgs mass range floating:",po.replace("higgsMassRange=","").split(",")
+                if self.debug>0: print("setting higgs mass range floating:",po.replace("higgsMassRange=","").split(","))
                 self.mHRange=po.replace("higgsMassRange=","").split(",")
                 #checks
                 if len(self.mHRange) != 2:
-                    raise RuntimeError, "Higgs mass range definition requires two extrema"
+                    raise RuntimeError("Higgs mass range definition requires two extrema")
                 elif float(self.mHRange[0]) >= float(self.mHRange[1]):
-                    raise RuntimeError, "Extrema for Higgs mass range defined with inverterd order. Second must be larger the first"
+                    raise RuntimeError("Extrema for Higgs mass range defined with inverterd order. Second must be larger the first")
             if po.startswith("mass="):
                 self.mass=float( po.replace('mass=','') )
             #verbose
@@ -129,7 +129,7 @@ class DifferentialFiducial( PhysicsModel ):
 
     def doParametersOfInterest(self):
         POIs=""
-        if self.debug>0:print "Setting pois"
+        if self.debug>0:print("Setting pois")
         for iBin in range(0,self.nBin):
             if self.modelBuilder.out.var("rBin%d" % (iBin)):
                 self.modelBuilder.out.var("rBin%d" % (iBin)).setRange(self.Range[0], self.Range[1])
@@ -153,25 +153,25 @@ class DifferentialFiducial( PhysicsModel ):
                 POIs+="rBin%d,"%iBin
                 POIs+="frac4eBin%d,"%iBin
                 POIs+="frac4muBin%d,"%iBin
-                if self.debug>0:print "Added Bin%d to the POIs"%iBin
+                if self.debug>0:print("Added Bin%d to the POIs"%iBin)
         poiNames=[]
         if self.modelBuilder.out.var("MH"):
             if len(self.mHRange) == 2:
-                print 'MH will be left floating within', self.mHRange[0], 'and', self.mHRange[1]
+                print('MH will be left floating within', self.mHRange[0], 'and', self.mHRange[1])
                 self.modelBuilder.out.var("MH").setRange(float(self.mHRange[0]),float(self.mHRange[1]))
                 self.modelBuilder.out.var("MH").setConstant(False)
                 poiNames += [ 'MH' ]
             else:
-                print 'MH will be assumed to be', self.mass
+                print('MH will be assumed to be', self.mass)
                 self.modelBuilder.out.var("MH").removeRange()
                 self.modelBuilder.out.var("MH").setVal(self.mass)
         else:
             if len(self.mHRange) == 2:
-                print 'MH will be left floating within', self.mHRange[0], 'and', self.mHRange[1]
+                print('MH will be left floating within', self.mHRange[0], 'and', self.mHRange[1])
                 self.modelBuilder.doVar("MH[%s,%s]" % (self.mHRange[0],self.mHRange[1]))
                 poiNames += [ 'MH' ]
             else:
-                print 'MH (not there before) will be assumed to be', self.mass
+                print('MH (not there before) will be assumed to be', self.mass)
                 self.modelBuilder.doVar("MH[%g]" % self.mass)
         for poi in poiNames:
             POIs += "%s,"%poi
@@ -207,21 +207,21 @@ class InclusiveFiducialV2( PhysicsModel ):
         self.debug=1
 
     def setPhysicsOptions(self,physOptions):
-        if self.debug>0:print "Setting PhysicsModel Options"
+        if self.debug>0:print("Setting PhysicsModel Options")
         for po in physOptions:
             if po.startswith("range="):
                 self.SigmaRange=po.replace("range=","").split(",")
                 if len(self.SigmaRange)!=2:
-                    raise RunTimeError, "SigmaRange require minimal and maximal values: range=min,max"
-                if self.debug>0:print "New SigmaRange is ", self.SigmaRange
+                    raise RuntimeError("SigmaRange require minimal and maximal values: range=min,max")
+                if self.debug>0:print("New SigmaRange is ", self.SigmaRange)
             if po.startswith("higgsMassRange="):
-                if self.debug>0: print "setting MHRange floating:",po.replace("higgsMassRange=","").split(",")
+                if self.debug>0: print("setting MHRange floating:",po.replace("higgsMassRange=","").split(","))
                 self.MHRange=po.replace("higgsMassRange=","").split(",")
                 #checks
                 if len(self.MHRange) != 2:
-                    raise RuntimeError, "MHRange definition requires two extrema: higgsMassRange=min,max"
+                    raise RuntimeError("MHRange definition requires two extrema: higgsMassRange=min,max")
                 elif float(self.MHRange[0]) >= float(self.MHRange[1]):
-                    raise RuntimeError, "Extrema for MH defined with inverterd order. Second must be larger the first"
+                    raise RuntimeError("Extrema for MH defined with inverterd order. Second must be larger the first")
             if po.startswith("mass="):
                 self.defaultMH=float( po.replace('mass=','') )
             #verbose
@@ -230,7 +230,7 @@ class InclusiveFiducialV2( PhysicsModel ):
 
     def doParametersOfInterest(self):
         POIs=""
-        if self.debug>0:print "Setting POIs"
+        if self.debug>0:print("Setting POIs")
 
 
         if self.modelBuilder.out.var("Sigma4e"):
@@ -253,31 +253,31 @@ class InclusiveFiducialV2( PhysicsModel ):
         poiNames=[]
         if self.modelBuilder.out.var("MH"):
             if len(self.MHRange) == 2:
-                print 'MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1]
+                print('MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1])
                 self.modelBuilder.out.var("MH").setRange(float(self.MHRange[0]),float(self.MHRange[1]))
                 self.modelBuilder.out.var("MH").setVal(self.defaultMH)
                 self.modelBuilder.out.var("MH").setConstant(False)
                 poiNames += [ 'MH' ]
             else:
-                print 'MH will be assumed to be', self.defaultMH
+                print('MH will be assumed to be', self.defaultMH)
                 self.modelBuilder.out.var("MH").removeRange()
                 self.modelBuilder.out.var("MH").setVal(self.defaultMH)
                 self.modelBuilder.out.var("MH").setConstant(True)
         else:
             if len(self.MHRange) == 2:
-                print 'MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1]
+                print('MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1])
                 self.modelBuilder.doVar("MH[%s,%s]" % (self.MHRange[0],self.MHRange[1]))
                 self.modelBuilder.out.var("MH").setVal(self.defaultMH)
                 poiNames += [ 'MH' ]
             else:
-                print 'MH (not there before) will be assumed to be', self.defaultMH
+                print('MH (not there before) will be assumed to be', self.defaultMH)
                 self.modelBuilder.doVar("MH[%g]" % self.defaultMH)
 
         for poi in poiNames:
             POIs += ",%s"%poi
 
         self.modelBuilder.doSet("POI",POIs)
-        print "set up pois"
+        print("set up pois")
         self.setup()
 
     def setup(self):
@@ -309,24 +309,24 @@ class DifferentialFiducialV2( PhysicsModel ):
         self.mass=0
 
     def setPhysicsOptions(self,physOptions):
-        if self.debug>0:print "Setting PhysicsModel Options"
+        if self.debug>0:print("Setting PhysicsModel Options")
         for po in physOptions:
             if po.startswith("range="):
                 self.Range=po.replace("range=","").split(":")
                 if len(self.Range)!=2:
-                    raise RunTimeError, "Range require minimal and maximal values: range=min:max"
-                if self.debug>0:print "new Range is ", self.Range
+                    raise RuntimeError("Range require minimal and maximal values: range=min:max")
+                if self.debug>0:print("new Range is ", self.Range)
             if po.startswith("nBin="):
                 self.nBin=int(po.replace("nBin=",""))
-                if self.debug>0:print "new n. of bins is ",self.nBin
+                if self.debug>0:print("new n. of bins is ",self.nBin)
             if po.startswith("higgsMassRange="):
-                if self.debug>0: print "setting higgs mass range floating:",po.replace("higgsMassRange=","").split(":")
+                if self.debug>0: print("setting higgs mass range floating:",po.replace("higgsMassRange=","").split(":"))
                 self.mHRange=po.replace("higgsMassRange=","").split(",")
                 #checks
                 if len(self.mHRange) != 2:
-                    raise RuntimeError, "Higgs mass range definition requires two extrema"
+                    raise RuntimeError("Higgs mass range definition requires two extrema")
                 elif float(self.mHRange[0]) >= float(self.mHRange[1]):
-                    raise RuntimeError, "Extrema for Higgs mass range defined with inverterd order. Second must be larger the first"
+                    raise RuntimeError("Extrema for Higgs mass range defined with inverterd order. Second must be larger the first")
             if po.startswith("mass="):
                 self.mass=float( po.replace('mass=','') )
 
@@ -336,10 +336,10 @@ class DifferentialFiducialV2( PhysicsModel ):
 
     def doParametersOfInterest(self):
         POIs=""
-        if self.debug>0:print "Setting pois"
-        print "nBins:",self.nBin
+        if self.debug>0:print("Setting pois")
+        print("nBins:",self.nBin)
         for iBin in range(0,self.nBin):
-            print "bin",iBin
+            print("bin",iBin)
             if self.modelBuilder.out.var("r2e2muBin%d" % (iBin)):
                 self.modelBuilder.out.var("r2e2muBin%d" % (iBin)).setRange(self.Range[0], self.Range[1])
                 self.modelBuilder.out.var("r2e2muBin%d" % (iBin)).setConstant(False)
@@ -367,21 +367,21 @@ class DifferentialFiducialV2( PhysicsModel ):
         poiNames=[]
         if self.modelBuilder.out.var("MH"):
             if len(self.mHRange) == 2:
-                print 'MH will be left floating within', self.mHRange[0], 'and', self.mHRange[1]
+                print('MH will be left floating within', self.mHRange[0], 'and', self.mHRange[1])
                 self.modelBuilder.out.var("MH").setRange(float(self.mHRange[0]),float(self.mHRange[1]))
                 self.modelBuilder.out.var("MH").setConstant(False)
                 poiNames += [ 'MH' ]
             else:
-                print 'MH will be assumed to be', self.mass
+                print('MH will be assumed to be', self.mass)
                 self.modelBuilder.out.var("MH").removeRange()
                 self.modelBuilder.out.var("MH").setVal(self.mass)
         else:
             if len(self.mHRange) == 2:
-                print 'MH will be left floating within', self.mHRange[0], 'and', self.mHRange[1]
+                print('MH will be left floating within', self.mHRange[0], 'and', self.mHRange[1])
                 self.modelBuilder.doVar("MH[%s,%s]" % (self.mHRange[0],self.mHRange[1]))
                 poiNames += [ 'MH' ]
             else:
-                print 'MH (not there before) will be assumed to be', self.mass
+                print('MH (not there before) will be assumed to be', self.mass)
                 self.modelBuilder.doVar("MH[%g]" % self.mass)
         for poi in poiNames:
             POIs += "%s,"%poi
@@ -452,21 +452,21 @@ class InclusiveFiducialV3( PhysicsModel ):
         self.debug=1
 
     def setPhysicsOptions(self,physOptions):
-        if self.debug>0:print "Setting PhysicsModel Options"
+        if self.debug>0:print("Setting PhysicsModel Options")
         for po in physOptions:
             if po.startswith("range="):
                 self.SigmaRange=po.replace("range=","").split(",")
                 if len(self.SigmaRange)!=2:
-                    raise RunTimeError, "SigmaRange require minimal and maximal values: range=min,max"
-                if self.debug>0:print "New SigmaRange is ", self.SigmaRange
+                    raise RuntimeError("SigmaRange require minimal and maximal values: range=min,max")
+                if self.debug>0:print("New SigmaRange is ", self.SigmaRange)
             if po.startswith("higgsMassRange="):
-                if self.debug>0: print "setting MHRange floating:",po.replace("higgsMassRange=","").split(",")
+                if self.debug>0: print("setting MHRange floating:",po.replace("higgsMassRange=","").split(","))
                 self.MHRange=po.replace("higgsMassRange=","").split(",")
                 #checks
                 if len(self.MHRange) != 2:
-                    raise RuntimeError, "MHRange definition requires two extrema: higgsMassRange=min,max"
+                    raise RuntimeError("MHRange definition requires two extrema: higgsMassRange=min,max")
                 elif float(self.MHRange[0]) >= float(self.MHRange[1]):
-                    raise RuntimeError, "Extrema for MH defined with inverterd order. Second must be larger the first"
+                    raise RuntimeError("Extrema for MH defined with inverterd order. Second must be larger the first")
             if po.startswith("mass="):
                 self.defaultMH=float( po.replace('mass=','') )
             #verbose
@@ -475,7 +475,7 @@ class InclusiveFiducialV3( PhysicsModel ):
 
     def doParametersOfInterest(self):
         POIs=""
-        if self.debug>0:print "Setting pois"
+        if self.debug>0:print("Setting pois")
 
         # get values from the workspace
         fracSM4e = self.modelBuilder.out.var("fracSM4e").getVal()
@@ -486,6 +486,8 @@ class InclusiveFiducialV3( PhysicsModel ):
             self.modelBuilder.out.var("Sigma").setRange(self.SigmaRange[0], self.SigmaRange[1])
         else:
             self.modelBuilder.doVar("Sigma[1,%s,%s]" % (self.SigmaRange[0], self.SigmaRange[1]))
+        
+        '''
         if self.modelBuilder.out.var("K1"):
             self.modelBuilder.out.var("K1").setRange(0.0, 1.0/fracSM4e)
         else:
@@ -494,43 +496,44 @@ class InclusiveFiducialV3( PhysicsModel ):
             self.modelBuilder.out.var("K2").setRange(0.0, (1.0-fracSM4e)/fracSM4mu)
         else:
             self.modelBuilder.doVar("K2[1,%s,%s]" % (0.0, (1.0-fracSM4e)/fracSM4mu))
+        '''
 
         POIs+="Sigma,"
-        POIs+="K1,"
-        POIs+="K2"
+        #POIs+="K1,"
+        #POIs+="K2"
 
         poiNames=[]
         if self.modelBuilder.out.var("MH"):
             if len(self.MHRange) == 2:
-                print 'MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1]
+                print('MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1])
                 self.modelBuilder.out.var("MH").setRange(float(self.MHRange[0]),float(self.MHRange[1]))
                 self.modelBuilder.out.var("MH").setConstant(False)
                 poiNames += [ 'MH' ]
             else:
-                print 'MH will be assumed to be', self.defaultMH
+                print('MH will be assumed to be', self.defaultMH)
                 self.modelBuilder.out.var("MH").removeRange()
                 self.modelBuilder.out.var("MH").setVal(self.defaultMH)
         else:
             if len(self.MHRange) == 2:
-                print 'MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1]
+                print('MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1])
                 self.modelBuilder.doVar("MH[%s,%s]" % (self.MHRange[0],self.MHRange[1]))
                 poiNames += [ 'MH' ]
             else:
-                print 'MH (not there before) will be assumed to be', self.defaultMH
+                print('MH (not there before) will be assumed to be', self.defaultMH)
                 self.modelBuilder.doVar("MH[%g]" % self.defaultMH)
         for poi in poiNames:
             POIs += ",%s"%poi
         self.modelBuilder.doSet("POI",POIs)
-        print "set up POIs"
+        print("set up POIs")
         self.setup()
 
     def setup(self):
-        self.modelBuilder.factory_('expr::Sigma_trueH4e("@0*@1*@2", Sigma, fracSM4e, K1)')
-        self.modelBuilder.factory_('expr::Sigma_trueH4mu("@0*(1.0-@1*@2)*@3*@4/(1.0-@1)", Sigma, fracSM4e, K1, K2, fracSM4mu)')
-        self.modelBuilder.factory_('expr::Sigma_trueH2e2mu("@0*(1.0-@1*@2)*(1.0-@3*@4/(1.0-@1))", Sigma, fracSM4e, K1, K2, fracSM4mu)')
-        self.modelBuilder.factory_('expr::Sigma_trueZ4e("@0*@1*@2", Sigma, fracSM4e, K1)')
-        self.modelBuilder.factory_('expr::Sigma_trueZ4mu("@0*(1.0-@1*@2)*@3*@4/(1.0-@1)", Sigma, fracSM4e, K1, K2, fracSM4mu)')
-        self.modelBuilder.factory_('expr::Sigma_trueZ2e2mu("@0*(1.0-@1*@2)*(1.0-@3*@4/(1.0-@1))", Sigma, fracSM4e, K1, K2, fracSM4mu)')
+        #self.modelBuilder.factory_('expr::Sigma_trueH4e("@0*@1*@2", Sigma, fracSM4e, K1)')
+        #self.modelBuilder.factory_('expr::Sigma_trueH4mu("@0*(1.0-@1*@2)*@3*@4/(1.0-@1)", Sigma, fracSM4e, K1, K2, fracSM4mu)')
+        #self.modelBuilder.factory_('expr::Sigma_trueH2e2mu("@0*(1.0-@1*@2)*(1.0-@3*@4/(1.0-@1))", Sigma, fracSM4e, K1, K2, fracSM4mu)')
+        #self.modelBuilder.factory_('expr::Sigma_trueZ4e("@0*@1*@2", Sigma, fracSM4e, K1)')
+        #self.modelBuilder.factory_('expr::Sigma_trueZ4mu("@0*(1.0-@1*@2)*@3*@4/(1.0-@1)", Sigma, fracSM4e, K1, K2, fracSM4mu)')
+        #self.modelBuilder.factory_('expr::Sigma_trueZ2e2mu("@0*(1.0-@1*@2)*(1.0-@3*@4/(1.0-@1))", Sigma, fracSM4e, K1, K2, fracSM4mu)')
 
     def getYieldScale(self,bin,process):
         if not self.DC.isSignal[process]: return 1
@@ -553,26 +556,26 @@ class DifferentialFiducialV3( PhysicsModel ):
         self.debug=1
 
     def setPhysicsOptions(self,physOptions):
-        if self.debug>0:print "Setting PhysicsModel Options"
+        if self.debug>0:print("Setting PhysicsModel Options")
         for po in physOptions:
             if po.startswith("range="):
                 self.SigmaRange=po.replace("range=","").split(",")
                 if len(self.SigmaRange)!=2:
-                    raise RunTimeError, "SigmaRange require minimal and maximal values: range=min,max"
-                if self.debug>0:print "New SigmaRange is ", self.SigmaRange
+                    raise RuntimeError("SigmaRange require minimal and maximal values: range=min,max")
+                if self.debug>0:print("New SigmaRange is ", self.SigmaRange)
             if po.startswith("higgsMassRange="):
-                if self.debug>0: print "setting MHRange floating:",po.replace("higgsMassRange=","").split(",")
+                if self.debug>0: print("setting MHRange floating:",po.replace("higgsMassRange=","").split(","))
                 self.MHRange=po.replace("higgsMassRange=","").split(",")
                 #checks
                 if len(self.MHRange) != 2:
-                    raise RuntimeError, "MHRange definition requires two extrema: higgsMassRange=min,max"
+                    raise RuntimeError("MHRange definition requires two extrema: higgsMassRange=min,max")
                 elif float(self.MHRange[0]) >= float(self.MHRange[1]):
-                    raise RuntimeError, "Extrema for MH defined with inverterd order. Second must be larger the first"
+                    raise RuntimeError("Extrema for MH defined with inverterd order. Second must be larger the first")
             if po.startswith("mass="):
                 self.defaultMH=float( po.replace('mass=','') )
             if po.startswith("nBin="):
                 self.nBin=int(po.replace("nBin=",""))
-                if self.debug>0:print "new n. of bins is ",self.nBin
+                if self.debug>0:print("new n. of bins is ",self.nBin)
             #verbose
             if po.startswith("verbose"):
                 self.debug = 1
@@ -580,7 +583,7 @@ class DifferentialFiducialV3( PhysicsModel ):
 
     def doParametersOfInterest(self):
         POIs=""
-        if self.debug>0:print "Setting pois"
+        if self.debug>0:print("Setting pois")
 
         for iBin in range(0,self.nBin):
             # get values from the workspace
@@ -593,6 +596,7 @@ class DifferentialFiducialV3( PhysicsModel ):
             else :
                 self.modelBuilder.doVar("SigmaBin%d[1, %s,%s]" % (iBi, self.SigmaRange[0],self.SigmaRange[1]))
 
+            '''
             if self.modelBuilder.out.var("K1Bin%d" % (iBin)):
                 self.modelBuilder.out.var("K1Bin%d" % (iBin)).setRange(0.0, 1.0/fracSM4e)
                 self.modelBuilder.out.var("K1Bin%d" % (iBin)).setConstant(False)
@@ -604,31 +608,32 @@ class DifferentialFiducialV3( PhysicsModel ):
                 self.modelBuilder.out.var("K2Bin%d" % (iBin)).setConstant(False)
             else :
                 self.modelBuilder.doVar("K2Bin%d[1.0,%s,%s]" % (iBin, 0.0, (1.0-fracSM4e)/fracSM4mu))
+            '''
 
             if iBin>=0:
                 POIs+="SigmaBin%d,"%iBin
-                POIs+="K1Bin%d,"%iBin
-                POIs+="K2Bin%d,"%iBin
-                if self.debug>0:print "Added Bin%d to the POIs"%iBin
+                #POIs+="K1Bin%d,"%iBin
+                #POIs+="K2Bin%d,"%iBin
+                if self.debug>0:print("Added Bin%d to the POIs"%iBin)
 
         poiNames=[]
         if self.modelBuilder.out.var("MH"):
             if len(self.MHRange) == 2:
-                print 'MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1]
+                print('MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1])
                 self.modelBuilder.out.var("MH").setRange(float(self.MHRange[0]),float(self.MHRange[1]))
                 self.modelBuilder.out.var("MH").setConstant(False)
                 poiNames += [ 'MH' ]
             else:
-                print 'MH will be assumed to be', self.defaultMH
+                print('MH will be assumed to be', self.defaultMH)
                 self.modelBuilder.out.var("MH").removeRange()
                 self.modelBuilder.out.var("MH").setVal(self.defaultMH)
         else:
             if len(self.MHRange) == 2:
-                print 'MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1]
+                print('MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1])
                 self.modelBuilder.doVar("MH[%s,%s]" % (self.MHRange[0],self.MHRange[1]))
                 poiNames += [ 'MH' ]
             else:
-                print 'MH (not there before) will be assumed to be', self.defaultMH
+                print('MH (not there before) will be assumed to be', self.defaultMH)
                 self.modelBuilder.doVar("MH[%g]" % self.defaultMH)
         for poi in poiNames:
             POIs += "%s,"%poi
@@ -638,12 +643,12 @@ class DifferentialFiducialV3( PhysicsModel ):
 
     def setup(self):
         for iBin in range(0,self.nBin):
-            self.modelBuilder.factory_('expr::Sigma_smH4eBin%d("@0*@1*@2", SigmaBin%d, fracSM4eBin%d, K1Bin%d)' % (iBin,iBin,iBin,iBin))
-            self.modelBuilder.factory_('expr::Sigma_smH4muBin%d("@0*(1.0-@1*@2)*@3*@4/(1.0-@1)", SigmaBin%d, fracSM4eBin%d, K1Bin%d, K2Bin%d, fracSM4muBin%d)' % (iBin,iBin,iBin,iBin,iBin,iBin) )
-            self.modelBuilder.factory_('expr::Sigma_smH2e2muBin%d("@0*(1.0-@1*@2)*(1.0-@3*@4/(1.0-@1))", SigmaBin%d, fracSM4eBin%d, K1Bin%d, K2Bin%d, fracSM4muBin%d)' % (iBin,iBin,iBin,iBin,iBin,iBin) )
-            self.modelBuilder.factory_('expr::Sigma_trueZ4eBin%d("@0*@1*@2", SigmaBin%d, fracSM4eBin%d, K1Bin%d)' % (iBin,iBin,iBin,iBin))
-            self.modelBuilder.factory_('expr::Sigma_trueZ4muBin%d("@0*(1.0-@1*@2)*@3*@4/(1.0-@1)", SigmaBin%d, fracSM4eBin%d, K1Bin%d, K2Bin%d, fracSM4muBin%d)' % (iBin,iBin,iBin,iBin,iBin,iBin) )
-            self.modelBuilder.factory_('expr::Sigma_trueZ2e2muBin%d("@0*(1.0-@1*@2)*(1.0-@3*@4/(1.0-@1))", SigmaBin%d, fracSM4eBin%d, K1Bin%d, K2Bin%d, fracSM4muBin%d)' % (iBin,iBin,iBin,iBin,iBin,iBin) )
+            #self.modelBuilder.factory_('expr::Sigma_smH4eBin%d("@0*@1*@2", SigmaBin%d, fracSM4eBin%d, K1Bin%d)' % (iBin,iBin,iBin,iBin))
+            #self.modelBuilder.factory_('expr::Sigma_smH4muBin%d("@0*(1.0-@1*@2)*@3*@4/(1.0-@1)", SigmaBin%d, fracSM4eBin%d, K1Bin%d, K2Bin%d, fracSM4muBin%d)' % (iBin,iBin,iBin,iBin,iBin,iBin) )
+            #self.modelBuilder.factory_('expr::Sigma_smH2e2muBin%d("@0*(1.0-@1*@2)*(1.0-@3*@4/(1.0-@1))", SigmaBin%d, fracSM4eBin%d, K1Bin%d, K2Bin%d, fracSM4muBin%d)' % (iBin,iBin,iBin,iBin,iBin,iBin) )
+            #self.modelBuilder.factory_('expr::Sigma_trueZ4eBin%d("@0*@1*@2", SigmaBin%d, fracSM4eBin%d, K1Bin%d)' % (iBin,iBin,iBin,iBin))
+            #self.modelBuilder.factory_('expr::Sigma_trueZ4muBin%d("@0*(1.0-@1*@2)*@3*@4/(1.0-@1)", SigmaBin%d, fracSM4eBin%d, K1Bin%d, K2Bin%d, fracSM4muBin%d)' % (iBin,iBin,iBin,iBin,iBin,iBin) )
+            #self.modelBuilder.factory_('expr::Sigma_trueZ2e2muBin%d("@0*(1.0-@1*@2)*(1.0-@3*@4/(1.0-@1))", SigmaBin%d, fracSM4eBin%d, K1Bin%d, K2Bin%d, fracSM4muBin%d)' % (iBin,iBin,iBin,iBin,iBin,iBin) )
 
 
 
@@ -674,34 +679,34 @@ class H4lZ4lInclusiveFiducialRatio( PhysicsModel ):
         self.debug=1
 
     def setPhysicsOptions(self,physOptions):
-        if self.debug>0:print "Setting PhysicsModel Options"
+        if self.debug>0:print("Setting PhysicsModel Options")
         for po in physOptions:
             if po.startswith("SigmaRange="):
                 self.SigmaRange=po.replace("SigmaRange=","").split(":")
                 if len(self.SigmaRange)!=2:
-                    raise RunTimeError, "SigmaRange require minimal and maximal values: SigmaRange=min:max"
-                if self.debug>0:print "new SigmaRange is ", self.SigmaRange
+                    raise RuntimeError("SigmaRange require minimal and maximal values: SigmaRange=min:max")
+                if self.debug>0:print("new SigmaRange is ", self.SigmaRange)
             if po.startswith("RatioSigmaRange="):
                 self.RatioSigmaRange=po.replace("RatioSigmaRange=","").split(":")
                 if len(self.RatioSigmaRange)!=2:
-                    raise RunTimeError, "RatioSigmaRange require minimal and maximal values: RatioSigmaRange=min:max"
-                if self.debug>0:print "new RatioSigmaRange is ", self.RatioSigmaRange
+                    raise RuntimeError("RatioSigmaRange require minimal and maximal values: RatioSigmaRange=min:max")
+                if self.debug>0:print("new RatioSigmaRange is ", self.RatioSigmaRange)
             if po.startswith("MHRange="):
-                if self.debug>0: print "setting MH mass range floating:",po.replace("MHRange=","").split(":")
+                if self.debug>0: print("setting MH mass range floating:",po.replace("MHRange=","").split(":"))
                 self.MHRange=po.replace("MHRange=","").split(",")
                 #checks
                 if len(self.MHRange) != 2:
-                    raise RuntimeError, "MH range definition requires two extrema"
+                    raise RuntimeError("MH range definition requires two extrema")
                 elif float(self.MHRange[0]) >= float(self.MHRange[1]):
-                    raise RuntimeError, "Extrema for MH mass range defined with inverterd order. Second must be larger the first"
+                    raise RuntimeError("Extrema for MH mass range defined with inverterd order. Second must be larger the first")
             if po.startswith("DeltaMHmZRange="):
-                if self.debug>0: print "setting MH-MZ mass range floating:",po.replace("DeltaMHmZRange=","").split(":")
+                if self.debug>0: print("setting MH-MZ mass range floating:",po.replace("DeltaMHmZRange=","").split(":"))
                 self.DeltaMHmZRange=po.replace("DeltaMHmZRange=","").split(",")
                 #checks
                 if len(self.DeltaMHmZRange) != 2:
-                    raise RuntimeError, "MH-MZ range definition requires two extrema"
+                    raise RuntimeError("MH-MZ range definition requires two extrema")
                 elif float(self.DeltaMHmZRange[0]) >= float(self.DeltaMHmZRange[1]):
-                    raise RuntimeError, "Extrema for MH-MZ mass range defined with inverterd order. Second must be larger the first"
+                    raise RuntimeError("Extrema for MH-MZ mass range defined with inverterd order. Second must be larger the first")
             if po.startswith("defaultMH="):
                 self.defaultMH=float( po.replace('defaultMH=','') )
             if po.startswith("defaultDeltaMHmZ="):
@@ -716,7 +721,7 @@ class H4lZ4lInclusiveFiducialRatio( PhysicsModel ):
 
     def doParametersOfInterest(self):
         POIs=""
-        if self.debug>0:print "Setting pois"
+        if self.debug>0:print("Setting pois")
 
         if self.modelBuilder.out.var("SigmaH"):
             self.modelBuilder.out.var("SigmaH").setRange(self.SigmaRange[0], self.SigmaRange[1])
@@ -755,46 +760,46 @@ class H4lZ4lInclusiveFiducialRatio( PhysicsModel ):
         # set Parameter MH
         if self.modelBuilder.out.var("MH"):
             if len(self.MHRange) == 2:
-                print 'MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1]
+                print('MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1])
                 self.modelBuilder.out.var("MH").setRange(float(self.MHRange[0]),float(self.MHRange[1]))
                 self.modelBuilder.out.var("MH").setVal(self.defaultMH)
                 self.modelBuilder.out.var("MH").setConstant(False)
                 poiNames += [ 'MH' ]
             else:
-                print 'MH will be assumed to be', self.defaultMH
+                print('MH will be assumed to be', self.defaultMH)
                 self.modelBuilder.out.var("MH").removeRange()
                 self.modelBuilder.out.var("MH").setVal(self.defaultMH)
                 self.modelBuilder.out.var("MH").setConstant(True)
         else:
             if len(self.MHRange) == 2:
-                print 'MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1]
+                print('MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1])
                 self.modelBuilder.doVar("MH[%s,%s]" % (self.MHRange[0],self.MHRange[1]))
                 self.modelBuilder.out.var("MH").setVal(self.defaultMH)
                 poiNames += [ 'MH' ]
             else:
-                print 'MH (not there before) will be assumed to be', self.defaultMH
+                print('MH (not there before) will be assumed to be', self.defaultMH)
                 self.modelBuilder.doVar("MH[%g]" % self.defaultMH)
         # set Parameter DeltaMHmZ
         if self.modelBuilder.out.var("DeltaMHmZ"):
             if len(self.DeltaMHmZRange) == 2:
-                print 'DeltaMHmZ will be left floating within', self.DeltaMHmZRange[0], 'and', self.DeltaMHmZRange[1]
+                print('DeltaMHmZ will be left floating within', self.DeltaMHmZRange[0], 'and', self.DeltaMHmZRange[1])
                 self.modelBuilder.out.var("DeltaMHmZ").setRange(float(self.DeltaMHmZRange[0]),float(self.DeltaMHmZRange[1]))
                 self.modelBuilder.out.var("DeltaMHmZ").setVal(self.defaultDeltaMHmZ)
                 self.modelBuilder.out.var("DeltaMHmZ").setConstant(False)
                 poiNames += [ 'DeltaMHmZ' ]
             else:
-                print 'DeltaMHmZ will be assumed to be', self.defaultDeltaMHmZ
+                print('DeltaMHmZ will be assumed to be', self.defaultDeltaMHmZ)
                 self.modelBuilder.out.var("DeltaMHmZ").removeRange()
                 self.modelBuilder.out.var("DeltaMHmZ").setVal(self.defaultDeltaMHmZ)
                 self.modelBuilder.out.var("DeltaMHmZ").setConstant(True)
         else:
             if len(self.DeltaMHmZRange) == 2:
-                print 'DeltaMHmZ will be left floating within', self.DeltaMHmZRange[0], 'and', self.DeltaMHmZRange[1]
+                print('DeltaMHmZ will be left floating within', self.DeltaMHmZRange[0], 'and', self.DeltaMHmZRange[1])
                 self.modelBuilder.doVar("DeltaMHmZ[%s,%s]" % (self.DeltaMHmZRange[0],self.DeltaMHmZRange[1]))
                 self.modelBuilder.out.var("DeltaMHmZ").setVal(self.defaultDeltaMHmZ)
                 poiNames += [ 'DeltaMHmZ' ]
             else:
-                print 'DeltaMHmZ (not there before) will be assumed to be', self.defaultDeltaMHmZ
+                print('DeltaMHmZ (not there before) will be assumed to be', self.defaultDeltaMHmZ)
                 self.modelBuilder.doVar("DeltaMHmZ[%g]" % self.defaultDeltaMHmZ)
 
         if (self.fixMH):
@@ -810,7 +815,7 @@ class H4lZ4lInclusiveFiducialRatio( PhysicsModel ):
             POIs += "%s,"%poi
         POIs = POIs[:-1] # remove last comma
         self.modelBuilder.doSet("POI",POIs)
-        print "set up pois"
+        print("set up pois")
         self.setup()
 
     def setup(self):
@@ -845,34 +850,34 @@ class H4lZ4lInclusiveFiducialRatioV2( PhysicsModel ):
         self.debug=1
 
     def setPhysicsOptions(self,physOptions):
-        if self.debug>0:print "Setting PhysicsModel Options"
+        if self.debug>0:print("Setting PhysicsModel Options")
         for po in physOptions:
             if po.startswith("SigmaRange="):
                 self.SigmaRange=po.replace("SigmaRange=","").split(":")
                 if len(self.SigmaRange)!=2:
-                    raise RunTimeError, "SigmaRange require minimal and maximal values: SigmaRange=min:max"
-                if self.debug>0:print "new SigmaRange is ", self.SigmaRange
+                    raise RuntimeError("SigmaRange require minimal and maximal values: SigmaRange=min:max")
+                if self.debug>0:print("new SigmaRange is ", self.SigmaRange)
             if po.startswith("RatioSigmaRange="):
                 self.RatioSigmaRange=po.replace("RatioSigmaRange=","").split(":")
                 if len(self.RatioSigmaRange)!=2:
-                    raise RunTimeError, "RatioSigmaRange require minimal and maximal values: RatioSigmaRange=min:max"
-                if self.debug>0:print "new RatioSigmaRange is ", self.RatioSigmaRange
+                    raise RuntimeError("RatioSigmaRange require minimal and maximal values: RatioSigmaRange=min:max")
+                if self.debug>0:print("new RatioSigmaRange is ", self.RatioSigmaRange)
             if po.startswith("MHRange="):
-                if self.debug>0: print "setting MH mass range floating:",po.replace("MHRange=","").split(":")
+                if self.debug>0: print("setting MH mass range floating:",po.replace("MHRange=","").split(":"))
                 self.MHRange=po.replace("MHRange=","").split(",")
                 #checks
                 if len(self.MHRange) != 2:
-                    raise RuntimeError, "MH range definition requires two extrema"
+                    raise RuntimeError("MH range definition requires two extrema")
                 elif float(self.MHRange[0]) >= float(self.MHRange[1]):
-                    raise RuntimeError, "Extrema for MH mass range defined with inverterd order. Second must be larger the first"
+                    raise RuntimeError("Extrema for MH mass range defined with inverterd order. Second must be larger the first")
             if po.startswith("DeltaMHmZRange="):
-                if self.debug>0: print "setting MH-MZ mass range floating:",po.replace("DeltaMHmZRange=","").split(":")
+                if self.debug>0: print("setting MH-MZ mass range floating:",po.replace("DeltaMHmZRange=","").split(":"))
                 self.DeltaMHmZRange=po.replace("DeltaMHmZRange=","").split(",")
                 #checks
                 if len(self.DeltaMHmZRange) != 2:
-                    raise RuntimeError, "MH-MZ range definition requires two extrema"
+                    raise RuntimeError("MH-MZ range definition requires two extrema")
                 elif float(self.DeltaMHmZRange[0]) >= float(self.DeltaMHmZRange[1]):
-                    raise RuntimeError, "Extrema for MH-MZ mass range defined with inverterd order. Second must be larger the first"
+                    raise RuntimeError("Extrema for MH-MZ mass range defined with inverterd order. Second must be larger the first")
             if po.startswith("defaultMH="):
                 self.defaultMH=float( po.replace('defaultMH=','') )
             if po.startswith("defaultDeltaMHmZ="):
@@ -887,7 +892,7 @@ class H4lZ4lInclusiveFiducialRatioV2( PhysicsModel ):
 
     def doParametersOfInterest(self):
         POIs=""
-        if self.debug>0:print "Setting pois"
+        if self.debug>0:print("Setting pois")
         if self.modelBuilder.out.var("SigmaH4e"):
             self.modelBuilder.out.var("SigmaH4e").setRange(self.SigmaRange[0], self.SigmaRange[1])
         else:
@@ -925,46 +930,46 @@ class H4lZ4lInclusiveFiducialRatioV2( PhysicsModel ):
         # set Parameter MH
         if self.modelBuilder.out.var("MH"):
             if len(self.MHRange) == 2:
-                print 'MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1]
+                print('MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1])
                 self.modelBuilder.out.var("MH").setRange(float(self.MHRange[0]),float(self.MHRange[1]))
                 self.modelBuilder.out.var("MH").setVal(self.defaultMH)
                 self.modelBuilder.out.var("MH").setConstant(False)
                 poiNames += [ 'MH' ]
             else:
-                print 'MH will be assumed to be', self.defaultMH
+                print('MH will be assumed to be', self.defaultMH)
                 self.modelBuilder.out.var("MH").removeRange()
                 self.modelBuilder.out.var("MH").setVal(self.defaultMH)
                 self.modelBuilder.out.var("MH").setConstant(True)
         else:
             if len(self.MHRange) == 2:
-                print 'MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1]
+                print('MH will be left floating within', self.MHRange[0], 'and', self.MHRange[1])
                 self.modelBuilder.doVar("MH[%s,%s]" % (self.MHRange[0],self.MHRange[1]))
                 self.modelBuilder.out.var("MH").setVal(self.defaultMH)
                 poiNames += [ 'MH' ]
             else:
-                print 'MH (not there before) will be assumed to be', self.defaultMH
+                print('MH (not there before) will be assumed to be', self.defaultMH)
                 self.modelBuilder.doVar("MH[%g]" % self.defaultMH)
         # set Parameter DeltaMHmZ
         if self.modelBuilder.out.var("DeltaMHmZ"):
             if len(self.DeltaMHmZRange) == 2:
-                print 'DeltaMHmZ will be left floating within', self.DeltaMHmZRange[0], 'and', self.DeltaMHmZRange[1]
+                print('DeltaMHmZ will be left floating within', self.DeltaMHmZRange[0], 'and', self.DeltaMHmZRange[1])
                 self.modelBuilder.out.var("DeltaMHmZ").setRange(float(self.DeltaMHmZRange[0]),float(self.DeltaMHmZRange[1]))
                 self.modelBuilder.out.var("DeltaMHmZ").setVal(self.defaultDeltaMHmZ)
                 self.modelBuilder.out.var("DeltaMHmZ").setConstant(False)
                 poiNames += [ 'DeltaMHmZ' ]
             else:
-                print 'DeltaMHmZ will be assumed to be', self.defaultDeltaMHmZ
+                print('DeltaMHmZ will be assumed to be', self.defaultDeltaMHmZ)
                 self.modelBuilder.out.var("DeltaMHmZ").removeRange()
                 self.modelBuilder.out.var("DeltaMHmZ").setVal(self.defaultDeltaMHmZ)
                 self.modelBuilder.out.var("DeltaMHmZ").setConstant(True)
         else:
             if len(self.DeltaMHmZRange) == 2:
-                print 'DeltaMHmZ will be left floating within', self.DeltaMHmZRange[0], 'and', self.DeltaMHmZRange[1]
+                print('DeltaMHmZ will be left floating within', self.DeltaMHmZRange[0], 'and', self.DeltaMHmZRange[1])
                 self.modelBuilder.doVar("DeltaMHmZ[%s,%s]" % (self.DeltaMHmZRange[0],self.DeltaMHmZRange[1]))
                 self.modelBuilder.out.var("DeltaMHmZ").setVal(self.defaultDeltaMHmZ)
                 poiNames += [ 'DeltaMHmZ' ]
             else:
-                print 'DeltaMHmZ (not there before) will be assumed to be', self.defaultDeltaMHmZ
+                print('DeltaMHmZ (not there before) will be assumed to be', self.defaultDeltaMHmZ)
                 self.modelBuilder.doVar("DeltaMHmZ[%g]" % self.defaultDeltaMHmZ)
 
         if (self.fixMH):
@@ -980,7 +985,7 @@ class H4lZ4lInclusiveFiducialRatioV2( PhysicsModel ):
             POIs += "%s,"%poi
         POIs = POIs[:-1] # remove last comma
         self.modelBuilder.doSet("POI",POIs)
-        print "set up pois"
+        print("set up pois")
         self.setup()
 
     def setup(self):

@@ -140,7 +140,7 @@ def computeJES(obsname, obs_bins, year, fState, m4l_low, m4l_high, doubleDiff, o
 
 ## ---------------------------- Main ----------------------------
 #indir = '/eos/user/a/atarabin/MC_samples/'
-indir = '/eos/home-s/sellissp/HZZ/SAMPLES/032025/'
+indir = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/'
 # pmodes = ['ggH125', 'VBFH125', 'ttH125', 'WminusH125', 'WplusH125', 'ZH125']
 
 obsname = opt.OBSNAME

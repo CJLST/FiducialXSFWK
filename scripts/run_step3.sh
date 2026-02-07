@@ -18,10 +18,11 @@ python3 plot_templates.py --obsName "$obsName" --year "$year"
 
 cd ../fit
 
-python3 RunFiducialXS.py --obsName "$obsName" --year "$year"
-#python3 RunFiducialXS.py --obsName "$obsName" --year "$year" --eff_unc
+#python3 RunFiducialXS.py --obsName "$obsName" --year "$year"
+python3 RunFiducialXS.py --obsName "$obsName" --year "$year" --eff_unc
 python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year"
 python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --nnlops
+python3 impacts.py --obsName "$obsName" --year "$year"
 
 cd ../LHScans
 

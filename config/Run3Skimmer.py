@@ -39,106 +39,287 @@ def get_genEventSumw(input_file, maxEntriesPerSample=None):
     return genEventSumw
 ## spencer        
 
-usage = ('usage: %prog [options]\n'
-             + '%prog -h for help')
+usage = ('usage: %prog [options]\n' + '%prog -h for help')
 parser = optparse.OptionParser(usage)
 parser.add_option('',   '--mc', action='store_true', dest='MC', default=False, help='MC samples')
 parser.add_option('',   '--input',dest='INPUT',type='string',default='', help='Name and path to the input file')
 parser.add_option('',   '--output',dest='OUTPUT',type='string',default='', help='Name and path to the output file')
-parser.add_option('',   '--skipZL', action='store_true', dest='SKIPZL', default=False, help='Skip the ZL tree (e.g., necessary for ZZto4l samples)')
-
 (opt, args) = parser.parse_args()
 
-def makeCR(_df, _flag):
 
-    # CRZLLss 21 --> 2097152
-    # CRZLLos_2P2F 22 --> 4194304
+######################################################################## MAKE DATAFRAMES ########################################################################
+
+
+def makeCR(_df, _flag, year):
+
     # CRZLLos_3P1F 23 --> 8388608
+    # CRZLLos_2P2F 22 --> 4194304
+    # CRZLLss 21 --> 2097152
+
+    # the bits are not used
+
     if _flag == '3P1F':
         bit = '8388608'
+        filter = 'ZLLbest3P1FIdx>-1'
+        key = "ZLLbest"+_flag+"Idx"
+        cand ="ZLLCand"
     elif _flag == '2P2F':
         bit = '4194304'
+        filter = 'ZLLbest2P2FIdx>-1'
+        key = "ZLLbest"+_flag+"Idx"
+        cand ="ZLLCand"
     elif _flag == 'SS':
         bit = '2097152'
+        filter = 'ZLLbestSSIdx>-1'
+        key = "ZLLbest"+_flag+"Idx"
+        cand ="ZLLCand"
     elif _flag == 'SIPCR':
         bit = '21'
+        filter = 'ZLLbestSIPCRIdx>-1'
+        key = "ZLLbest"+_flag+"Idx"
+        cand ="ZLLCand"
+    elif _flag == 'SR':
+        bit = '0' ## dummy
+        filter = 'bestCandIdx>=0'
+        key = "bestCandIdx"
+        cand ="ZZCand"
     else:
         raise Exception("The CR "+_flag+" is not known")
 
-    df_out = ( _df.Filter('ZLLbest'+_flag+'Idx>-1').Define("ZZMass", "ZLLCand_mass[ZLLbest"+_flag+"Idx]")
-                                                    .Define("RunNumber", "run")
-                                                    .Define("EventNumber", "event")
-                                                    .Define("LumiNumber", "luminosityBlock")
-                                                    .Define("CRflag", bit)
-                                                    .Define("Z1Mass", "ZLLCand_Z1mass[ZLLbest"+_flag+"Idx]")
-                                                    .Define("Z2Mass", "ZLLCand_Z2mass[ZLLbest"+_flag+"Idx]")
-                                                    .Define("Z1Flav", "ZLLCand_Z1flav[ZLLbest"+_flag+"Idx]")
-                                                    .Define("Z2Flav", "ZLLCand_Z2flav[ZLLbest"+_flag+"Idx]")
-                                                    .Define('Leptons_pt', "concatenate(Electron_pt,Muon_pt)")
-                                                    .Define('Leptons_eta', "concatenate(Electron_eta,Muon_eta)")
-                                                    .Define('Leptons_phi', "concatenate(Electron_phi,Muon_phi)")
-                                                    .Define('Leptons_dxy', "concatenate(Electron_dxy,Muon_dxy)")
-                                                    .Define('Leptons_dz', "concatenate(Electron_dz,Muon_dz)")
-                                                    .Define('Leptons_id', "concatenate(Electron_pdgId,Muon_pdgId)")
-                                                    .Define('Leptons_sip', "concatenate(Electron_sip3d,Muon_sip3d)")
-                                                    .Define('Leptons_iso', "concatenate(Electron_pfRelIso03FsrCorr,Muon_pfRelIso03FsrCorr)")
-                                                    .Define('Leptons_isid', "concatenate(Electron_passBDT,Muon_passID)")
-                                                    ## Need to add the LepMissingHit branch for SS FR method
-                                                    ## First create a dummy branch for muons filled with zeroes
-                                                    .Define('Muon_lostHits', "addDummyBranch(Muon_pt)")
-                                                    .Define('Leptons_missinghit', "concatenate(Electron_lostHits, Muon_lostHits)")
-                                                    ## Variable miniAOD-style
-                                                    .Define('LepPt', "std::vector<float> LepPt{Leptons_pt[ZLLCand_Z1l1Idx[ZLLbest"+_flag+"Idx]], Leptons_pt[ZLLCand_Z1l2Idx[ZLLbest"+_flag+"Idx]], Leptons_pt[ZLLCand_Z2l1Idx[ZLLbest"+_flag+"Idx]], Leptons_pt[ZLLCand_Z2l2Idx[ZLLbest"+_flag+"Idx]]}; return LepPt")
-                                                    .Define('LepEta', "std::vector<float> LepEta{Leptons_eta[ZLLCand_Z1l1Idx[ZLLbest"+_flag+"Idx]], Leptons_eta[ZLLCand_Z1l2Idx[ZLLbest"+_flag+"Idx]], Leptons_eta[ZLLCand_Z2l1Idx[ZLLbest"+_flag+"Idx]], Leptons_eta[ZLLCand_Z2l2Idx[ZLLbest"+_flag+"Idx]]}; return LepEta")
-                                                    .Define('LepPhi', "std::vector<float> LepPhi{Leptons_phi[ZLLCand_Z1l1Idx[ZLLbest"+_flag+"Idx]], Leptons_phi[ZLLCand_Z1l2Idx[ZLLbest"+_flag+"Idx]], Leptons_phi[ZLLCand_Z2l1Idx[ZLLbest"+_flag+"Idx]], Leptons_phi[ZLLCand_Z2l2Idx[ZLLbest"+_flag+"Idx]]}; return LepPhi")
-                                                    .Define('Lepdxy', "std::vector<float> Lepdxy{Leptons_dxy[ZLLCand_Z1l1Idx[ZLLbest"+_flag+"Idx]], Leptons_dxy[ZLLCand_Z1l2Idx[ZLLbest"+_flag+"Idx]], Leptons_dxy[ZLLCand_Z2l1Idx[ZLLbest"+_flag+"Idx]], Leptons_dxy[ZLLCand_Z2l2Idx[ZLLbest"+_flag+"Idx]]}; return Lepdxy")
-                                                    .Define('Lepdz', "std::vector<float> Lepdz{Leptons_dz[ZLLCand_Z1l1Idx[ZLLbest"+_flag+"Idx]], Leptons_dz[ZLLCand_Z1l2Idx[ZLLbest"+_flag+"Idx]], Leptons_dz[ZLLCand_Z2l1Idx[ZLLbest"+_flag+"Idx]], Leptons_dz[ZLLCand_Z2l2Idx[ZLLbest"+_flag+"Idx]]}; return Lepdz")
-                                                    .Define('LepLepId', "std::vector<short> LepLepId{Leptons_id[ZLLCand_Z1l1Idx[ZLLbest"+_flag+"Idx]], Leptons_id[ZLLCand_Z1l2Idx[ZLLbest"+_flag+"Idx]], Leptons_id[ZLLCand_Z2l1Idx[ZLLbest"+_flag+"Idx]], Leptons_id[ZLLCand_Z2l2Idx[ZLLbest"+_flag+"Idx]]}; return LepLepId")
-                                                    .Define('LepSIP', "std::vector<float> LepSIP{Leptons_sip[ZLLCand_Z1l1Idx[ZLLbest"+_flag+"Idx]], Leptons_sip[ZLLCand_Z1l2Idx[ZLLbest"+_flag+"Idx]], Leptons_sip[ZLLCand_Z2l1Idx[ZLLbest"+_flag+"Idx]], Leptons_sip[ZLLCand_Z2l2Idx[ZLLbest"+_flag+"Idx]]}; return LepSIP")
-                                                    .Define('LepCombRelIsoPF', "std::vector<float> LepCombRelIsoPF{Leptons_iso[ZLLCand_Z1l1Idx[ZLLbest"+_flag+"Idx]], Leptons_iso[ZLLCand_Z1l2Idx[ZLLbest"+_flag+"Idx]], Leptons_iso[ZLLCand_Z2l1Idx[ZLLbest"+_flag+"Idx]], Leptons_iso[ZLLCand_Z2l2Idx[ZLLbest"+_flag+"Idx]]}; return LepCombRelIsoPF")
-                                                    .Define('LepisID', "std::vector<bool> LepisID{Leptons_isid[ZLLCand_Z1l1Idx[ZLLbest"+_flag+"Idx]], Leptons_isid[ZLLCand_Z1l2Idx[ZLLbest"+_flag+"Idx]], Leptons_isid[ZLLCand_Z2l1Idx[ZLLbest"+_flag+"Idx]], Leptons_isid[ZLLCand_Z2l2Idx[ZLLbest"+_flag+"Idx]]}; return Leptons_isid")
-                                                    .Define('LepMissingHit', "std::vector<unsigned char> LepMissingHit{Leptons_missinghit[ZLLCand_Z1l1Idx[ZLLbest"+_flag+"Idx]], Leptons_missinghit[ZLLCand_Z1l2Idx[ZLLbest"+_flag+"Idx]], Leptons_missinghit[ZLLCand_Z2l1Idx[ZLLbest"+_flag+"Idx]], Leptons_missinghit[ZLLCand_Z2l2Idx[ZLLbest"+_flag+"Idx]]}; return LepMissingHit")
-                                                    #.Define('PFMET', "PFMET_pt")
-                                                    ## overallEventWeight contains everything in NanoAODs
-                                                    .Define('L1prefiringWeight', "1") ## Dummy
-                                                    .Define('KFactor_EW_qqZZ', "1") ## Dummy
-                                                    .Define('KFactor_QCD_qqZZ_M', "1") ## Dummy
-                                                    .Define('KFactor_QCD_ggZZ_Nominal', '1') ## Dummy
-                                                    .Define('xsec', '1') ## Dummy
-                                                    # spencer
-                                                    .Define('ZZPt', "ZLLCand_pt[ZLLbest"+_flag+"Idx]")
-                                                    .Define('ZZy', "ZLLCand_rapidity[ZLLbest"+_flag+"Idx]")
-                                                    .Define('pTj1', "JetLeadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 ? Jet_pt[JetLeadingIdx]: -99")
-                                                    .Define('pTj2',  "JetSubleadingIdx >= 0 && Jet_pt[JetSubleadingIdx]>30 && TMath::Abs(Jet_eta[JetSubleadingIdx])<5 && Jet_jetId[JetSubleadingIdx]==6 ? Jet_pt[JetSubleadingIdx]: -99")
-                                                    .Define('Nj', "nCleanedJetsPt30")
-                                                    .Define('mjj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_pt[JetSubleadingIdx]>30 && TMath::Abs(Jet_eta[JetSubleadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 && Jet_jetId[JetSubleadingIdx]==6 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).M() : -99")
-                                                    .Define('absdetajj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_pt[JetSubleadingIdx]>30 && TMath::Abs(Jet_eta[JetSubleadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 && Jet_jetId[JetSubleadingIdx]==6 ? TMath::Abs(Jet_eta[JetLeadingIdx] - Jet_eta[JetSubleadingIdx]) : -99")
-                                                    .Define('dphijj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_pt[JetSubleadingIdx]>30 && TMath::Abs(Jet_eta[JetSubleadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 && Jet_jetId[JetSubleadingIdx]==6 ? deltaphi(ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])) : -99")
-                                                    .Define('pTHj', "JetLeadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[ZLLbest"+_flag+"Idx], ZZCand_eta[ZLLbest"+_flag+"Idx], ZZCand_phi[ZLLbest"+_flag+"Idx], ZZCand_mass[ZLLbest"+_flag+"Idx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx])).Pt() : -99")
-                                                    .Define('pTHjj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_pt[JetSubleadingIdx]>30 && TMath::Abs(Jet_eta[JetSubleadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 && Jet_jetId[JetSubleadingIdx]==6 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[ZLLbest"+_flag+"Idx], ZZCand_eta[ZLLbest"+_flag+"Idx], ZZCand_phi[ZLLbest"+_flag+"Idx], ZZCand_mass[ZLLbest"+_flag+"Idx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).Pt() : -99")
-                                                    .Define('mHj', "JetLeadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[ZLLbest"+_flag+"Idx], ZZCand_eta[ZLLbest"+_flag+"Idx], ZZCand_phi[ZLLbest"+_flag+"Idx], ZZCand_mass[ZLLbest"+_flag+"Idx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx])).M() : -99")
-                                                    .Define('Nj_JESUP', 'nCleanedJetsPt30_jesUp')
-                                                    .Define('Nj_JESDOWN', 'nCleanedJetsPt30_jesDn')
-                                                    #.Define('TBMax', "Jet_pt.size() > 0 ? TB(ROOT::Math::PtEtaPhiMVector(ZZCand_pt[ZLLbest"+_flag+"Idx], ZZCand_eta[ZLLbest"+_flag+"Idx], ZZCand_phi[ZLLbest"+_flag+"Idx], ZZCand_mass[ZLLbest"+_flag+"Idx]) , Jet_pt, Jet_eta, Jet_phi, Jet_mass) : -99")
-                                                    #.Define('TCMax', "Jet_pt.size() > 0 ? TC(ROOT::Math::PtEtaPhiMVector(ZZCand_pt[ZLLbest"+_flag+"Idx], ZZCand_eta[ZLLbest"+_flag+"Idx], ZZCand_phi[ZLLbest"+_flag+"Idx], ZZCand_mass[ZLLbest"+_flag+"Idx]) , Jet_pt, Jet_eta, Jet_phi, Jet_mass) : -99")
-                                                    #.Define('Jet_pt_scaleUp', 'Jet_scaleUp_pt')
-                                                    #.Define('Jet_pt_scaleDn', 'Jet_scaleDn_pt')
-                                                    #.Define('Jet_mass_scaleUp', 'Jet_scaleUp_mass')
-                                                    #.Define('Jet_mass_scaleDn', 'Jet_scaleDn_mass')
-                                                    #.Define('Jet_pt_smearUp', 'Jet_smearUp_pt')
-                                                    #.Define('Jet_pt_smearDn', 'Jet_smearDn_pt')
-                                                    #.Define('Jet_mass_smearUp', 'Jet_smearUp_mass')
-                                                    #.Define('Jet_mass_smearDn', 'Jet_smearDn_mass')
-                                                    # Addition of angluar variables by Martina
-                                                    .Define('costheta1', "ZZCand_costheta1[ZLLbest"+_flag+"Idx]")
-                                                    .Define('costheta2', "ZZCand_costheta2[ZLLbest"+_flag+"Idx]")
-                                                    .Define('Phi', "ZZCand_Phi[ZLLbest"+_flag+"Idx]")
-                                                    .Define('costhetastar', "ZZCand_costhetastar[ZLLbest"+_flag+"Idx]")
-                                                    .Define('Phi1', "ZZCand_Phi1[ZLLbest"+_flag+"Idx]")
-                                                    # tagging
-                                                    #.Define('Jet_btagPNetB_', 'Jet_btagPNetB')
-                                                )
+    df_out = ( _df.Filter(filter)
+        .Define('RunNumber', "run")
+        .Define('EventNumber', "event")
+        .Define('LumiNumber', "luminosityBlock")
+        .Define("CRflag", bit)
+        .Define("ZZMass", f"{cand}_mass[{key}]")
+        .Define("ZZPt",   f"{cand}_pt[{key}]")
+        .Define("ZZy",    f"TMath::Abs({cand}_rapidity[{key}])")
+        .Define("ZZEta",  f"{cand}_eta[{key}]")
+        .Define("ZZPhi",  f"{cand}_phi[{key}]")
+        .Define("Z1Flav", f"{cand}_Z1flav[{key}]")
+        .Define("Z2Flav", f"{cand}_Z2flav[{key}]")
+        .Define("Z1Mass", f"{cand}_Z1mass[{key}]")
+        .Define("Z2Mass", f"{cand}_Z2mass[{key}]")
+        .Define('Leptons_pt',  "concatenate(Electron_pt,Muon_pt)")
+        .Define('Leptons_eta', "concatenate(Electron_eta,Muon_eta)")
+        .Define('Leptons_phi', "concatenate(Electron_phi,Muon_phi)")
+        .Define('Leptons_dxy', "concatenate(Electron_dxy,Muon_dxy)")
+        .Define('Leptons_dz',  "concatenate(Electron_dz,Muon_dz)")
+        .Define('Leptons_id',  "concatenate(Electron_pdgId,Muon_pdgId)")
+        .Define('Leptons_sip', "concatenate(Electron_sip3d,Muon_sip3d)")
+        .Define('Leptons_iso', "concatenate(Electron_pfRelIso03FsrCorr,Muon_pfRelIso03FsrCorr)")
+        .Define('Leptons_isid', "concatenate(Electron_passBDT,Muon_ZZFullId)")
+        .Define('Muon_lostHits', "addDummyBranch(Muon_pt)")
+        .Define('Leptons_missinghit', "concatenate(Electron_lostHits, Muon_lostHits)")
+        .Define('LepPt',  f"std::vector<float> LepPt{{Leptons_pt[{cand}_Z1l1Idx[{key}]], Leptons_pt[{cand}_Z1l2Idx[{key}]], Leptons_pt[{cand}_Z2l1Idx[{key}]], Leptons_pt[{cand}_Z2l2Idx[{key}]]}}; return LepPt;")
+        .Define('LepEta', f"std::vector<float> LepEta{{Leptons_eta[{cand}_Z1l1Idx[{key}]], Leptons_eta[{cand}_Z1l2Idx[{key}]], Leptons_eta[{cand}_Z2l1Idx[{key}]], Leptons_eta[{cand}_Z2l2Idx[{key}]]}}; return LepEta;")
+        .Define('LepPhi', f"std::vector<float> LepPhi{{Leptons_phi[{cand}_Z1l1Idx[{key}]], Leptons_phi[{cand}_Z1l2Idx[{key}]], Leptons_phi[{cand}_Z2l1Idx[{key}]], Leptons_phi[{cand}_Z2l2Idx[{key}]]}}; return LepPhi;")
+        .Define('Lepdxy', f"std::vector<float> Lepdxy{{Leptons_dxy[{cand}_Z1l1Idx[{key}]], Leptons_dxy[{cand}_Z1l2Idx[{key}]], Leptons_dxy[{cand}_Z2l1Idx[{key}]], Leptons_dxy[{cand}_Z2l2Idx[{key}]]}}; return Lepdxy;")
+        .Define('Lepdz',  f"std::vector<float> Lepdz{{Leptons_dz[{cand}_Z1l1Idx[{key}]],  Leptons_dz[{cand}_Z1l2Idx[{key}]],  Leptons_dz[{cand}_Z2l1Idx[{key}]],  Leptons_dz[{cand}_Z2l2Idx[{key}]]}}; return Lepdz;")
+        .Define('LepLepId', f"std::vector<short> LepLepId{{Leptons_id[{cand}_Z1l1Idx[{key}]], Leptons_id[{cand}_Z1l2Idx[{key}]], Leptons_id[{cand}_Z2l1Idx[{key}]], Leptons_id[{cand}_Z2l2Idx[{key}]]}}; return LepLepId;")
+        .Define('LepisID', f"std::vector<bool> LepisID{{Leptons_isid[{cand}_Z1l1Idx[{key}]], Leptons_isid[{cand}_Z1l2Idx[{key}]], Leptons_isid[{cand}_Z2l1Idx[{key}]], Leptons_isid[{cand}_Z2l2Idx[{key}]]}}; return LepisID;")
+        .Define('LepSIP', f"std::vector<float> LepSIP{{Leptons_sip[{cand}_Z1l1Idx[{key}]], Leptons_sip[{cand}_Z1l2Idx[{key}]], Leptons_sip[{cand}_Z2l1Idx[{key}]], Leptons_sip[{cand}_Z2l2Idx[{key}]]}}; return LepSIP;")
+        .Define('LepCombRelIsoPF', f"std::vector<float> LepCombRelIsoPF{{Leptons_iso[{cand}_Z1l1Idx[{key}]], Leptons_iso[{cand}_Z1l2Idx[{key}]], Leptons_iso[{cand}_Z2l1Idx[{key}]], Leptons_iso[{cand}_Z2l2Idx[{key}]]}}; return LepCombRelIsoPF;")
+        .Define('LepMissingHit', f"std::vector<unsigned char> LepMissingHit{{Leptons_missinghit[{cand}_Z1l1Idx[{key}]], Leptons_missinghit[{cand}_Z1l2Idx[{key}]], Leptons_missinghit[{cand}_Z2l1Idx[{key}]], Leptons_missinghit[{cand}_Z2l2Idx[{key}]]}}; return LepMissingHit;")
+        .Define('lep_Hindex', "getHindex(LepPt)")
+        .Define('passedFullSelection', "1")
+        #.Define('xsec', '1') ## Dummy
+        .Define('jet_idx', 'get_jet_idx(Jet_jetId, Jet_ZZMask, Jet_pt, Jet_eta)')
+        .Define('pTj1', "jet_idx.size()>0 ? Jet_pt[jet_idx[0]] : -99")
+        .Define('Mj1',  "jet_idx.size()>0 ? Jet_mass[jet_idx[0]] : -99")
+        .Define('Etaj1',"jet_idx.size()>0 ? Jet_eta[jet_idx[0]] : -99")
+        .Define('Phij1',"jet_idx.size()>0 ? Jet_phi[jet_idx[0]] : -99")
+        .Define('pTj2', "jet_idx.size()>1 ? Jet_pt[jet_idx[1]] : -99")
+        .Define('Mj2',  "jet_idx.size()>1 ? Jet_mass[jet_idx[1]] : -99")
+        .Define('Etaj2',"jet_idx.size()>1 ? Jet_eta[jet_idx[1]] : -99")
+        .Define('Phij2',"jet_idx.size()>1 ? Jet_phi[jet_idx[1]] : -99")
+        .Define('Nj',   "jet_idx.size()")
+        .Define('mjj',      "get_mjj(jet_idx, Jet_pt, Jet_eta, Jet_phi, Jet_mass)")
+        .Define('absdetajj',"get_absdetajj(jet_idx, Jet_eta)")
+        .Define('dphijj',   "get_dphijj(jet_idx, Jet_pt, Jet_eta, Jet_phi, Jet_mass)")
+        .Define('pTHj',  f"get_pTHj({cand}_pt[{key}], {cand}_eta[{key}], {cand}_phi[{key}], {cand}_mass[{key}], jet_idx, Jet_pt, Jet_eta, Jet_phi, Jet_mass)")
+        .Define('pTHjj', f"get_pTHjj({cand}_pt[{key}], {cand}_eta[{key}], {cand}_phi[{key}], {cand}_mass[{key}], jet_idx, Jet_pt, Jet_eta, Jet_phi, Jet_mass)")
+        .Define('mHj',   f"get_mHj({cand}_pt[{key}], {cand}_eta[{key}], {cand}_phi[{key}], {cand}_mass[{key}], jet_idx, Jet_pt, Jet_eta, Jet_phi, Jet_mass)")
+        .Define('TBjMax', f"get_TBjmax({cand}_rapidity[{key}], jet_idx, Jet_pt, Jet_eta, Jet_phi, Jet_mass)")
+        .Define('TCjMax', f"get_TCjmax({cand}_rapidity[{key}], jet_idx, Jet_pt, Jet_eta, Jet_phi, Jet_mass)")
+        .Define('costheta1',    f'{cand}_costheta1[{key}]')
+        .Define('costheta2',    f'{cand}_costheta2[{key}]')
+        .Define('Phi',          f'{cand}_Phi[{key}]')
+        .Define('costhetastar', f'{cand}_costhetastar[{key}]')
+        .Define('Phi1',         f'{cand}_Phi1[{key}]')
+    )
+
+    if  year == "2024":
+        df_out = ( df_out.Define('MET', "PFMET_pt") )
+    elif year == "2022" or year == "2022EE":
+        df_out = ( df_out.Define('MET', "MET_pt") )
+    ## skip 2023 for now
+
     return df_out
+
+def makeGenCR(df, isfail):
+
+    if isfail:
+        df = df.Filter("isNotInEvents(event)")
+
+    df_out = (df.Define('GENlep_pt', "getGENlep_vector(FidDressedLeps_pt)")
+                    .Define('GENlep_eta', "getGENlep_vector(FidDressedLeps_eta)")
+                    .Define('GENlep_phi', "getGENlep_vector(FidDressedLeps_phi)")
+                    .Define('GENlep_mass', "getGENlep_vector(FidDressedLeps_mass)")
+                    .Define('GENlep_id', "getGENlep_vector(FidDressedLeps_id)")
+                    .Define('GENlep_MomId', "getGENlep_vector(FidDressedLeps_momid)")
+                    .Define('GENlep_MomMomId', "getGENlep_vector(FidDressedLeps_mommomid)")
+                    .Define('GENlep_RelIso', "getGENlep_vector(FidDressedLeps_RelIso)")
+                    .Define('GENmass4l', "FidZZ_mass")
+                    .Define('GENpT4l', "FidZZ_pt")
+                    .Define('GENeta4l', "FidZZ_eta")
+                    .Define('GENphi4l', "FidZZ_phi")
+                    .Define('GENrapidity4l', "FidZZ_rapidity")
+                    .Define('GENmassZ1', "FidZ1_mass")
+                    .Define('GENmassZ2', "FidZ2_mass")
+                    .Define('GENZ_DaughtersId', "getGENlep_int(FidZ_DauPdgId)")
+                    .Define('GENZ_MomId', "getGENlep_int(FidZ_MomPdgId)")
+                    .Define('GENlep_Hindex', "getGENHindex(FidZZ_Z1l1Idx, FidZZ_Z1l2Idx, FidZZ_Z2l1Idx, FidZZ_Z2l2Idx)")
+                    .Define('genjet_idx', 'get_genjet_idx(GenJet_pt, GenJet_eta)')
+                    .Define('GENpTj1', "genjet_idx.size() > 0 ? GenJet_pt[genjet_idx[0]] : -99")
+                    .Define('GENMj1', "genjet_idx.size() > 0 ? GenJet_mass[genjet_idx[0]] : -99")
+                    .Define('GENEtaj1', "genjet_idx.size() > 0 ? GenJet_eta[genjet_idx[0]] : -99")
+                    .Define('GENPhij1', "genjet_idx.size() > 0 ? GenJet_phi[genjet_idx[0]] : -99")
+                    .Define('GENpTj2', "genjet_idx.size() > 1 ? GenJet_pt[genjet_idx[1]] : -99")
+                    .Define('GENMj2', "genjet_idx.size() > 1 ? GenJet_mass[genjet_idx[1]] : -99")
+                    .Define('GENEtaj2', "genjet_idx.size() > 1 ? GenJet_eta[genjet_idx[1]] : -99")
+                    .Define('GENPhij2', "genjet_idx.size() > 1 ? GenJet_phi[genjet_idx[1]] : -99")
+                    .Define('GENNj', "genjet_idx.size()")
+                    .Define('GENmjj', "get_mjj(genjet_idx, GenJet_pt, GenJet_eta, GenJet_phi, GenJet_mass)")
+                    .Define('GENabsdetajj', "get_absdetajj(genjet_idx, GenJet_eta)")
+                    .Define('GENdphijj', "get_dphijj(genjet_idx, GenJet_pt, GenJet_eta, GenJet_phi, GenJet_mass)")
+                    .Define('GENpTHj', "get_pTHj(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass, genjet_idx, GenJet_pt, GenJet_eta, GenJet_phi, GenJet_mass)")
+                    .Define('GENpTHjj', "get_pTHjj(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass, genjet_idx, GenJet_pt, GenJet_eta, GenJet_phi, GenJet_mass)")
+                    .Define('GENmHj', "get_mHj(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass, genjet_idx, GenJet_pt, GenJet_eta, GenJet_phi, GenJet_mass)")
+                    .Define('GENTBjMax', "get_TBjmax(FidZZ_rapidity, genjet_idx, GenJet_pt, GenJet_eta, GenJet_phi, GenJet_mass)")
+                    .Define('GENTCjMax', "get_TCjmax(FidZZ_rapidity, genjet_idx, GenJet_pt, GenJet_eta, GenJet_phi, GenJet_mass)")
+                    .Define('GENcostheta1', 'FidZZ_costheta1')
+                    .Define('GENcostheta2', 'FidZZ_costheta2')
+                    .Define('GENPhi', 'FidZZ_Phi')
+                    .Define('GENcosthetastar', 'FidZZ_costhetastar')
+                    .Define('GENPhi1', 'FidZZ_Phi1')
+        )
+    
+    return df_out
+
+def makeZLCR(df, year):
+    
+    df_ZL = ( df.Filter('ZLCand_lepIdx>-1').Define("ZZMass", "0") ## Dummy
+                                            .Define("CRflag", "0") ## Dummy
+                                            .Define("Z1Flav", "ZCand_flav[bestZIdx]")
+                                            .Define("Z2Flav", "0") ## Dummy
+                                            .Define("Z1Mass", "ZCand_mass[bestZIdx]")
+                                            .Define("Z2Mass", "0") ## Dummy
+                                            .Define("RunNumber", "run")
+                                            .Define("EventNumber", "event")
+                                            .Define("LumiNumber", "luminosityBlock")
+                                            .Define('Leptons_pt', "concatenate(Electron_pt,Muon_pt)")
+                                            .Define('Leptons_eta', "concatenate(Electron_eta,Muon_eta)")
+                                            .Define('Leptons_phi', "concatenate(Electron_phi,Muon_phi)")
+                                            .Define('Leptons_dxy', "concatenate(Electron_dxy,Muon_dxy)")
+                                            .Define('Leptons_dz', "concatenate(Electron_dz,Muon_dz)")
+                                            .Define('Leptons_id', "concatenate(Electron_pdgId,Muon_pdgId)")
+                                            .Define('Leptons_sip', "concatenate(Electron_sip3d,Muon_sip3d)")
+                                            .Define('Leptons_iso', "concatenate(Electron_pfRelIso03FsrCorr,Muon_pfRelIso03FsrCorr)")
+                                            .Define('Leptons_isid', "concatenate(Electron_passBDT,Muon_ZZFullId)")
+                                            ## Need to add the LepMissingHit branch for SS FR method
+                                            ## First create a dummy branch for muons filled with zeroes
+                                            .Define('Muon_lostHits', "addDummyBranch(Muon_pt)")
+                                            .Define('Leptons_missinghit', "concatenate(Electron_lostHits, Muon_lostHits)")
+                                            .Define('LepPt', "std::vector<float> LepPt{Leptons_pt[ZCand_l1Idx[bestZIdx]], Leptons_pt[ZCand_l2Idx[bestZIdx]], Leptons_pt[ZLCand_lepIdx]}; return LepPt")
+                                            .Define('LepEta', "std::vector<float> LepEta{Leptons_eta[ZCand_l1Idx[bestZIdx]], Leptons_eta[ZCand_l2Idx[bestZIdx]], Leptons_eta[ZLCand_lepIdx]}; return LepEta")
+                                            .Define('LepPhi', "std::vector<float> LepPhi{Leptons_phi[ZCand_l1Idx[bestZIdx]], Leptons_phi[ZCand_l2Idx[bestZIdx]], Leptons_phi[ZLCand_lepIdx]}; return LepPhi")
+                                            .Define('Lepdxy', "std::vector<float> Lepdxy{Leptons_dxy[ZCand_l1Idx[bestZIdx]], Leptons_dxy[ZCand_l2Idx[bestZIdx]], Leptons_dxy[ZLCand_lepIdx]}; return Lepdxy")
+                                            .Define('Lepdz', "std::vector<float> Lepdz{Leptons_dz[ZCand_l1Idx[bestZIdx]], Leptons_dz[ZCand_l2Idx[bestZIdx]], Leptons_dz[ZLCand_lepIdx]}; return Lepdz")
+                                            .Define('LepLepId', "std::vector<short> LepLepId{Leptons_id[ZCand_l1Idx[bestZIdx]], Leptons_id[ZCand_l2Idx[bestZIdx]], Leptons_id[ZLCand_lepIdx]}; return LepLepId")
+                                            .Define('LepSIP', "std::vector<float> LepSIP{Leptons_sip[ZCand_l1Idx[bestZIdx]], Leptons_sip[ZCand_l2Idx[bestZIdx]], Leptons_sip[ZLCand_lepIdx]}; return LepSIP")
+                                            .Define('LepCombRelIsoPF', "std::vector<float> LepCombRelIsoPF{Leptons_iso[ZCand_l1Idx[bestZIdx]], Leptons_iso[ZCand_l2Idx[bestZIdx]], Leptons_iso[ZLCand_lepIdx]}; return LepCombRelIsoPF")
+                                            .Define('LepisID', "std::vector<bool> LepisID{Leptons_isid[ZCand_l1Idx[bestZIdx]], Leptons_isid[ZCand_l2Idx[bestZIdx]], Leptons_isid[ZLCand_lepIdx]}; return LepisID")
+                                            .Define('LepMissingHit', "std::vector<unsigned char> LepMissingHit{Leptons_missinghit[ZCand_l1Idx[bestZIdx]], Leptons_missinghit[ZCand_l2Idx[bestZIdx]], Leptons_missinghit[ZLCand_lepIdx]}; return LepMissingHit")
+                                            .Define('L1prefiringWeight', "1") ## Dummy
+                                            .Define('KFactor_EW_qqZZ', "1") ## Dummy
+                                            .Define('KFactor_QCD_qqZZ_M', "1") ## Dummy
+                                            .Define('KFactor_QCD_ggZZ_Nominal', '1') ## Dummy
+                                            .Define('xsec', '1') ## Dummy
+                                            # not sure if these are necessary
+                                            .Define('jet_idx', 'get_jet_idx(Jet_jetId, Jet_ZZMask, Jet_pt, Jet_eta)')
+                                            .Define('pTj1', "jet_idx.size()>0 ? Jet_pt[jet_idx[0]] : -99")
+                                            .Define('Mj1', "jet_idx.size()>0 ? Jet_mass[jet_idx[0]] : -99")
+                                            .Define('Etaj1', "jet_idx.size()>0 ? Jet_eta[jet_idx[0]] : -99")
+                                            .Define('Phij1', "jet_idx.size()>0 ? Jet_phi[jet_idx[0]] : -99")
+                                            .Define('pTj2',  "jet_idx.size()>1 ? Jet_pt[jet_idx[1]] : -99")
+                                            .Define('Mj2', "jet_idx.size()>1 ? Jet_mass[jet_idx[1]] : -99")
+                                            .Define('Etaj2', "jet_idx.size()>1 ? Jet_eta[jet_idx[1]] : -99")
+                                            .Define('Phij2', "jet_idx.size()>1 ? Jet_phi[jet_idx[1]] : -99")
+                                            .Define('Nj', "jet_idx.size()")
+                                            .Define('mjj', "get_mjj(jet_idx, Jet_pt, Jet_eta, Jet_phi, Jet_mass)")
+                                            .Define('absdetajj', "get_absdetajj(jet_idx, Jet_eta)")
+                                            .Define('dphijj', "get_dphijj(jet_idx, Jet_pt, Jet_eta, Jet_phi, Jet_mass)")
+                                            .Define('pTHj', "get_pTHj(0, 0, 0, 0, jet_idx, Jet_pt, Jet_eta, Jet_phi, Jet_mass)")
+                                            .Define('pTHjj', "get_pTHjj(0, 0, 0, 0, jet_idx, Jet_pt, Jet_eta, Jet_phi, Jet_mass)")
+                                            .Define('mHj', "get_mHj(0, 0, 0, 0, jet_idx, Jet_pt, Jet_eta, Jet_phi, Jet_mass)")
+                                            .Define('TBjMax', "get_TBjmax(0, jet_idx, Jet_pt, Jet_eta, Jet_phi, Jet_mass)")
+                                            .Define('TCjMax', "get_TCjmax(0, jet_idx, Jet_pt, Jet_eta, Jet_phi, Jet_mass)")
+                                            .Define('costheta1', '0')
+                                            .Define('costheta2', '0')
+                                            .Define('Phi', '0')
+                                            .Define('costhetastar', '0')
+                                            .Define('Phi1', '0')
+            )
+
+    if  year == "2024":
+        df_ZL = ( df_ZL.Define('MET', "PFMET_pt") )
+    else:
+        df_ZL = ( df_ZL.Define('MET', "MET_pt") )
+
+    return df_ZL
+
+def add_jes(df, jes):
+
+    up_idx = f"jet_{jes}_ScaleUp_idx"
+    dn_idx = f"jet_{jes}_ScaleDn_idx"
+
+    df = (df
+        .Define(up_idx, f"get_jet_idx(Jet_jetId, Jet_ZZMask, Jet_{jes}_ScaleUp_pt, Jet_eta)")
+        .Define(dn_idx, f"get_jet_idx(Jet_jetId, Jet_ZZMask, Jet_{jes}_ScaleDn_pt, Jet_eta)")
+        .Define(f"pTj1_{jes}_ScaleUp", f"{up_idx}.size()>0 ? Jet_{jes}_ScaleUp_pt[{up_idx}[0]] : -99")
+        .Define(f"pTj1_{jes}_ScaleDn", f"{dn_idx}.size()>0 ? Jet_{jes}_ScaleDn_pt[{dn_idx}[0]] : -99")
+        .Define(f"Mj1_{jes}_ScaleUp",  f"{up_idx}.size()>0 ? Jet_{jes}_ScaleUp_mass[{up_idx}[0]] : -99")
+        .Define(f"Mj1_{jes}_ScaleDn",  f"{dn_idx}.size()>0 ? Jet_{jes}_ScaleDn_mass[{dn_idx}[0]] : -99")
+        .Define(f"pTj2_{jes}_ScaleUp", f"{up_idx}.size()>1 ? Jet_{jes}_ScaleUp_pt[{up_idx}[1]] : -99")
+        .Define(f"pTj2_{jes}_ScaleDn", f"{dn_idx}.size()>1 ? Jet_{jes}_ScaleDn_pt[{dn_idx}[1]] : -99")
+        .Define(f"Mj2_{jes}_ScaleUp",  f"{up_idx}.size()>1 ? Jet_{jes}_ScaleUp_mass[{up_idx}[1]] : -99")
+        .Define(f"Mj2_{jes}_ScaleDn",  f"{dn_idx}.size()>1 ? Jet_{jes}_ScaleDn_mass[{dn_idx}[1]] : -99")
+        .Define(f"Nj_{jes}_ScaleUp",   f"{up_idx}.size()")
+        .Define(f"Nj_{jes}_ScaleDn",   f"{dn_idx}.size()")
+        .Define(f"mjj_{jes}_ScaleUp",  f"get_mjj({up_idx}, Jet_{jes}_ScaleUp_pt, Jet_eta, Jet_phi, Jet_{jes}_ScaleUp_mass)")
+        .Define(f"mjj_{jes}_ScaleDn",  f"get_mjj({dn_idx}, Jet_{jes}_ScaleDn_pt, Jet_eta, Jet_phi, Jet_{jes}_ScaleDn_mass)")
+        .Define(f"absdetajj_{jes}_ScaleUp", f"get_absdetajj({up_idx}, Jet_eta)")
+        .Define(f"absdetajj_{jes}_ScaleDn", f"get_absdetajj({dn_idx}, Jet_eta)")
+        .Define(f"dphijj_{jes}_ScaleUp", f"get_dphijj({up_idx}, Jet_{jes}_ScaleUp_pt, Jet_eta, Jet_phi, Jet_{jes}_ScaleUp_mass)")
+        .Define(f"dphijj_{jes}_ScaleDn", f"get_dphijj({dn_idx}, Jet_{jes}_ScaleDn_pt, Jet_eta, Jet_phi, Jet_{jes}_ScaleDn_mass)")
+        .Define(f"pTHj_{jes}_ScaleUp", f"get_pTHj(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx], {up_idx}, Jet_{jes}_ScaleUp_pt, Jet_eta, Jet_phi, Jet_{jes}_ScaleUp_mass)")
+        .Define(f"pTHj_{jes}_ScaleDn", f"get_pTHj(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx], {dn_idx}, Jet_{jes}_ScaleDn_pt, Jet_eta, Jet_phi, Jet_{jes}_ScaleDn_mass)")
+        .Define(f"pTHjj_{jes}_ScaleUp", f"get_pTHjj(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx], {up_idx}, Jet_{jes}_ScaleUp_pt, Jet_eta, Jet_phi, Jet_{jes}_ScaleUp_mass)")
+        .Define(f"pTHjj_{jes}_ScaleDn", f"get_pTHjj(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx], {dn_idx}, Jet_{jes}_ScaleDn_pt, Jet_eta, Jet_phi, Jet_{jes}_ScaleDn_mass)")
+        .Define(f"mHj_{jes}_ScaleUp", f"get_mHj(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx], {up_idx}, Jet_{jes}_ScaleUp_pt, Jet_eta, Jet_phi, Jet_{jes}_ScaleUp_mass)")
+        .Define(f"mHj_{jes}_ScaleDn", f"get_mHj(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx], {dn_idx}, Jet_{jes}_ScaleDn_pt, Jet_eta, Jet_phi, Jet_{jes}_ScaleDn_mass)")
+        .Define(f"TBjMax_{jes}_ScaleUp", f"get_TBjmax(ZZCand_rapidity[bestCandIdx], {up_idx}, Jet_{jes}_ScaleUp_pt, Jet_eta, Jet_phi, Jet_{jes}_ScaleUp_mass)")
+        .Define(f"TBjMax_{jes}_ScaleDn", f"get_TBjmax(ZZCand_rapidity[bestCandIdx], {dn_idx}, Jet_{jes}_ScaleDn_pt, Jet_eta, Jet_phi, Jet_{jes}_ScaleDn_mass)")
+        .Define(f"TCjMax_{jes}_ScaleUp", f"get_TCjmax(ZZCand_rapidity[bestCandIdx], {up_idx}, Jet_{jes}_ScaleUp_pt, Jet_eta, Jet_phi, Jet_{jes}_ScaleUp_mass)")
+        .Define(f"TCjMax_{jes}_ScaleDn", f"get_TCjmax(ZZCand_rapidity[bestCandIdx], {dn_idx}, Jet_{jes}_ScaleDn_pt, Jet_eta, Jet_phi, Jet_{jes}_ScaleDn_mass)")
+    )
+
+    return df
+
+
+####################################################################### HELPER FUNCTIONS ########################################################################
+
 
 ROOT.gInterpreter.Declare("""
 ROOT::RVec<float> concatenate(ROOT::RVec<float> &A, ROOT::RVec<float> &B){
@@ -315,627 +496,488 @@ std::vector<int> getGENlep_int(ROOT::VecOps::RVec<int> GENlep_input){
 }
 """)
 
-# spencer
 ROOT.gInterpreter.Declare("""
-float deltaphi (ROOT::Math::PtEtaPhiMVector j1, ROOT::Math::PtEtaPhiMVector j2){ 
+#include <ROOT/RVec.hxx>
+#include <cmath>
+#include <cstddef>
 
-  //Direction of the two jets - vectors in the lab frame
-  TVector3 j1dir(j1.Px(), j1.Py(), j1.Pz());
-  TVector3 j2dir(j2.Px(), j2.Py(), j2.Pz());
-
-  //Transverse component in the xy plane
-  TVector3 jt1(j1.Px(), j1.Py(), 0);
-  TVector3 jt2(j2.Px(), j2.Py(), 0);
-
-  //Unit vectors of the transverse components
-  TVector3 jt1_norm = jt1.Unit();
-  TVector3 jt2_norm = jt2.Unit();
-
-  //Unit vector of the z axis
-  TVector3 z(0,0,1);
-
-  //Cross product between transverse components
-  Double_t cross      = jt1_norm.Cross(jt2_norm) * z;
-  Double_t cross_norm = cross / std::abs(cross);
-
-  //Dot product between transverse components
-  Double_t dot = jt1_norm * jt2_norm;
-
-  //Difference between the direction of the two jets
-  Double_t diff      = (j1dir - j2dir) * z;
-  Double_t diff_norm = diff / std::abs(diff);
-
-  return std::acos(dot) * diff_norm * cross_norm;
-}
-""")
-
-ROOT.gInterpreter.Declare("""
-float TB(ROOT::Math::PtEtaPhiMVector H,
-         ROOT::VecOps::RVec<Float_t> JetPt,
-         ROOT::VecOps::RVec<Float_t> JetEta,
-         ROOT::VecOps::RVec<Float_t> JetPhi,
-         ROOT::VecOps::RVec<Float_t> JetMass)
+ROOT::VecOps::RVec<int> get_jet_idx(const ROOT::VecOps::RVec<UChar_t>& jetId,
+                                        const ROOT::VecOps::RVec<Bool_t>& zzMask,
+                                        const ROOT::VecOps::RVec<Float_t>& jet_pt,
+                                        const ROOT::VecOps::RVec<Float_t>& jet_eta,
+                                        int requiredId = 6,
+                                        float minPt = 30.0,
+                                        float maxAbsEta = 5.0)
 {
-    float _TBj = -1;
-    float _TBjmax = -1;
-
-    for (unsigned int i = 0; i < JetPt.size(); ++i) {
-        if (JetPt[i] > 30 && abs(JetEta[i]) < 4.7) {
-            TLorentzVector theJet;
-            theJet.SetPtEtaPhiM(JetPt[i], JetEta[i], JetPhi[i], JetMass[i]);
-            _TBj = sqrt(pow(theJet.Pt(), 2) + pow(theJet.M(), 2)) * exp(-1 * abs(theJet.Rapidity() - H.Rapidity()));
-            if (_TBj > _TBjmax) _TBjmax = _TBj;
+    ROOT::VecOps::RVec<int> jet_indices;
+    
+    const std::size_t n = jetId.size();
+    for (std::size_t i = 0; i < n; ++i) {
+        if (static_cast<int>(jetId[i]) == requiredId &&
+            !static_cast<bool>(zzMask[i]) &&
+            jet_pt[i] > minPt &&
+            std::abs(jet_eta[i]) < maxAbsEta)
+        {
+            jet_indices.push_back(i);
         }
     }
-    return _TBjmax;
+    return jet_indices;
 }
 """)
 
 ROOT.gInterpreter.Declare("""
-float TC(ROOT::Math::PtEtaPhiMVector H,
-         ROOT::VecOps::RVec<Float_t> JetPt,
-         ROOT::VecOps::RVec<Float_t> JetEta,
-         ROOT::VecOps::RVec<Float_t> JetPhi,
-         ROOT::VecOps::RVec<Float_t> JetMass)
-{
-    float _TCj = -1;
-    float _TCjmax = -1;
+#include <ROOT/RVec.hxx>
+#include <cmath>
+#include <cstddef>
 
-    for (unsigned int i = 0; i < JetPt.size(); ++i) {
-        if (JetPt[i] > 30 && abs(JetEta[i]) < 4.7) {
-            TLorentzVector theJet;
-            theJet.SetPtEtaPhiM(JetPt[i], JetEta[i], JetPhi[i], JetMass[i]);
-            _TCj = sqrt(pow(theJet.Pt(), 2) + pow(theJet.M(), 2)) / (2 * cosh(theJet.Rapidity() - H.Rapidity()));
-            if (_TCj > _TCjmax) _TCjmax = _TCj;
+ROOT::VecOps::RVec<int> get_genjet_idx(const ROOT::VecOps::RVec<Float_t>& jet_pt,
+                                        const ROOT::VecOps::RVec<Float_t>& jet_eta,
+                                        float minPt = 30.0,
+                                        float maxAbsEta = 5.0)
+{
+    ROOT::VecOps::RVec<int> jet_indices;
+    
+    const std::size_t n = jet_pt.size();
+    for (std::size_t i = 0; i < n; ++i) {
+        if (jet_pt[i] > minPt &&
+            std::abs(jet_eta[i]) < maxAbsEta)
+        {
+            jet_indices.push_back(i);
         }
     }
-    return _TCjmax;
+    return jet_indices;
 }
 """)
 
 ROOT.gInterpreter.Declare("""
-TLorentzVector makeP4(float pt, float eta, float phi, float mass) {
-    TLorentzVector v;
-    v.SetPtEtaPhiM(pt, eta, phi, mass);
-    return v;
+#include <ROOT/RVec.hxx>
+#include <TLorentzVector.h>
+#include <cmath>
+
+float get_mjj(const ROOT::VecOps::RVec<int>& jet_indices,
+                    const ROOT::VecOps::RVec<float>& jet_pt,
+                    const ROOT::VecOps::RVec<float>& jet_eta,
+                    const ROOT::VecOps::RVec<float>& jet_phi,
+                    const ROOT::VecOps::RVec<float>& jet_mass,
+                    float default_value = -99.0f)
+{
+    if (jet_indices.size() < 2) {
+        return default_value;
+    }
+    
+    int idx1 = jet_indices[0];
+    int idx2 = jet_indices[1];
+    
+    TLorentzVector jet1, jet2;
+    jet1.SetPtEtaPhiM(jet_pt[idx1], jet_eta[idx1], jet_phi[idx1], jet_mass[idx1]);
+    jet2.SetPtEtaPhiM(jet_pt[idx2], jet_eta[idx2], jet_phi[idx2], jet_mass[idx2]);
+    
+    return (jet1 + jet2).M();
 }
 """)
 
-# spencer
+ROOT.gInterpreter.Declare("""
+#include <ROOT/RVec.hxx>
+#include <Math/Vector4D.h>
+#include <cmath>
+
+float get_absdetajj(const ROOT::VecOps::RVec<int>& jet_indices,
+                         const ROOT::VecOps::RVec<float>& jet_eta,
+                         float default_value = -99.0f)
+{
+    if (jet_indices.size() < 2) {
+        return default_value;
+    }
+    
+    int idx1 = jet_indices[0];
+    int idx2 = jet_indices[1];
+    
+    return std::abs(jet_eta[idx1] - jet_eta[idx2]);
+}
+""")
+
+ROOT.gInterpreter.Declare("""
+#include <ROOT/RVec.hxx>
+#include <Math/Vector4D.h>
+#include <TVector3.h>
+#include <cmath>
+
+float get_dphijj(const ROOT::VecOps::RVec<int>& jet_indices,
+               const ROOT::VecOps::RVec<float>& jet_pt,
+               const ROOT::VecOps::RVec<float>& jet_eta,
+               const ROOT::VecOps::RVec<float>& jet_phi,
+               const ROOT::VecOps::RVec<float>& jet_mass,
+               float default_value = -99.0f)
+{
+    if (jet_indices.size() < 2) {
+        return default_value;
+    }
+
+    int idx1 = jet_indices[0];
+    int idx2 = jet_indices[1];
+
+    // Build 4-vectors (mass doesn't matter for directions)
+    ROOT::Math::PtEtaPhiMVector j1(jet_pt[idx1], jet_eta[idx1], jet_phi[idx1], jet_mass[idx1]);
+    ROOT::Math::PtEtaPhiMVector j2(jet_pt[idx2], jet_eta[idx2], jet_phi[idx2], jet_mass[idx2]);
+
+    // Direction of the two jets
+    TVector3 j1dir(j1.Px(), j1.Py(), j1.Pz());
+    TVector3 j2dir(j2.Px(), j2.Py(), j2.Pz());
+
+    // Transverse components
+    TVector3 jt1(j1.Px(), j1.Py(), 0);
+    TVector3 jt2(j2.Px(), j2.Py(), 0);
+
+    // Unit vectors
+    TVector3 jt1_norm = jt1.Unit();
+    TVector3 jt2_norm = jt2.Unit();
+
+    TVector3 z(0,0,1);
+
+    // Cross product sign
+    double cross = jt1_norm.Cross(jt2_norm) * z;
+    double cross_norm = cross / std::abs(cross);
+
+    // Dot product
+    double dot = jt1_norm * jt2_norm;
+
+    // Direction sign
+    double diff = (j1dir - j2dir) * z;
+    double diff_norm = diff / std::abs(diff);
+
+    return std::acos(dot) * diff_norm * cross_norm;
+}
+""")
+
+ROOT.gInterpreter.Declare("""
+#include <ROOT/RVec.hxx>
+#include <Math/Vector4D.h>
+#include <TVector3.h>
+#include <cmath>
+
+float get_pTHj(float higgs_pt,
+                float higgs_eta,
+                float higgs_phi,
+                float higgs_m,
+                const ROOT::VecOps::RVec<int>& jet_indices,
+                const ROOT::VecOps::RVec<float>& jet_pt,
+                const ROOT::VecOps::RVec<float>& jet_eta,
+                const ROOT::VecOps::RVec<float>& jet_phi,
+                const ROOT::VecOps::RVec<float>& jet_mass,
+                float default_value = -99.0f)
+{
+    if (jet_indices.size() < 1) {
+        return default_value;
+    }
+
+    int idx1 = jet_indices[0];
+
+    TLorentzVector H, j1;
+    H.SetPtEtaPhiM(higgs_pt, higgs_eta, higgs_phi, higgs_m);
+    j1.SetPtEtaPhiM(jet_pt[idx1], jet_eta[idx1], jet_phi[idx1], jet_mass[idx1]);
 
 
-##################################### MAIN #####################################
+    return (H+j1).Pt();
+}
+""")
 
-_SKIPZL = opt.SKIPZL
+
+ROOT.gInterpreter.Declare("""
+#include <ROOT/RVec.hxx>
+#include <Math/Vector4D.h>
+#include <TVector3.h>
+#include <cmath>
+
+float get_pTHjj(float higgs_pt,
+                float higgs_eta,
+                float higgs_phi,
+                float higgs_m,
+                const ROOT::VecOps::RVec<int>& jet_indices,
+                const ROOT::VecOps::RVec<float>& jet_pt,
+                const ROOT::VecOps::RVec<float>& jet_eta,
+                const ROOT::VecOps::RVec<float>& jet_phi,
+                const ROOT::VecOps::RVec<float>& jet_mass,
+                float default_value = -99.0f)
+{
+    if (jet_indices.size() < 2) {
+        return default_value;
+    }
+
+    int idx1 = jet_indices[0];
+    int idx2 = jet_indices[1];
+
+    TLorentzVector H, j1, j2;
+    H.SetPtEtaPhiM(higgs_pt, higgs_eta, higgs_phi, higgs_m);
+    j1.SetPtEtaPhiM(jet_pt[idx1], jet_eta[idx1], jet_phi[idx1], jet_mass[idx1]);
+    j2.SetPtEtaPhiM(jet_pt[idx2], jet_eta[idx2], jet_phi[idx2], jet_mass[idx2]);
+
+    return (H+j1+j2).Pt();
+}
+""")
+
+ROOT.gInterpreter.Declare("""
+#include <ROOT/RVec.hxx>
+#include <Math/Vector4D.h>
+#include <TVector3.h>
+#include <cmath>
+
+float get_mHj(float higgs_pt,
+                float higgs_eta,
+                float higgs_phi,
+                float higgs_m,
+                const ROOT::VecOps::RVec<int>& jet_indices,
+                const ROOT::VecOps::RVec<float>& jet_pt,
+                const ROOT::VecOps::RVec<float>& jet_eta,
+                const ROOT::VecOps::RVec<float>& jet_phi,
+                const ROOT::VecOps::RVec<float>& jet_mass,
+                float default_value = -99.0f)
+{
+    if (jet_indices.size() < 1) {
+        return default_value;
+    }
+
+    int idx1 = jet_indices[0];
+
+    TLorentzVector H, j1;
+    H.SetPtEtaPhiM(higgs_pt, higgs_eta, higgs_phi, higgs_m);
+    j1.SetPtEtaPhiM(jet_pt[idx1], jet_eta[idx1], jet_phi[idx1], jet_mass[idx1]);
+
+
+    return (H+j1).M();
+}
+""")
+
+ROOT.gInterpreter.Declare("""
+#include <ROOT/RVec.hxx>
+#include <TLorentzVector.h>
+#include <cmath>
+
+float get_TBjmax(float higgs_y,
+         const ROOT::VecOps::RVec<int>& jet_indices,
+         const ROOT::VecOps::RVec<Float_t>& jet_pt,
+         const ROOT::VecOps::RVec<Float_t>& jet_eta,
+         const ROOT::VecOps::RVec<Float_t>& jet_phi,
+         const ROOT::VecOps::RVec<Float_t>& jet_mass,
+         float default_value = -99.0f)
+{
+    if (jet_indices.size() < 1) {
+        return default_value;
+    }
+
+    float TBjmax = default_value;
+
+    for (int idx : jet_indices) {
+
+        TLorentzVector j;
+        j.SetPtEtaPhiM(jet_pt[idx], jet_eta[idx], jet_phi[idx], jet_mass[idx]);
+
+        float TBj = j.Mt()*std::exp(-std::abs(j.Rapidity() - higgs_y));
+
+        if (TBj > TBjmax) TBjmax = TBj;
+    }
+
+    return TBjmax;
+}
+""")
+
+ROOT.gInterpreter.Declare("""
+#include <ROOT/RVec.hxx>
+#include <TLorentzVector.h>
+#include <cmath>
+
+float get_TCjmax(float higgs_y,
+         const ROOT::VecOps::RVec<int>& jet_indices,
+         const ROOT::VecOps::RVec<Float_t>& jet_pt,
+         const ROOT::VecOps::RVec<Float_t>& jet_eta,
+         const ROOT::VecOps::RVec<Float_t>& jet_phi,
+         const ROOT::VecOps::RVec<Float_t>& jet_mass,
+         float default_value = -99.0f)
+{
+    if (jet_indices.size() < 1) {
+        return default_value;
+    }
+
+    float TCjmax = default_value;
+
+    for (int idx : jet_indices) {
+
+        TLorentzVector j;
+        j.SetPtEtaPhiM(jet_pt[idx], jet_eta[idx], jet_phi[idx], jet_mass[idx]);
+
+        float TCj = std::sqrt(j.E()*j.E() - j.Pz()*j.Pz()) / (2*std::cosh(j.Rapidity() - higgs_y));
+
+        if (TCj > TCjmax) TCjmax = TCj;
+    }
+
+    return TCjmax;
+}
+""")
+
+
+############################################################################# MAIN ##############################################################################
+
+
 MC = opt.MC
 if MC: 
     print("MC TRUE")
-    _SKIPZL = True
 
 inFileName = opt.INPUT
 outFileName = opt.OUTPUT
 
+skip_ZLL = True
+
+if "ZZTo4l" in inFileName: skip_ZL = True
+else: skip_ZL = False
+
+do_CR = False
+if not opt.MC: do_CR = True
+if "DYJets" in inFileName: do_CR = True
+if "WZto3LNu" in inFileName: do_CR = True
+if "TTto2L2Nu" in inFileName: do_CR = True
+if "ZZTo4l" in inFileName: do_CR = True
+
+year = None
+if "2022EE" in inFileName: year = "2022EE"
+elif "2022" in inFileName: year = "2022"
+elif "2023preBPix" in inFileName: year = "2023"
+elif "2023postBPix" in inFileName: year = "2023BPix"
+elif "2024" in inFileName: year = "2024"
+else: raise RuntimeError(f"Could not infer year from inFileName: {inFileName}")
+
+jesNames = ['Absolute', f'Absolute_{year}','BBEC1', f'BBEC1_{year}','EC2', f'EC2_{year}','FlavorQCD','HF', f'HF_{year}','RelativeBal',f'RelativeSample_{year}']
+
 df = ROOT.RDataFrame('Events', inFileName)
 # df = df.Range(0, 100)
 
-events = df.Take[df.GetColumnType('event')]('event')
-event_values = df.AsNumpy(["event"])["event"]
-event_list = list(set(event_values))
-
-
-ROOT.gInterpreter.Declare(f"""
-    #include <vector>
-    #include <set>
-
-    std::vector<unsigned long long> getEventVector() {{
-        return std::vector<unsigned long long>({{ {', '.join(map(str, event_list))} }});
-    }}
-
-    auto eventVector = getEventVector();
-    auto eventSet = std::set<unsigned long long>(eventVector.begin(), eventVector.end());
-    auto isNotInEvents = [](unsigned long long event) {{
-        return eventSet.find(event) == eventSet.end();
-    }};
-""")
-
-if not MC:
-    df_3P1F = makeCR(df, "3P1F")
-    df_2P2F = makeCR(df, "2P2F")
-    df_2P2Lss = makeCR(df, "SS")
-    df_SIP = makeCR(df, "SIPCR")
-    
-#print(f"df nEntries: {df.Count().GetValue()}")
-
-if "H12" in inFileName:
-    df_all = ROOT.RDataFrame('AllEvents', inFileName)
-    print(f"df_all nEntries: {df_all.Count().GetValue()}")
+print(f"df nEntries: {df.Count().GetValue()}")
 
 opts = ROOT.RDF.RSnapshotOptions()
-opts.fMode = 'RECREATE'
 
-## Variables to store in the output root file
-vars = {'RunNumber',
-        'EventNumber',
-        'LumiNumber',
-        'ZZMass',
-        'ZZPt',
-        'ZZy',
-        # 'CRflag',
-        'Z1Flav',
-        'Z2Flav',
-        'Z1Mass',
-        'Z2Mass',
-        #'dataMCWeight',
-        #'PFMET',
-        'LepPt',
-        'LepEta',
-        'LepPhi',
-        'Lepdxy',
-        'Lepdz',
-        'LepLepId',
-        'LepSIP',
-        'LepCombRelIsoPF',
-        # 'LepMissingHit',
-        # spencer
-        'pTj1', 
-        'pTj2',
-        'Nj',
-        'mjj',
-        'absdetajj',
-        'dphijj',  
-        'pTHj',
-        'pTHjj',
-        'mHj', 
-        'Nj_JESUP',
-        'Nj_JESDOWN',
-        #'TBMax',
-        #'TCMax',
-        #'Jet_pt_scaleUp',
-        #'Jet_pt_scaleDn',
-        #'Jet_mass_scaleUp',
-        #'Jet_mass_scaleDn',
-        #'Jet_pt_smearUp',
-        #'Jet_pt_smearDn',
-        #'Jet_mass_smearUp',
-        #'Jet_mass_smearDn',
-        # Addition of angluar variables by Martina
-        'costheta1',
-        'costheta2',
-        'Phi',
-        'costhetastar',
-        'Phi1',
-        #'Jet_btagPNetB_',
-        }
+df_SR = makeCR(df, "SR", year)
+
+vars_keep = []
+
 if MC:
-    vars.add('overallEventWeight')
-    vars.add('LHEPdfWeight_') # spencer
-    vars.add('LHEScaleWeight_') # spencer
-    vars.add('PUWeight')
-    # vars.add('LHEWeight_originalXWGTUP')
-    vars.add('lep_Hindex') # SHOULD THIS BE GENLEP_HINDEX ? - SPENCER
-    vars.add('dataMCWeight') # spencer
-    if "H12" in inFileName:
-        vars.add('GENlep_pt')
-        vars.add('GENlep_eta')
-        vars.add('GENlep_phi')
-        vars.add('GENlep_mass')
-        vars.add('GENlep_id')
-        vars.add('GENlep_MomId')
-        vars.add('GENlep_MomMomId')
-        vars.add('GENlep_RelIso')
-        vars.add('GENmass4l')
-        vars.add('GENpT4l')
-        vars.add('GENeta4l')
-        vars.add('GENphi4l')
-        vars.add('GENrapidity4l')
-        vars.add('GENZ_DaughtersId')
-        vars.add('GENZ_MomId')
-        vars.add('GENlep_Hindex')
-        # vars.add('GENlep_index')
-        vars.add('lep_genindex')
-        vars.add('passedFiducial')
-        # spencer
-        vars.add('GENpTj1')
-        vars.add('GENpTj2')
-        vars.add('GENNj')
-        vars.add('GENmjj')
-        vars.add('GENabsdetajj')
-        vars.add('GENdphijj')
-        vars.add('GENpTHj')
-        vars.add('GENpTHjj')
-        vars.add('GENmHj')
-        vars.add('GENmassZ1')
-        vars.add('GENmassZ2')
-        #ars.add('GENTBMax')
-        #vars.add('GENTCMax')
-        # Addition of angluar varaibles by Martina
-        vars.add('GENcostheta1')
-        vars.add('GENcostheta2')
-        vars.add('GENPhi')
-        vars.add('GENcosthetastar')
-        vars.add('GENPhi1')
-        vars.add('Jet_hadronFlavour_')
 
-    vars.add('passedFullSelection')
-    vars.add('genHEPMCweight')
+    vars_keep = ["overallEventWeight", "LHEPdfWeight", "LHEScaleWeight"]
     
-    if 'ggH' in inFileName:
-        vars.add('ggH_NNLOPS_weight')
-    if 'ZZTo' in inFileName:
-        # vars.add('KFactor_EW_qqZZ_Weight')
-        vars.add('KFactor_QCD_qqZZ_M_Weight')
-    if 'ggTo' in inFileName:
-        vars.add('KFactor_QCD_ggZZ_Nominal_Weight')
+    df_SR = ( df_SR.Define("dataMCWeight", "ZZCand_dataMCWeight[bestCandIdx]")
+                   .Define('genHEPMCweight', "Generator_weight")
+                   .Define('PUWeight', "puWeight"))
+    
+    if 'ggH' in inFileName: df_SR = df_SR.Define('ggH_NNLOPS_weight', "ggH_NNLOPS_Weight")
+    if 'ZZTo' in inFileName: df_SR = df_SR.Define('KFactor_QCD_qqZZ_M_weight', "KFactor_QCD_qqZZ_M_Weight")
+    if 'ggTo' in inFileName: df_SR = df_SR.Define('KFactor_QCD_ggZZ_Nominal_weight', "KFactor_QCD_ggZZ_Nominal_Weight")
 
-skip_ZLL = True
-if not MC:
-    df_3P1F.Snapshot('CRZLLTree/candTree', "test_3P1F.root", vars, opts)
-    df_2P2F.Snapshot('CRZLLTree/candTree', "test_2P2F.root", vars, opts)
-    df_2P2Lss.Snapshot('CRZLLTree/candTree', "test_2P2Lss.root", vars, opts)
-    df_SIP.Snapshot('CRZLLTree/candTree', "test_SIP.root", vars, opts)
+    for jes in jesNames:
+        df_SR = add_jes(df_SR, jes)
+
+    if "H12" in inFileName:
+
+        vars_keep = vars_keep + ["passedFiducial"]
+
+        events = df.Take[df.GetColumnType('event')]('event')
+        event_values = df.AsNumpy(["event"])["event"]
+        event_list = list(set(event_values))
+
+        
+        ROOT.gInterpreter.Declare(f"""
+            #include <vector>
+            #include <set>
+
+            std::vector<unsigned long long> getEventVector() {{
+                return std::vector<unsigned long long>({{ {', '.join(map(str, event_list))} }});
+            }}
+
+            auto eventVector = getEventVector();
+            auto eventSet = std::set<unsigned long long>(eventVector.begin(), eventVector.end());
+            auto isNotInEvents = [](unsigned long long event) {{
+                return eventSet.find(event) == eventSet.end();
+            }};
+        """)
+
+        df_SR = makeGenCR(df_SR, False)
+        df_SR = ( df_SR.Define('lep_genindex', "getLepGENindex(LepPt, LepEta, LepPhi, GENlep_id, LepLepId, GENlep_pt, GENlep_eta, GENlep_phi)") )
+
+        df_all = ROOT.RDataFrame('AllEvents', inFileName)
+        print(f"df_all nEntries: {df_all.Count().GetValue()}")
+        df_fail = makeGenCR(df_all, True)
+
+        df_fail = ( df_fail.Define('genHEPMCweight', "Generator_weight")
+                           .Define('PUWeight', "puWeight")
+                           .Define('passedFullSelection', "0")
+                           .Define('RunNumber', "run")
+                           .Define('EventNumber', "event")
+                           .Define('LumiNumber', "luminosityBlock") )
+
+        if 'ggH' in inFileName: df_fail = df_fail.Define('ggH_NNLOPS_weight', "ggH_NNLOPS_Weight")
+
+        df_fail.Snapshot('ZZTree/candTree_failed', outFileName, list(df_fail.GetDefinedColumnNames())+vars_keep, opts)
+
+if do_CR:
+
+    if MC:
+        vars_keep = ["overallEventWeight", "LHEPdfWeight", "LHEScaleWeight"]
+
+    path = outFileName.rsplit('/', 1)[0] + '/'
+
+    df_3P1F = makeCR(df, "3P1F", year)
+    df_2P2F = makeCR(df, "2P2F", year)
+    df_2P2Lss = makeCR(df, "SS", year)
+    df_SIP = makeCR(df, "SIPCR", year)
+
+    
+    opts.fMode = 'RECREATE'
+    df_3P1F.Snapshot('CRZLLTree/candTree', path+"test_3P1F.root", list(df_3P1F.GetDefinedColumnNames())+vars_keep, opts)
+    df_2P2F.Snapshot('CRZLLTree/candTree', path+"test_2P2F.root", list(df_2P2F.GetDefinedColumnNames())+vars_keep, opts)
+    df_2P2Lss.Snapshot('CRZLLTree/candTree', path+"test_2P2Lss.root", list(df_2P2Lss.GetDefinedColumnNames())+vars_keep, opts)
+    df_SIP.Snapshot('CRZLLTree/candTree', path+"test_SIP.root", list(df_SIP.GetDefinedColumnNames())+vars_keep, opts)
+    
 
     ## RooDataFrames cannot be concatenated.
     ## Solution: save each CR in a different tree and then merge them through another RooDataFrame
     ## Not fancy, but it works
-    df_bis = ROOT.RDataFrame('CRZLLTree/candTree', "test_*.root")
-    skip_ZLL = True
+    df_bis = ROOT.RDataFrame('CRZLLTree/candTree', f"{path}test_*.root")
+    print("df_bis.Count().GetValue(): ", df_bis.Count().GetValue())
     if df_bis.Count().GetValue() != 0:
         ## If the number of entries in df_bis is zero (when debugging on few events)
         ## you get an error when trying to take the snapshot
-        df_bis.Snapshot('CRZLLTree/candTree', outFileName, vars, opts)
+        opts.fMode = 'UPDATE'
+        df_bis.Snapshot('CRZLLTree/candTree', outFileName, list(df_3P1F.GetDefinedColumnNames())+vars_keep, opts)
         skip_ZLL = False
     ## Remove the intermediate files, we don't need them anymore
-    os.system('rm test_*.root')
-        
-## SR
-df_SR = ( df.Filter('bestCandIdx>=0').Define("ZZMass", "ZZCand_mass[bestCandIdx]") ## Dummy
-                                    .Define("ZZPt", "ZZCand_pt[bestCandIdx]")
-                                    .Define("ZZy", "abs(ZZCand_rapidity[bestCandIdx])")
-                                    #.Define("CRflag", "0") ## Dummy
-                                    .Define("Z1Flav", "ZZCand_Z1flav[bestCandIdx]")
-                                    .Define("Z2Flav", "ZZCand_Z2flav[bestCandIdx]") ## Dummy
-                                    .Define("Z1Mass", "ZZCand_Z1mass[bestCandIdx]")
-                                    .Define("Z2Mass", "ZZCand_Z2mass[bestCandIdx]") ## Dummy
-                                    #.Define("dataMCWeight", "ZZCand_dataMCWeight[bestCandIdx]")
-                                    .Define('RunNumber', "run")
-                                    .Define('EventNumber', "event")
-                                    .Define('LumiNumber', "luminosityBlock")
-                                    .Define('Leptons_pt', "concatenate(Electron_pt,Muon_pt)")
-                                    .Define('Leptons_eta', "concatenate(Electron_eta,Muon_eta)")
-                                    .Define('Leptons_phi', "concatenate(Electron_phi,Muon_phi)")
-                                    .Define('Leptons_dxy', "concatenate(Electron_dxy,Muon_dxy)")
-                                    .Define('Leptons_dz', "concatenate(Electron_dz,Muon_dz)")
-                                    .Define('Leptons_id', "concatenate(Electron_pdgId,Muon_pdgId)")
-                                    .Define('Leptons_sip', "concatenate(Electron_sip3d,Muon_sip3d)")
-                                    .Define('Leptons_iso', "concatenate(Electron_pfRelIso03FsrCorr,Muon_pfRelIso03FsrCorr)")
-                                    ## Need to add the LepMissingHit branch for SS FR method
-                                    ## First create a dummy branch for muons filled with zeroes
-                                    # .Define('Muon_lostHits', "addDummyBranch(Muon_pt)")
-                                    # .Define('Leptons_missinghit', "concatenate(Electron_lostHits, Muon_lostHits)")
-                                    ## Variable miniAOD-style
-                                    .Define('LepPt', "std::vector<float> LepPt{Leptons_pt[ZZCand_Z1l1Idx[bestCandIdx]], Leptons_pt[ZZCand_Z1l2Idx[bestCandIdx]], Leptons_pt[ZZCand_Z2l1Idx[bestCandIdx]], Leptons_pt[ZZCand_Z2l2Idx[bestCandIdx]]}; return LepPt")
-                                    .Define('LepEta', "std::vector<float> LepEta{Leptons_eta[ZZCand_Z1l1Idx[bestCandIdx]], Leptons_eta[ZZCand_Z1l2Idx[bestCandIdx]], Leptons_eta[ZZCand_Z2l1Idx[bestCandIdx]], Leptons_eta[ZZCand_Z2l2Idx[bestCandIdx]]}; return LepEta")
-                                    .Define('LepPhi', "std::vector<float> LepPhi{Leptons_phi[ZZCand_Z1l1Idx[bestCandIdx]], Leptons_phi[ZZCand_Z1l2Idx[bestCandIdx]], Leptons_phi[ZZCand_Z2l1Idx[bestCandIdx]], Leptons_phi[ZZCand_Z2l2Idx[bestCandIdx]]}; return LepPhi")
-                                    .Define('Lepdxy', "std::vector<float> Lepdxy{Leptons_dxy[ZZCand_Z1l1Idx[bestCandIdx]], Leptons_dxy[ZZCand_Z1l2Idx[bestCandIdx]], Leptons_dxy[ZZCand_Z2l1Idx[bestCandIdx]], Leptons_dxy[ZZCand_Z2l2Idx[bestCandIdx]]}; return Lepdxy")
-                                    .Define('Lepdz', "std::vector<float> Lepdz{Leptons_dz[ZZCand_Z1l1Idx[bestCandIdx]], Leptons_dz[ZZCand_Z1l2Idx[bestCandIdx]], Leptons_dz[ZZCand_Z2l1Idx[bestCandIdx]], Leptons_dz[ZZCand_Z2l2Idx[bestCandIdx]]}; return Lepdz")
-                                    .Define('LepLepId', "std::vector<short> LepLepId{Leptons_id[ZZCand_Z1l1Idx[bestCandIdx]], Leptons_id[ZZCand_Z1l2Idx[bestCandIdx]], Leptons_id[ZZCand_Z2l1Idx[bestCandIdx]], Leptons_id[ZZCand_Z2l2Idx[bestCandIdx]]}; return LepLepId")
-                                    .Define('LepSIP', "std::vector<float> LepSIP{Leptons_sip[ZZCand_Z1l1Idx[bestCandIdx]], Leptons_sip[ZZCand_Z1l2Idx[bestCandIdx]], Leptons_sip[ZZCand_Z2l1Idx[bestCandIdx]], Leptons_sip[ZZCand_Z2l2Idx[bestCandIdx]]}; return LepSIP")
-                                    .Define('LepCombRelIsoPF', "std::vector<float> LepCombRelIsoPF{Leptons_iso[ZZCand_Z1l1Idx[bestCandIdx]], Leptons_iso[ZZCand_Z1l2Idx[bestCandIdx]], Leptons_iso[ZZCand_Z2l1Idx[bestCandIdx]], Leptons_iso[ZZCand_Z2l2Idx[bestCandIdx]]}; return LepCombRelIsoPF")
-                                    # .Define('LepMissingHit', "std::vector<unsigned char> LepMissingHit{Leptons_missinghit[ZZCand_Z1l1Idx[bestCandIdx]], Leptons_missinghit[ZZCand_Z1l2Idx[bestCandIdx]], Leptons_missinghit[ZZCand_Z2l1Idx[bestCandIdx]], Leptons_missinghit[ZZCand_Z2l2Idx[bestCandIdx]]}; return LepMissingHit")
-                                    #.Define('PFMET', "PFMET_pt")
-                                    .Define('lep_Hindex', "getHindex(LepPt)")
-                                    .Define('passedFullSelection', "1")
-                                    # spencer
-                                    .Define('pTj1', "JetLeadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 ? Jet_pt[JetLeadingIdx]: -99")
-                                    .Define('pTj2',  "JetSubleadingIdx >= 0 && Jet_pt[JetSubleadingIdx]>30 && TMath::Abs(Jet_eta[JetSubleadingIdx])<5 && Jet_jetId[JetSubleadingIdx]==6 ? Jet_pt[JetSubleadingIdx]: -99")
-                                    .Define('Nj', "nCleanedJetsPt30")
-                                    .Define('mjj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_pt[JetSubleadingIdx]>30 && TMath::Abs(Jet_eta[JetSubleadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 && Jet_jetId[JetSubleadingIdx]==6 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).M() : -99")
-                                    .Define('absdetajj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_pt[JetSubleadingIdx]>30 && TMath::Abs(Jet_eta[JetSubleadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 && Jet_jetId[JetSubleadingIdx]==6 ? TMath::Abs(Jet_eta[JetLeadingIdx] - Jet_eta[JetSubleadingIdx]) : -99")
-                                    .Define('dphijj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_pt[JetSubleadingIdx]>30 && TMath::Abs(Jet_eta[JetSubleadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 && Jet_jetId[JetSubleadingIdx]==6 ? deltaphi(ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])) : -99")
-                                    .Define('pTHj', "JetLeadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx])).Pt() : -99")
-                                    .Define('pTHjj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_pt[JetSubleadingIdx]>30 && TMath::Abs(Jet_eta[JetSubleadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 && Jet_jetId[JetSubleadingIdx]==6 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).Pt() : -99")
-                                    .Define('mHj', "JetLeadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 ? (ROOT::Math::PtEtaPhiMVector(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx])).M() : -99")
-                                    .Define('Nj_JESUP', 'nCleanedJetsPt30_jesUp')
-                                    .Define('Nj_JESDOWN', 'nCleanedJetsPt30_jesDn')
-                                    #.Define('TBMax', "Jet_pt.size() > 0 ? TB(ROOT::Math::PtEtaPhiMVector(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx]) , Jet_pt, Jet_eta, Jet_phi, Jet_mass) : -99")
-                                    #.Define('TCMax', "Jet_pt.size() > 0 ? TC(ROOT::Math::PtEtaPhiMVector(ZZCand_pt[bestCandIdx], ZZCand_eta[bestCandIdx], ZZCand_phi[bestCandIdx], ZZCand_mass[bestCandIdx]) , Jet_pt, Jet_eta, Jet_phi, Jet_mass) : -99")
-                                    #.Define('Jet_pt_scaleUp', 'Jet_scaleUp_pt')
-                                    #.Define('Jet_pt_scaleDn', 'Jet_scaleDn_pt')
-                                    #.Define('Jet_mass_scaleUp', 'Jet_scaleUp_mass')
-                                    #.Define('Jet_mass_scaleDn', 'Jet_scaleDn_mass')
-                                    #.Define('Jet_pt_smearUp', 'Jet_smearUp_pt')
-                                    #.Define('Jet_pt_smearDn', 'Jet_smearDn_pt')
-                                    #.Define('Jet_mass_smearUp', 'Jet_smearUp_mass')
-                                    #.Define('Jet_mass_smearDn', 'Jet_smearDn_mass')
-                                    # Addition of angluar variables by Martina
-                                    .Define('costheta1', 'ZZCand_costheta1[bestCandIdx]')
-                                    .Define('costheta2', 'ZZCand_costheta2[bestCandIdx]')
-                                    .Define('Phi', 'ZZCand_Phi[bestCandIdx]')
-                                    .Define('costhetastar', 'ZZCand_costhetastar[bestCandIdx]')
-                                    .Define('Phi1', 'ZZCand_Phi1[bestCandIdx]')
-                                    # tagging
-                                    #.Define('Jet_btagPNetB_', 'Jet_btagPNetB')
-    )
+    os.system(f'rm {path}test_*.root')
 
-if MC:
-    df_SR = (df_SR.Define('LHEPdfWeight_', "LHEPdfWeight") # spencer
-         .Define('LHEScaleWeight_', "LHEScaleWeight") # spencer
-         .Define("dataMCWeight", "ZZCand_dataMCWeight[bestCandIdx]") # spencer
-         .Define('genHEPMCweight', "Generator_weight") # spencer
-         .Define('PUWeight', "puWeight")) # spencer
-
-    
-if 'ggH' in inFileName: df_SR = df_SR.Define('ggH_NNLOPS_weight', "ggH_NNLOPS_Weight")
-if 'ZZTo' in inFileName: df_SR = df_SR.Define('KFactor_QCD_qqZZ_M_weight', "KFactor_QCD_qqZZ_M_Weight") # spencer
-if 'ggTo' in inFileName: df_SR = df_SR.Define('KFactor_QCD_ggZZ_Nominal_weight', "KFactor_QCD_ggZZ_Nominal_Weight") # spencer
-
-if "H12" in inFileName:
-    df_SR = (df_SR.Define('GENlep_pt', "getGENlep_vector(FidDressedLeps_pt)")
-                    .Define('GENlep_eta', "getGENlep_vector(FidDressedLeps_eta)")
-                    .Define('GENlep_phi', "getGENlep_vector(FidDressedLeps_phi)")
-                    .Define('GENlep_mass', "getGENlep_vector(FidDressedLeps_mass)")
-                    .Define('GENlep_id', "getGENlep_vector(FidDressedLeps_id)")
-                    .Define('GENlep_MomId', "getGENlep_vector(FidDressedLeps_momid)")
-                    .Define('GENlep_MomMomId', "getGENlep_vector(FidDressedLeps_mommomid)")
-                    .Define('GENlep_RelIso', "getGENlep_vector(FidDressedLeps_RelIso)")
-                    .Define('GENmass4l', "FidZZ_mass")
-                    .Define('GENpT4l', "FidZZ_pt")
-                    .Define('GENeta4l', "FidZZ_eta")
-                    .Define('GENphi4l', "FidZZ_phi")
-                    .Define('GENrapidity4l', "FidZZ_rapidity")
-                    .Define('GENZ_DaughtersId', "getGENlep_int(FidZ_DauPdgId)")
-                    .Define('GENZ_MomId', "getGENlep_int(FidZ_MomPdgId)")
-                    .Define('GENlep_Hindex', "getGENHindex(FidZZ_Z1l1Idx, FidZZ_Z1l2Idx, FidZZ_Z2l1Idx, FidZZ_Z2l2Idx)")
-                    .Define('lep_genindex', "getLepGENindex(LepPt, LepEta, LepPhi, GENlep_id, LepLepId, GENlep_pt, GENlep_eta, GENlep_phi)")
-                    # spencer
-                    .Define('GENpTj1', "FidZZ_GenJetLeadingIdx >= 0 && GenJet_pt[FidZZ_GenJetLeadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetLeadingIdx])<5 ? GenJet_pt[FidZZ_GenJetLeadingIdx] : -99")
-                    .Define('GENpTj2', "FidZZ_GenJetSubleadingIdx >= 0 && GenJet_pt[FidZZ_GenJetSubleadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetSubleadingIdx])<5 ? GenJet_pt[FidZZ_GenJetSubleadingIdx] : -99")
-                    .Define('GENNj', "FidZZ_nCleanedGenJetsPt30")
-                    .Define('GENmjj', "FidZZ_GenJetLeadingIdx >= 0 && FidZZ_GenJetSubleadingIdx >= 0 && GenJet_pt[FidZZ_GenJetLeadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetLeadingIdx])<5 && GenJet_pt[FidZZ_GenJetSubleadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetSubleadingIdx])<5 ? (ROOT::Math::PtEtaPhiMVector(GenJet_pt[FidZZ_GenJetLeadingIdx], GenJet_eta[FidZZ_GenJetLeadingIdx], GenJet_phi[FidZZ_GenJetLeadingIdx], GenJet_mass[FidZZ_GenJetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[FidZZ_GenJetSubleadingIdx], GenJet_eta[FidZZ_GenJetSubleadingIdx], GenJet_phi[FidZZ_GenJetSubleadingIdx], GenJet_mass[FidZZ_GenJetSubleadingIdx])).M() : -99")
-                    .Define('GENabsdetajj', "FidZZ_GenJetLeadingIdx >= 0 && FidZZ_GenJetSubleadingIdx >= 0  && GenJet_pt[FidZZ_GenJetLeadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetLeadingIdx])<5 && GenJet_pt[FidZZ_GenJetSubleadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetSubleadingIdx])<5 ? TMath::Abs(GenJet_eta[FidZZ_GenJetLeadingIdx] - GenJet_eta[FidZZ_GenJetSubleadingIdx]) : -99")
-                    .Define('GENdphijj', "FidZZ_GenJetLeadingIdx >= 0 && FidZZ_GenJetSubleadingIdx >= 0 && GenJet_pt[FidZZ_GenJetLeadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetLeadingIdx])<5 && GenJet_pt[FidZZ_GenJetSubleadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetSubleadingIdx])<5 ? deltaphi(ROOT::Math::PtEtaPhiMVector(GenJet_pt[FidZZ_GenJetLeadingIdx], GenJet_eta[FidZZ_GenJetLeadingIdx], GenJet_phi[FidZZ_GenJetLeadingIdx], GenJet_mass[FidZZ_GenJetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(GenJet_pt[FidZZ_GenJetSubleadingIdx], GenJet_eta[FidZZ_GenJetSubleadingIdx], GenJet_phi[FidZZ_GenJetSubleadingIdx], GenJet_mass[FidZZ_GenJetSubleadingIdx])) : -99")
-                    .Define('GENpTHj', "FidZZ_GenJetLeadingIdx >= 0 && GenJet_pt[FidZZ_GenJetLeadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetLeadingIdx])<5 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[FidZZ_GenJetLeadingIdx], GenJet_eta[FidZZ_GenJetLeadingIdx], GenJet_phi[FidZZ_GenJetLeadingIdx], GenJet_mass[FidZZ_GenJetLeadingIdx])).Pt() : -99")
-                    .Define('GENpTHjj', "FidZZ_GenJetLeadingIdx >= 0 && FidZZ_GenJetSubleadingIdx >= 0 && GenJet_pt[FidZZ_GenJetLeadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetLeadingIdx])<5 && GenJet_pt[FidZZ_GenJetSubleadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetSubleadingIdx])<5 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[FidZZ_GenJetLeadingIdx], GenJet_eta[FidZZ_GenJetLeadingIdx], GenJet_phi[FidZZ_GenJetLeadingIdx], GenJet_mass[FidZZ_GenJetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[FidZZ_GenJetSubleadingIdx], GenJet_eta[FidZZ_GenJetSubleadingIdx], GenJet_phi[FidZZ_GenJetSubleadingIdx], GenJet_mass[FidZZ_GenJetSubleadingIdx])).Pt() : -99")
-                    .Define('GENmHj', "FidZZ_GenJetLeadingIdx >= 0 && GenJet_pt[FidZZ_GenJetLeadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetLeadingIdx])<5 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[FidZZ_GenJetLeadingIdx], GenJet_eta[FidZZ_GenJetLeadingIdx], GenJet_phi[FidZZ_GenJetLeadingIdx], GenJet_mass[FidZZ_GenJetLeadingIdx])).M() : -99")
-                    .Define('GENmassZ1', "FidZ1_mass")
-                    .Define('GENmassZ2', "FidZ2_mass")
-                    #.Define('GENTBMax', "GenJet_pt.size() > 0 ? TB(ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) , GenJet_pt, GenJet_eta, GenJet_phi, GenJet_mass) : -99")
-                    #Define('GENTCMax', "GenJet_pt.size() > 0 ? TC(ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) , GenJet_pt, GenJet_eta, GenJet_phi, GenJet_mass) : -99")
-                    # Addition of angluar variables by Martina
-                    .Define('GENcostheta1', 'FidZZ_costheta1')
-                    .Define('GENcostheta2', 'FidZZ_costheta2')
-                    .Define('GENPhi', 'FidZZ_Phi')
-                    .Define('GENcosthetastar', 'FidZZ_costhetastar')
-                    .Define('GENPhi1', 'FidZZ_Phi1')
-                    .Define('Jet_hadronFlavour_', 'Jet_hadronFlavour')
-            )
-    
-    df_filter = df_all.Filter("isNotInEvents(event)")
-    print(f"df_filter nEntries: {df_filter.Count().GetValue()}")
-    vars_fail = {'GENlep_pt',
-    'GENlep_eta',
-    'GENlep_phi',
-    'GENlep_mass',
-    'GENlep_id',
-    'GENlep_MomId',
-    'GENlep_MomMomId',
-    'GENlep_RelIso',
-    'GENmass4l',
-    'GENpT4l',
-    'GENeta4l',
-    'GENphi4l',
-    'GENrapidity4l',
-    'GENZ_DaughtersId',
-    'GENZ_MomId',
-    'GENlep_Hindex',
-    'RunNumber',
-    'EventNumber',
-    'LumiNumber',
-    'passedFiducial',
-    'passedFullSelection',
-    'LHEPdfWeight_', # spencer
-    'LHEScaleWeight_', # spencer
-    'genHEPMCweight',
-    'PUWeight',
-    'GENpTj1', # spencer
-    'GENpTj2', 
-    'GENNj',
-    'GENmjj',
-    'GENabsdetajj',
-    'GENdphijj',
-    'GENpTHj',
-    'GENpTHjj', 
-    'GENmHj', 
-    'GENmassZ1',
-    'GENmassZ2',
-    #'GENTBMax',
-    #'GENTCMax',
-    'GENcostheta1', # Martina
-    'GENcostheta2',
-    'GENPhi',
-    'GENcosthetastar',
-    'GENPhi1',}
-
-    df_fail = (df_filter.Define('GENlep_pt', "getGENlep_vector(FidDressedLeps_pt)")
-                        .Define('GENlep_eta', "getGENlep_vector(FidDressedLeps_eta)")
-                        .Define('GENlep_phi', "getGENlep_vector(FidDressedLeps_phi)")
-                        .Define('GENlep_mass', "getGENlep_vector(FidDressedLeps_mass)")
-                        .Define('GENlep_id', "getGENlep_vector(FidDressedLeps_id)")
-                        .Define('GENlep_MomId', "getGENlep_vector(FidDressedLeps_momid)")
-                        .Define('GENlep_MomMomId', "getGENlep_vector(FidDressedLeps_mommomid)")
-                        .Define('GENlep_RelIso', "getGENlep_vector(FidDressedLeps_RelIso)")
-                        .Define('GENmass4l', "FidZZ_mass")
-                        .Define('GENpT4l', "FidZZ_pt")
-                        .Define('GENeta4l', "FidZZ_eta")
-                        .Define('GENphi4l', "FidZZ_phi")
-                        .Define('GENrapidity4l', "FidZZ_rapidity")
-                        .Define('GENZ_DaughtersId', "getGENlep_int(FidZ_DauPdgId)")
-                        .Define('GENZ_MomId', "getGENlep_int(FidZ_MomPdgId)")
-                        .Define('GENlep_Hindex', "getGENHindex(FidZZ_Z1l1Idx, FidZZ_Z1l2Idx, FidZZ_Z2l1Idx, FidZZ_Z2l2Idx)")
-                        .Define('RunNumber', "run")
-                        .Define('EventNumber', "event")
-                        .Define('LumiNumber', "luminosityBlock")
-                        .Define('passedFullSelection', "0")
-                        .Define('genHEPMCweight', "Generator_weight")  #LHEWeight_originalXWGTUP")
-                        .Define('PUWeight', "puWeight")
-                        .Define('LHEPdfWeight_', "LHEPdfWeight") # spencer
-                        .Define('LHEScaleWeight_', "LHEScaleWeight") # spencer    
-                        # spencer
-                        .Define('GENpTj1', "FidZZ_GenJetLeadingIdx >= 0 && GenJet_pt[FidZZ_GenJetLeadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetLeadingIdx])<5 ? GenJet_pt[FidZZ_GenJetLeadingIdx] : -99")
-                        .Define('GENpTj2', "FidZZ_GenJetSubleadingIdx >= 0 && GenJet_pt[FidZZ_GenJetSubleadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetSubleadingIdx])<5 ? GenJet_pt[FidZZ_GenJetSubleadingIdx] : -99")
-                        .Define('GENNj', "FidZZ_nCleanedGenJetsPt30")
-                        .Define('GENmjj', "FidZZ_GenJetLeadingIdx >= 0 && FidZZ_GenJetSubleadingIdx >= 0 && GenJet_pt[FidZZ_GenJetLeadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetLeadingIdx])<5 && GenJet_pt[FidZZ_GenJetSubleadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetSubleadingIdx])<5 ? (ROOT::Math::PtEtaPhiMVector(GenJet_pt[FidZZ_GenJetLeadingIdx], GenJet_eta[FidZZ_GenJetLeadingIdx], GenJet_phi[FidZZ_GenJetLeadingIdx], GenJet_mass[FidZZ_GenJetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[FidZZ_GenJetSubleadingIdx], GenJet_eta[FidZZ_GenJetSubleadingIdx], GenJet_phi[FidZZ_GenJetSubleadingIdx], GenJet_mass[FidZZ_GenJetSubleadingIdx])).M() : -99")
-                        .Define('GENabsdetajj', "FidZZ_GenJetLeadingIdx >= 0 && FidZZ_GenJetSubleadingIdx >= 0  && GenJet_pt[FidZZ_GenJetLeadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetLeadingIdx])<5 && GenJet_pt[FidZZ_GenJetSubleadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetSubleadingIdx])<5 ? TMath::Abs(GenJet_eta[FidZZ_GenJetLeadingIdx] - GenJet_eta[FidZZ_GenJetSubleadingIdx]) : -99")
-                        .Define('GENdphijj', "FidZZ_GenJetLeadingIdx >= 0 && FidZZ_GenJetSubleadingIdx >= 0 && GenJet_pt[FidZZ_GenJetLeadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetLeadingIdx])<5 && GenJet_pt[FidZZ_GenJetSubleadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetSubleadingIdx])<5 ? deltaphi(ROOT::Math::PtEtaPhiMVector(GenJet_pt[FidZZ_GenJetLeadingIdx], GenJet_eta[FidZZ_GenJetLeadingIdx], GenJet_phi[FidZZ_GenJetLeadingIdx], GenJet_mass[FidZZ_GenJetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(GenJet_pt[FidZZ_GenJetSubleadingIdx], GenJet_eta[FidZZ_GenJetSubleadingIdx], GenJet_phi[FidZZ_GenJetSubleadingIdx], GenJet_mass[FidZZ_GenJetSubleadingIdx])) : -99")
-                        .Define('GENpTHj', "FidZZ_GenJetLeadingIdx >= 0 && GenJet_pt[FidZZ_GenJetLeadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetLeadingIdx])<5 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[FidZZ_GenJetLeadingIdx], GenJet_eta[FidZZ_GenJetLeadingIdx], GenJet_phi[FidZZ_GenJetLeadingIdx], GenJet_mass[FidZZ_GenJetLeadingIdx])).Pt() : -99")
-                        .Define('GENpTHjj', "FidZZ_GenJetLeadingIdx >= 0 && FidZZ_GenJetSubleadingIdx >= 0 && GenJet_pt[FidZZ_GenJetLeadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetLeadingIdx])<5 && GenJet_pt[FidZZ_GenJetSubleadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetSubleadingIdx])<5 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[FidZZ_GenJetLeadingIdx], GenJet_eta[FidZZ_GenJetLeadingIdx], GenJet_phi[FidZZ_GenJetLeadingIdx], GenJet_mass[FidZZ_GenJetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[FidZZ_GenJetSubleadingIdx], GenJet_eta[FidZZ_GenJetSubleadingIdx], GenJet_phi[FidZZ_GenJetSubleadingIdx], GenJet_mass[FidZZ_GenJetSubleadingIdx])).Pt() : -99")
-                        .Define('GENmHj', "FidZZ_GenJetLeadingIdx >= 0 && GenJet_pt[FidZZ_GenJetLeadingIdx]>30 && TMath::Abs(GenJet_eta[FidZZ_GenJetLeadingIdx])<5 ? (ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) + ROOT::Math::PtEtaPhiMVector(GenJet_pt[FidZZ_GenJetLeadingIdx], GenJet_eta[FidZZ_GenJetLeadingIdx], GenJet_phi[FidZZ_GenJetLeadingIdx], GenJet_mass[FidZZ_GenJetLeadingIdx])).M() : -99")
-                        #.Define('GENTBMax', "GenJet_pt.size() > 0 ? TB(ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) , GenJet_pt, GenJet_eta, GenJet_phi, GenJet_mass) : -99")
-                        #.Define('GENTCMax', "GenJet_pt.size() > 0 ? TC(ROOT::Math::PtEtaPhiMVector(FidZZ_pt, FidZZ_eta, FidZZ_phi, FidZZ_mass) , GenJet_pt, GenJet_eta, GenJet_phi, GenJet_mass) : -99")
-                        .Define('GENmassZ1', "FidZ1_mass")
-                        .Define('GENmassZ2', "FidZ2_mass")
-                        # Addition of angluar variables by Martina
-                        .Define('GENcostheta1', 'FidZZ_costheta1')
-                        .Define('GENcostheta2', 'FidZZ_costheta2')
-                        .Define('GENPhi', 'FidZZ_Phi')
-                        .Define('GENcosthetastar', 'FidZZ_costhetastar')
-                        .Define('GENPhi1', 'FidZZ_Phi1')
-    )
-
-    if 'ggH' in inFileName:
-        vars_fail.add('ggH_NNLOPS_weight')
-        df_fail = df_fail.Define('ggH_NNLOPS_weight', "ggH_NNLOPS_Weight")
+    if not skip_ZL:
+        df_ZL = makeZLCR(df, year)
+        opts.fMode = 'UPDATE'
+        df_ZL.Snapshot('CRZLTree/candTree', outFileName, list(df_ZL.GetDefinedColumnNames())+vars_keep, opts)
 
 opts.fMode = 'UPDATE'
-df_SR.Snapshot('ZZTree/candTree', outFileName, vars, opts)
+df_SR.Snapshot('ZZTree/candTree', outFileName, list(df_SR.GetDefinedColumnNames())+vars_keep, opts)
 
-
-## ZL CR for the computation of fake rates
-if not _SKIPZL:
-    df_ZL = ( df.Filter('ZLCand_lepIdx>-1').Define("ZZMass", "0") ## Dummy
-                                           .Define("CRflag", "0") ## Dummy
-                                           .Define("Z1Flav", "ZCand_flav[bestZIdx]")
-                                           .Define("Z2Flav", "0") ## Dummy
-                                           .Define("Z1Mass", "ZCand_mass[bestZIdx]")
-                                           .Define("Z2Mass", "0") ## Dummy
-                                           .Define("RunNumber", "run")
-                                           .Define("EventNumber", "event")
-                                           .Define("LumiNumber", "luminosityBlock")
-                                           .Define('Leptons_pt', "concatenate(Electron_pt,Muon_pt)")
-                                           .Define('Leptons_eta', "concatenate(Electron_eta,Muon_eta)")
-                                           .Define('Leptons_phi', "concatenate(Electron_phi,Muon_phi)")
-                                           .Define('Leptons_dxy', "concatenate(Electron_dxy,Muon_dxy)")
-                                           .Define('Leptons_dz', "concatenate(Electron_dz,Muon_dz)")
-                                           .Define('Leptons_id', "concatenate(Electron_pdgId,Muon_pdgId)")
-                                           .Define('Leptons_sip', "concatenate(Electron_sip3d,Muon_sip3d)")
-                                           .Define('Leptons_iso', "concatenate(Electron_pfRelIso03FsrCorr,Muon_pfRelIso03FsrCorr)")
-                                           .Define('Leptons_isid', "concatenate(Electron_passBDT,Muon_passID)")
-                                           ## Need to add the LepMissingHit branch for SS FR method
-                                           ## First create a dummy branch for muons filled with zeroes
-                                           .Define('Muon_lostHits', "addDummyBranch(Muon_pt)")
-                                           .Define('Leptons_missinghit', "concatenate(Electron_lostHits, Muon_lostHits)")
-                                           ## Variable miniAOD-style
-                                           .Define('LepPt', "std::vector<float> LepPt{Leptons_pt[ZCand_l1Idx[bestZIdx]], Leptons_pt[ZCand_l2Idx[bestZIdx]], Leptons_pt[ZLCand_lepIdx]}; return LepPt")
-                                           .Define('LepEta', "std::vector<float> LepEta{Leptons_eta[ZCand_l1Idx[bestZIdx]], Leptons_eta[ZCand_l2Idx[bestZIdx]], Leptons_eta[ZLCand_lepIdx]}; return LepEta")
-                                           .Define('LepPhi', "std::vector<float> LepPhi{Leptons_phi[ZCand_l1Idx[bestZIdx]], Leptons_phi[ZCand_l2Idx[bestZIdx]], Leptons_phi[ZLCand_lepIdx]}; return LepPhi")
-                                           .Define('Lepdxy', "std::vector<float> Lepdxy{Leptons_dxy[ZCand_l1Idx[bestZIdx]], Leptons_dxy[ZCand_l2Idx[bestZIdx]], Leptons_dxy[ZLCand_lepIdx]}; return Lepdxy")
-                                           .Define('Lepdz', "std::vector<float> Lepdz{Leptons_dz[ZCand_l1Idx[bestZIdx]], Leptons_dz[ZCand_l2Idx[bestZIdx]], Leptons_dz[ZLCand_lepIdx]}; return Lepdz")
-                                           .Define('LepLepId', "std::vector<short> LepLepId{Leptons_id[ZCand_l1Idx[bestZIdx]], Leptons_id[ZCand_l2Idx[bestZIdx]], Leptons_id[ZLCand_lepIdx]}; return LepLepId")
-                                           .Define('LepSIP', "std::vector<float> LepSIP{Leptons_sip[ZCand_l1Idx[bestZIdx]], Leptons_sip[ZCand_l2Idx[bestZIdx]], Leptons_sip[ZLCand_lepIdx]}; return LepSIP")
-                                           .Define('LepCombRelIsoPF', "std::vector<float> LepCombRelIsoPF{Leptons_iso[ZCand_l1Idx[bestZIdx]], Leptons_iso[ZCand_l2Idx[bestZIdx]], Leptons_iso[ZLCand_lepIdx]}; return LepCombRelIsoPF")
-                                           .Define('LepisID', "std::vector<bool> LepisID{Leptons_isid[ZCand_l1Idx[bestZIdx]], Leptons_isid[ZCand_l2Idx[bestZIdx]], Leptons_isid[ZLCand_lepIdx]}; return LepisID")
-                                           .Define('LepMissingHit', "std::vector<unsigned char> LepMissingHit{Leptons_missinghit[ZCand_l1Idx[bestZIdx]], Leptons_missinghit[ZCand_l2Idx[bestZIdx]], Leptons_missinghit[ZLCand_lepIdx]}; return LepMissingHit")
-                                           #.Define('PFMET', "PFMET_pt")
-                                           ## overallEventWeight contains everything in NanoAODs
-                                           .Define('L1prefiringWeight', "1") ## Dummy
-                                           .Define('KFactor_EW_qqZZ', "1") ## Dummy
-                                           .Define('KFactor_QCD_qqZZ_M', "1") ## Dummy
-                                           .Define('KFactor_QCD_ggZZ_Nominal', '1') ## Dummy
-                                           .Define('xsec', '1') ## Dummy
-                                            # spencer
-                                            .Define('ZZPt', "0")
-                                            .Define('ZZy', "0")
-                                            .Define('pTj1', "JetLeadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 ? Jet_pt[JetLeadingIdx]: -99")
-                                            .Define('pTj2',  "JetSubleadingIdx >= 0 && Jet_pt[JetSubleadingIdx]>30 && TMath::Abs(Jet_eta[JetSubleadingIdx])<5 && Jet_jetId[JetSubleadingIdx]==6 ? Jet_pt[JetSubleadingIdx]: -99")
-                                            .Define('Nj', "nCleanedJetsPt30")
-                                            .Define('mjj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_pt[JetSubleadingIdx]>30 && TMath::Abs(Jet_eta[JetSubleadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 && Jet_jetId[JetSubleadingIdx]==6 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).M() : -99")
-                                            .Define('absdetajj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_pt[JetSubleadingIdx]>30 && TMath::Abs(Jet_eta[JetSubleadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 && Jet_jetId[JetSubleadingIdx]==6 ? TMath::Abs(Jet_eta[JetLeadingIdx] - Jet_eta[JetSubleadingIdx]) : -99")
-                                            .Define('dphijj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_pt[JetSubleadingIdx]>30 && TMath::Abs(Jet_eta[JetSubleadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 && Jet_jetId[JetSubleadingIdx]==6 ? deltaphi(ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]), ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])) : -99")
-                                            .Define('pTHj', "JetLeadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx])).Pt() : -99")
-                                            .Define('pTHjj', "JetLeadingIdx >= 0 && JetSubleadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_pt[JetSubleadingIdx]>30 && TMath::Abs(Jet_eta[JetSubleadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 && Jet_jetId[JetSubleadingIdx]==6 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx]) + ROOT::Math::PtEtaPhiMVector(Jet_pt[JetSubleadingIdx], Jet_eta[JetSubleadingIdx], Jet_phi[JetSubleadingIdx], Jet_mass[JetSubleadingIdx])).Pt() : -99")
-                                            .Define('mHj', "JetLeadingIdx >= 0 && Jet_pt[JetLeadingIdx]>30 && TMath::Abs(Jet_eta[JetLeadingIdx])<5 && Jet_jetId[JetLeadingIdx]==6 ? (ROOT::Math::PtEtaPhiMVector(Jet_pt[JetLeadingIdx], Jet_eta[JetLeadingIdx], Jet_phi[JetLeadingIdx], Jet_mass[JetLeadingIdx])).M() : -99")
-                                            .Define('Nj_JESUP', 'nCleanedJetsPt30_jesUp')
-                                            .Define('Nj_JESDOWN', 'nCleanedJetsPt30_jesDn')
-                                            #.Define('TBMax', "Jet_pt.size() > 0 ? TB(0 , Jet_pt, Jet_eta, Jet_phi, Jet_mass): -99")
-                                            #.Define('TCMax', "Jet_pt.size() > 0 ? TC(0 , Jet_pt, Jet_eta, Jet_phi, Jet_mass): -99")
-                                            #.Define('Jet_pt_scaleUp', 'Jet_scaleUp_pt')
-                                            #.Define('Jet_pt_scaleDn', 'Jet_scaleDn_pt')
-                                            #.Define('Jet_mass_scaleUp', 'Jet_scaleUp_mass')
-                                            #.Define('Jet_mass_scaleDn', 'Jet_scaleDn_mass')
-                                            #.Define('Jet_pt_smearUp', 'Jet_smearUp_pt')
-                                            #.Define('Jet_pt_smearDn', 'Jet_smearDn_pt')
-                                            #.Define('Jet_mass_smearUp', 'Jet_smearUp_mass')
-                                            #.Define('Jet_mass_smearDn', 'Jet_smearDn_mass')
-                                            # Addition of angluar variables by Martina
-                                            .Define('costheta1', 'ZZCand_costheta1[bestCandIdx]')
-                                            .Define('costheta2', 'ZZCand_costheta2[bestCandIdx]')
-                                            .Define('Phi', 'ZZCand_Phi[bestCandIdx]')
-                                            .Define('costhetastar', 'ZZCand_costhetastar[bestCandIdx]')
-                                            .Define('Phi1', 'ZZCand_Phi1[bestCandIdx]')
-                                            # tagging
-                                            #.Define('Jet_btagPNetB_', 'Jet_btagPNetB')
-                                            )
-    opts.fMode = 'UPDATE'
-    df_ZL.Snapshot('CRZLTree/candTree', outFileName, vars, opts)
-
-
-opts.fMode = 'UPDATE'
-print(f"df nEntries: {df_SR.Count().GetValue()}")
-
-df_SR.Snapshot('ZZTree/candTree', outFileName, vars, opts)
-if "H12" in inFileName:
-    opts.fMode = 'UPDATE'
-    df_fail.Snapshot('ZZTree/candTree_failed', outFileName, vars_fail, opts)
-#'''
 ## Add counter only with the 40th entry
 counters = ROOT.TH1F("Counters", "Counters", 50, 0, 100)
 if opt.MC:
     root = ROOT.TFile.Open(inFileName)
     genEventSumw = get_genEventSumw(root)
     counters.SetBinContent(40, genEventSumw)
-    counters.Write()
-    print("Counter belongs to:", counters.GetDirectory().GetName())
     root.Close()
-#'''
-
-if opt.MC:
-    root = ROOT.TFile.Open(inFileName)
-    genEventSumw = get_genEventSumw(root)
-    root.Close()
-
-    # Open output file in UPDATE mode
-    root_file = ROOT.TFile(outFileName, "UPDATE")
-    root_file.cd()  # Ensure you're in the file's directory
-
-    # Create and write histogram
-    counters = ROOT.TH1F("Counters", "Counters", 50, 0, 100)
-    counters.SetBinContent(40, genEventSumw)
-    counters.SetDirectory(root_file)  # Attach it to the file
-    counters.Write("", ROOT.TObject.kOverwrite)  # Force write
-
-    print("Counter belongs to:", counters.GetDirectory().GetName())
-    root_file.Close()
 
 root_file = ROOT.TFile(outFileName, "UPDATE")
-#'''
+
 if not skip_ZLL:
     sub_dir = root_file.Get("CRZLLTree")
-    sub_dir.cd()
-    counters.Write()
+    if sub_dir:
+        sub_dir.cd()
+        counters.Clone("Counters").Write("", ROOT.TObject.kOverwrite)
 
-if not _SKIPZL:
+if not skip_ZL:
     sub_dir = root_file.Get("CRZLTree")
-    sub_dir.cd()
-    counters.Write()
-#'''
+    if sub_dir:
+        sub_dir.cd()
+        counters.Clone("Counters").Write("", ROOT.TObject.kOverwrite)
+
+root_file.cd()
+counters.Clone("Counters").Write("", ROOT.TObject.kOverwrite)
 root_file.Close()

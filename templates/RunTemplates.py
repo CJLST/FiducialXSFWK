@@ -84,11 +84,11 @@ def xsecs(year):
         if 'ZZTo' in bkg:
             # TODO: Add EW KFactor once in the samples
             # KFactor_QCD_qqZZ_M_Weight = d_bkg[bkg].arrays("KFactor_QCD_qqZZ_M", library="np")["KFactor_QCD_qqZZ_M"]
-            KFactor_QCD_qqZZ_M_Weight = d_bkg[bkg].arrays("KFactor_QCD_qqZZ_M_Weight", library="np")["KFactor_QCD_qqZZ_M_Weight"] # spencer
+            KFactor_QCD_qqZZ_M_Weight = d_bkg[bkg].arrays("KFactor_QCD_qqZZ_M_weight", library="np")["KFactor_QCD_qqZZ_M_weight"] # spencer
             xsec = total_weight/(puweight*genweight*KFactor_QCD_qqZZ_M_Weight)
         elif 'ggTo' in bkg:
             #KFactor_QCD_ggZZ_Nominal_Weight = d_bkg[bkg].arrays("KFactor_QCD_ggZZ_Nominal", library="np")["KFactor_QCD_ggZZ_Nominal"]
-            KFactor_QCD_ggZZ_Nominal_Weight = d_bkg[bkg].arrays("KFactor_QCD_ggZZ_Nominal_Weight", library="np")["KFactor_QCD_ggZZ_Nominal_Weight"] # spencer
+            KFactor_QCD_ggZZ_Nominal_Weight = d_bkg[bkg].arrays("KFactor_QCD_ggZZ_Nominal_weight", library="np")["KFactor_QCD_ggZZ_Nominal_weight"] # spencer
             xsec = total_weight/(puweight*genweight*KFactor_QCD_ggZZ_Nominal_Weight)
         else:
             xsec = total_weight/(puweight*genweight)
@@ -233,7 +233,7 @@ def GetFakeRate(lep_Pt, lep_eta, lep_ID):
 def openFR(year):
     
     if (year == "2022" or year == "2022EE" or year == "2023preBPix" or year == "2023postBPix" or year == "2024"):
-        fnameFR = "/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/LATEST_PROD/FAKERATES/%s/FakeRates_SS_%s.root" % (year, year)
+        fnameFR = path['eos_path_FR']+"FAKERATES/%s/FakeRates_SS_%s.root" % (year, year)
     else:
         raise ValueError(f"ERROR: Unsupported year")
 
@@ -348,13 +348,13 @@ def ZXYield(df, year, year_mc):
 def doZX(year, year_mc):
     keyZX = 'CRZLLTree/candTree'
 
-    PATH = '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/LATEST_PROD/'
+    PATH = path['eos_path_sig']
 
-    if (year=="2022"): data = PATH + '2022_Data/Data_eraCD_preEE_SKIMMED.root'
-    if (year=="2022EE"): data = PATH + '2022_Data/Data_eraEFG_postEE_SKIMMED.root'
-    if (year=="2023preBPix"): data = PATH + '2023_Data/Data_eraC_preBPix_SKIMMED.root'
-    if (year=="2023postBPix"): data = PATH + '2023_Data/Data_eraD_postBPix_SKIMMED.root'
-    if (year=="2024"): data = PATH + '2024_Data/ZZ4lAnalysis_SKIMMED.root'
+    if (year=="2022"): data = PATH + '/2022_Data/Data_eraCD_preEE_SKIMMED.root'
+    if (year=="2022EE"): data = PATH + '/2022_Data/Data_eraEFG_postEE_SKIMMED.root'
+    if (year=="2023preBPix"): data = PATH + '/2023_Data/Data_eraC_preBPix_SKIMMED.root'
+    if (year=="2023postBPix"): data = PATH + '/2023_Data/Data_eraD_postBPix_SKIMMED.root'
+    if (year=="2024"): data = PATH + '/2024_Data/ZZ4lAnalysis_SKIMMED.root'
     
     ttreeZX = uproot.open(data)[keyZX]
     ttreeZX = ttreeZX.arrays(branches_ZX, library="np")

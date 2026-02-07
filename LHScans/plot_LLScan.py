@@ -167,7 +167,7 @@ elif year == '2018':
     _lumi = '59.83'
 
 elif year == 'Run3':
-    _lumi = '170.9' #62
+    _lumi = '171' #62
 
 elif year == '2022':
     _lumi = '7.98'

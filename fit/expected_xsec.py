@@ -7,6 +7,7 @@ import math
 import time
 from decimal import *
 import json
+import importlib.util
 
 sys.path.append('../helperstuff/')
 from higgs_xsbr_13TeV import *
@@ -29,7 +30,7 @@ def parseOptions():
     parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
     parser.add_option('',   '--year',  dest='YEAR',  type='string',default='',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--doHIG', action='store_true', dest='DOHIG', default=False, help='use HIG 19 001 acceptances')
-    parser.add_option('',   '--split', action='store_true', dest='SPLIT', default=False, help='use HIG 19 001 acceptances')
+    parser.add_option('',   '--split', action='store_true', dest='SPLIT', default=False, help='')
 
     # store options and arguments as global variables
     global opt, args
@@ -69,19 +70,19 @@ def exp_xsec():
     higgs4l_br = _temp.higgs4l_br
 
     if opt.SPLIT:
-        fname = path['eos_path']+'inputs/inputs_sig_'+obsName+'_'+opt.YEAR
+        fname = path['eos_path']+'inputs/inputs_sig_'+obsName+'_'+opt.YEAR+".py"
     else:
-        fname = '../inputs/inputs_sig_'+obsName+'_'+opt.YEAR
+        fname = '../inputs/inputs_sig_'+obsName+'_'+opt.YEAR+".py"
 
     if opt.DOHIG: fname = fname + '_HIG19001'
     #_temp = __import__(fname, globals(), locals(), ['acc'], -1)
     #_temp = __import__(fname, globals(), locals(), ['acc'], 0) # spencer
     
-    spec = importlib.util.spec_from_file_location("acc_module", fname)
-    acc_module = importlib.util.module_from_spec(spec)
-    sys.modules["acc_module"] = acc_module
-    spec.loader.exec_module(acc_module)
-
+    module_name = os.path.splitext(os.path.basename(fname))[0]
+    spec = importlib.util.spec_from_file_location(module_name, fname)
+    _temp = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(_temp)
+    
     acc = _temp.acc
     XH = []
     nBins = len(observableBins)

@@ -3,22 +3,22 @@ from numpy import array, float32 # spencer
 
 def fixJes(jesnp, jes_evts_noWeight):
     if jes_evts_noWeight <= 50:
-        return '-'
+        return '- '
      # Cases where jes are '-' or single value
     if (len(jesnp)==1) | ('/' not in jesnp):
-        return jesnp
+        return jesnp+' '
     else:
         jesnp_tmp = jesnp.split('/')
         jesnp_tmp_dn = jesnp_tmp[0]
         jesnp_tmp_up = jesnp_tmp[1]
         if ((jesnp_tmp_dn=='1.0') & (jesnp_tmp_up!='1.0')):
-            return jesnp_tmp_up
+            return jesnp_tmp_up+' '
         elif ((jesnp_tmp_dn!='1.0') & (jesnp_tmp_up=='1.0')):
-            return jesnp_tmp_dn+'/'+ str(abs(round(2-float(jesnp_tmp_dn),3)))
+            return jesnp_tmp_dn+'/'+ str(abs(round(2-float(jesnp_tmp_dn),3)))+' '
         elif ((float(jesnp_tmp_dn) > 1) & (float(jesnp_tmp_up) > 1)):
-            return jesnp_tmp_up + '/' + str(abs(round(2-float(jesnp_tmp_up),3)))
+            return jesnp_tmp_up + '/' + str(abs(round(2-float(jesnp_tmp_up),3)))+' '
         elif ((float(jesnp_tmp_dn) < 1) & (float(jesnp_tmp_up) < 1)):
-            return jesnp_tmp_dn + '/' + str(abs(round(2-float(jesnp_tmp_dn),3)))
+            return jesnp_tmp_dn + '/' + str(abs(round(2-float(jesnp_tmp_dn),3)))+' '
         elif (float(jesnp_tmp_dn) > float(jesnp_tmp_up)):
             '''
             if 1.X/0.X cases
@@ -26,14 +26,14 @@ def fixJes(jesnp, jes_evts_noWeight):
             return the variation always as 1.X
             '''
             if((float(jesnp_tmp_dn)-1) > (1-float(jesnp_tmp_up))):
-                return jesnp_tmp_dn
+                return jesnp_tmp_dn+' '
             else:
-                return str(1+(1-float(jesnp_tmp_up)))
+                return str(1+(1-float(jesnp_tmp_up)))+' '
         else:
             '''
             if dn/up: correct jes, use it
             '''
-            return jesnp
+            return jesnp+' '
 
 def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalModel, year, nData, jes, lowerBound, upperBound, yearSetting):
     # Name of the bin (aFINALSTATE_ recobinX)
@@ -53,7 +53,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
             _recobin = 'GT'+str(int(observableBins[obsBin]))
 
     if physicalModel == 'v3':
-        _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
+        _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'NJ'}
         if obsName not in _obsName:
             _obsName[obsName] = obsName
         binName = 'hzz_' + _obsName[obsName] + '_' + _recobin + '_cat' + channel
@@ -74,13 +74,13 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     fractionsBackground = _temp.fractionsBackground
     if jes:
         sys.path.append('../coefficients/JES')
-        jesNames = ['Abs', 'Abs_year', 'BBEC1', 'BBEC1_year', 'EC2', 'EC2_year', 'FlavQCD', 'HF', 'HF_year', 'RelBal', 'RelSample_year']
+        jesNames = ['Absolute', 'Absolute_year', 'BBEC1', 'BBEC1_year', 'EC2', 'EC2_year', 'FlavorQCD', 'HF', 'HF_year', 'RelativeBal', 'RelativeSample_year']
         jesNames_datacard = [j.replace('year',year) for j in jesNames] # The name of the nuisance in the datacard should have the correspoding year
         #_temp = __import__('JESNP_'+obsName, globals(), locals(), ['JESNP'], -1)
-        _temp = __import__('JESNP_'+obsName, globals(), locals(), ['JESNP'], 0) # spencer
+        _temp = __import__('JESNP_'+obsName+'_'+year, globals(), locals(), ['JESNP'], 0) # spencer
         jesnp = _temp.JESNP
         #_temp = __import__('JESNP_evts_'+obsName, globals(), locals(), ['evts_noWeight'], -1)
-        _temp = __import__('JESNP_evts_'+obsName, globals(), locals(), ['evts_noWeight'], 0) # spencer
+        _temp = __import__('JESNP_evts_'+obsName+'_'+year, globals(), locals(), ['evts_noWeight'], 0) # spencer
         jes_evts_noWeight = _temp.evts_noWeight
         sys.path.remove('../coefficients/JES')
     sys.path.remove('../inputs')
@@ -98,6 +98,22 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
         lumi_corr_17_18 = {}
         lumi_corr_17_18['2017'] = '1.006'
         lumi_corr_17_18['2018'] = '1.002'
+    elif yearSetting == 'Run3':
+        # RUN III correlated luminosity scheme (2022/23/24)
+        lumi = {
+        '2022':'1.0138',
+        '2022EE':'1.0138',
+        '2023preBPix':'1.0017',
+        '2023postBPix':'1.0017',
+        '2024':'1.0020',
+        }
+        # Additional reduced nuisances for Run-3:
+        # lumi_2 applies to 2023 & 2024
+        # lumi_3 applies to 2024 only
+        lumi_extra = {
+        'lumi_2': {'2023preBPix': '1.0127', '2023postBPix': '1.0127', '2024': '1.0068'},
+        'lumi_3': {'2024': '1.0144'}
+        }
     else:
         lumi = {}
         lumi['2016'] = '1.026'
@@ -111,6 +127,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
         lumi['2023preBPix'] = '1.013'
         lumi['2023postBPix'] = '1.013'
         lumi['2024'] = '1.0161' 
+
 
     # Lepton efficiency
     # Values taken from:
@@ -263,7 +280,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
             else:
                 min_range = expected_yield['ZZ_'+channel]-100
             file.write('zz_norm_'+str(obsBin)+'_'+channel+' rateParam '+binName+' bkg_*zz '+str(expected_yield['ZZ_'+channel])+' ['+str(min_range)+','+str(expected_yield['ZZ_'+channel]+100)+']\n')
-    print(yearSetting)
+
     if yearSetting == 'Full':
         if zzfloating:
             # lumi_uncorrelated
@@ -299,38 +316,48 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
                 for i in range(nBins+4): # All except ZX
                     file.write(lumi_corr_17_18[year]+' ')
                 file.write('-\n') # ZX
+
+    elif yearSetting == 'Run3':
+
+        # correlated Run-3 lumi nuisances
+        # lumi_1 (2022,2023,2024)
+        file.write('lumi_1 lnN ')
+        for i in range(2*nBins+4): 
+            # All except ZX
+            file.write(lumi[year]+' ')
+        file.write('-\n')
+
+        # lumi_2 if applicable
+        if year in lumi_extra['lumi_2']:
+            file.write('lumi_2 lnN ')
+            for i in range(2*nBins+4):
+                file.write(lumi_extra['lumi_2'][year]+' ')
+            file.write('-\n')
+
+        # lumi_3 if applicable
+        if year in lumi_extra['lumi_3']:
+            file.write('lumi_3 lnN ')
+            for i in range(2*nBins+4):
+                file.write(lumi_extra['lumi_3'][year]+' ')
+            file.write('-\n')
+
     else:
-        if zzfloating:
-            # lumi
-            file.write('lumi_13TeV_'+year+' lnN ')
-            #file.write('lumi_13p6TeV_2022 lnN ') # spencer
-            for i in range(nBins+2): # signals + out + fake
-                file.write(lumi[year]+' ')
-            file.write('- - -\n') # qqzz + ggzz + ZX
+
+        # lumi
+        if year == '2022' or year == '2022EE':
+            file.write('lumi_13p6TeV_2022 lnN ')
+        elif year == '2023preBPix' or year == '2023postBPix':
+            file.write('lumi_13p6TeV_2023 lnN ')
+        elif year == '2024':
+            file.write('lumi_13p6TeV_2024 lnN ')
         else:
-            # lumi
             file.write('lumi_13TeV_'+year+' lnN ')
-            #file.write('lumi_13p6TeV_2022 lnN ') # spencer
-            for i in range(nBins+4): # All except ZX
-                file.write(lumi[year]+' ')
-            file.write('-\n') # ZX
-        '''
-        elif yearSetting == 'Run3':
-                if zzfloating:
-                    # lumi
-                    file.write('lumi_13TeV_2022 lnN ')
-                    #file.write('lumi_13p6TeV_2022 lnN ') # spencer
-                    for i in range(nBins+2): # signals + out + fake
-                        file.write(lumi['2022']+' ')
-                    file.write('- - -\n') # qqzz + ggzz + ZX
-                else:
-                    # lumi
-                    file.write('lumi_13TeV_2022 lnN ')
-                    #file.write('lumi_13p6TeV_2022 lnN ') # spencer
-                    for i in range(nBins+4): # All except ZX
-                        file.write(lumi['2022']+' ')
-                    file.write('-\n') # ZX
-        '''
+
+        # for i in range(nBins+4): # All except ZX
+        for i in range(2*nBins+4): # All except ZX
+            file.write(lumi[year]+' ')
+        file.write('-\n') # ZX
+
             
     # Lepton efficiency
     if channel == '4mu' or channel == '2e2mu':
@@ -389,23 +416,26 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     # JES
     if jes == True:
         for index,jesName in enumerate(jesNames_datacard):
-
             file.write('CMS_scale_j_'+jesName+' lnN ')
             for i in range(nBins+2): # Signals + out + fake
-                file.write(str(fixJes(jesnp['signal_'+jesNames[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)],
-                                      jes_evts_noWeight['signal_'+jesNames[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)]))+' ')
-            file.write(str(fixJes(jesnp['qqzz_'+jesNames[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)],
-                                  jes_evts_noWeight['qqzz_'+jesNames[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)]))+' ')
-            file.write(str(fixJes(jesnp['ggzz_'+jesNames[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)],
-                                  jes_evts_noWeight['ggzz_'+jesNames[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)]))+' ')
-            file.write(str(fixJes(jesnp['ZX_'+jesNames[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)],
-                                  jes_evts_noWeight['ZX_'+jesNames[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)]))+'\n')
-        # file.write('CMS_scale_j_ZX lnN ')
-        # for i in range(nBins+4): # All except ZX
-        #     file.write('- ')
-        # file.write(str(jesnp['ZX_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)])+'\n')
+                file.write(str(fixJes(jesnp['signal_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)],
+                                      jes_evts_noWeight['signal_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)])))
+            file.write(str(fixJes(jesnp['qqzz_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)],
+                                jes_evts_noWeight['qqzz_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)])))
+            file.write(str(fixJes(jesnp['ggzz_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)],
+                                jes_evts_noWeight['ggzz_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)])))
+            #file.write(str(fixJes(jesnp['ZX_'+jesNames[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)],
+            #                      jes_evts_noWeight['ZX_'+jesNames[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)]))+'\n')
 
-            #file.write('JES param 0.0 1.0\n')
+            file.write('- \n') # none for Z+X
+
+
+            # file.write('CMS_scale_j_ZX lnN ')
+            # for i in range(nBins+4): # All except ZX
+            #     file.write('- ')
+            # file.write(str(jesnp['ZX_'+channel+'_'+obsName+'_genbin'+str(obsBin)+'_recobin'+str(obsBin)])+'\n')
+
+                #file.write('JES param 0.0 1.0\n')
 
     file.close()
 
@@ -423,7 +453,7 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     if int(observableBins[obsBin+1]) > 1000:
         _recobin = 'GT'+str(int(observableBins[obsBin]))
 
-    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
+    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'NJ'}
     binName = 'hzz_' + _obsName[obsName] + '_' + _recobin + '_cat' + channel
     # Root of the name of the process (signal from genBin)
     # processName = 'smH'+channel+'Bin'
@@ -436,7 +466,7 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     expected_yield = _temp.expected_yield
     if jes:
         sys.path.append('../coefficients/JES')
-        jesNames = ['Abs', 'Abs_year', 'BBEC1', 'BBEC1_year', 'EC2', 'EC2_year', 'FlavQCD', 'HF', 'HF_year', 'RelBal', 'RelSample_year']
+        jesNames = ['Absolute', 'Absolute_year', 'BBEC1', 'BBEC1_year', 'EC2', 'EC2_year', 'FlavorQCD', 'HF', 'HF_year', 'RelativeBal', 'RelativeSample_year']
         jesNames_datacard = [j.replace('year',year) for j in jesNames] # The name of the nuisance in the datacard should have the correspoding year
         #_temp = __import__('JESNP_'+obsName+'_'+str(year), globals(), locals(), ['JESNP'], -1)
         _temp = __import__('JESNP_'+obsName+'_'+str(year), globals(), locals(), ['JESNP'], 0) # spencer
@@ -459,12 +489,20 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
         lumi_corr_17_18['2017'] = '1.006'
         lumi_corr_17_18['2018'] = '1.002'
     elif yearSetting == 'Run3':
-        lumi = {}
-        lumi['2022'] = '1.014'
-        lumi['2022EE'] = '1.014'
-        lumi['2023preBPix'] = '1.013'
-        lumi['2023postBPix'] = '1.013'
-        lumi['2024'] = '1.013' # using 2023postBPix value as placeholder
+        # RUN III correlated luminosity scheme (2022/23/24)
+        lumi = {
+        '2022':'1.0138',
+        '2022EE':'1.0138',
+        '2023preBPix':'1.0017',
+        '2023postBPix':'1.0017',
+        '2024':'1.0020',
+        }
+        # Additional reduced nuisances for Run-3:
+        # lumi_2 applies to 2023 & 2024 / lumi_3 applies to 2024 only
+        lumi_extra = {
+        'lumi_2': {'2023preBPix': '1.0127', '2023postBPix': '1.0127', '2024': '1.0068'},
+        'lumi_3': {'2024': '1.0144'}
+        }
     else:
         lumi = {}
         lumi['2016'] = '1.026'
@@ -643,16 +681,43 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
                 for i in range(nBins+4): # All except ZX
                     file.write(lumi_corr_17_18[year]+' ')
                 file.write('-\n') # ZX
+
     elif yearSetting == 'Run3':
-        # lumi
-        file.write('lumi_13TeV_2022 lnN ')
-        # for i in range(nBins+4): # All except ZX
-        for i in range(2*nBins+4): # All except ZX
-            file.write(lumi['2022']+' ')
-        file.write('-\n') # ZX
+
+        # correlated Run-3 lumi nuisances
+        # lumi_1 (2022,2023,2024)
+        file.write('lumi_1 lnN ')
+        for i in range(2*nBins+4): 
+            # All except ZX
+            file.write(lumi[year]+' ')
+        file.write('-\n')
+
+        # lumi_2 if applicable
+        if year in lumi_extra['lumi_2']:
+            file.write('lumi_2 lnN ')
+            for i in range(2*nBins+4):
+                file.write(lumi_extra['lumi_2'][year]+' ')
+            file.write('-\n')
+
+        # lumi_3 if applicable
+        if year in lumi_extra['lumi_3']:
+            file.write('lumi_3 lnN ')
+            for i in range(2*nBins+4):
+                file.write(lumi_extra['lumi_3'][year]+' ')
+            file.write('-\n')
+
     else:
+
         # lumi
-        file.write('lumi_13TeV_'+year+' lnN ')
+        if year == '2022' or year == '2022EE':
+            file.write('lumi_13p6TeV_2022 lnN ')
+        elif year == '2023preBPix' or year == '2023postBPix':
+            file.write('lumi_13p6TeV_2023 lnN ')
+        elif year == '2024':
+            file.write('lumi_13p6TeV_2024 lnN ')
+        else:
+            file.write('lumi_13TeV_'+year+' lnN ')
+
         # for i in range(nBins+4): # All except ZX
         for i in range(2*nBins+4): # All except ZX
             file.write(lumi[year]+' ')

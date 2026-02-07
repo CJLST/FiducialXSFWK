@@ -7,8 +7,10 @@ import time
 from decimal import *
 import json
 
-sys.path.append('../inputs/')
+sys.path.append('helperstuff/')
+from paths import path
 
+sys.path.append('../inputs/')
 from higgs_xsbr_13TeV import *
 
 def parseOptions():
@@ -112,7 +114,7 @@ def impactPlots():
     if not doubleDiff: nBins = nBins-1 #in case of 1D measurement the number of bins is -1 the length of the list of bin boundaries
     # if '_' in obsName and obsName!='mass4l_zzfloating': nBins = len(observableBins)+1
 
-    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
+    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'NJ'}
     if obsName in _obsName:
         obsName_poi = _obsName[obsName]
     else:
@@ -159,10 +161,10 @@ def impactPlots():
             fidxs2e2mu_sm = tmp_xs_sm['2e2mu_genbin'+str(obsBin)]
             frac4e_sm = fidxs4e_sm/(fidxs4e_sm+fidxs4mu_sm+fidxs2e2mu_sm)
             frac4mu_sm = fidxs4mu_sm/(fidxs4e_sm+fidxs4mu_sm+fidxs2e2mu_sm)
-            K1 = frac4e/frac4e_sm
-            K2 = frac4mu/frac4mu_sm * (1.0-frac4e_sm)/(1.0-frac4e)
+            #K1 = frac4e/frac4e_sm
+            #K2 = frac4mu/frac4mu_sm * (1.0-frac4e_sm)/(1.0-frac4e)
 
-            cmd_BR += 'K1Bin'+str(obsBin)+'='+str(K1)+',K2Bin'+str(obsBin)+'='+str(K2)+',' # SPENCER 10 2025
+            #cmd_BR += 'K1Bin'+str(obsBin)+'='+str(K1)+',K2Bin'+str(obsBin)+'='+str(K2)+',' # SPENCER 10 2025
         print(cmd_BR)
 
         cmd_sigma = ''
@@ -223,8 +225,8 @@ def impactPlots():
     else: max_sigma = '5'
 
     ### First step (Files from asimov and data have the same name)
-    cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_'+opt.PHYSICSMODEL+'_'+str(opt.YEAR)+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --doInitialFit --robustFit 1 '#--redefineSignalPOIs '
-    cmd += ' --freezeParameters _paramFit_Test_K1Bin0,_paramFit_Test_K2Bin0 --redefineSignalPOIs ' # SPENCER 11 2025
+    cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_'+opt.PHYSICSMODEL+'_'+str(opt.YEAR)+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --doInitialFit --robustFit 1 --redefineSignalPOIs '
+    #cmd += ' --freezeParameters _paramFit_Test_K1Bin0,_paramFit_Test_K2Bin0 --redefineSignalPOIs ' # SPENCER 11 2025
     for obsBin in range(nBins):
         if opt.PHYSICSMODEL=='v3':
             # cmd += 'SigmaBin' + str(obsBin) + ','
@@ -246,7 +248,8 @@ def impactPlots():
             cmd += ':r2e2muBin' + str(obsBin) + '=0,'+max_sigma+':r4lBin' + str(obsBin) + '=0,'+max_sigma
     if (not opt.UNBLIND):
         if opt.PHYSICSMODEL=='v3':
-            cmd = cmd + ' -t -1 --setParameters MH=125.38,' + cmd_BR[:-1] + ',' + cmd_XSEC
+            #cmd = cmd + ' -t -1 --setParameters MH=125.38,' + cmd_BR[:-1] + ',' + cmd_XSEC
+            cmd = cmd + ' -t -1 --setParameters MH=125.38' + ',' + cmd_XSEC
         elif opt.PHYSICSMODEL=='v2':
             cmd = cmd + ' -t -1 --setParameters MH=125.38,' + cmd_XSEC
         elif opt.PHYSICSMODEL=='v4':
@@ -260,8 +263,8 @@ def impactPlots():
     output = processCmd(cmd)
 
     ### Second step (Files from asimov and data have the same name)
-    cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_'+opt.PHYSICSMODEL+'_'+str(opt.YEAR)+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --doFits --robustFit 1 --parallel 10 '#--redefineSignalPOIs '
-    cmd += ' --freezeParameters _paramFit_Test_K1Bin0,_paramFit_Test_K2Bin0 --redefineSignalPOIs ' # SPENCER 11 2025
+    cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_'+opt.PHYSICSMODEL+'_'+str(opt.YEAR)+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --doFits --robustFit 1 --parallel 10 --redefineSignalPOIs '
+    #cmd += ' --freezeParameters _paramFit_Test_K1Bin0,_paramFit_Test_K2Bin0 --redefineSignalPOIs ' # SPENCER 11 2025
     for obsBin in range(nBins):
         if opt.PHYSICSMODEL=='v3':
             # cmd += 'SigmaBin' + str(obsBin) + ','
@@ -282,7 +285,8 @@ def impactPlots():
             cmd += ':r2e2muBin' + str(obsBin) + '=0,'+max_sigma+':r4lBin' + str(obsBin) + '=0,'+max_sigma
     if (not opt.UNBLIND):
         if opt.PHYSICSMODEL=='v3':
-            cmd = cmd + ' -t -1 --setParameters MH=125.38,' + cmd_BR[:-1] + ',' + cmd_XSEC
+            #cmd = cmd + ' -t -1 --setParameters MH=125.38,' + cmd_BR[:-1] + ',' + cmd_XSEC
+            cmd = cmd + ' -t -1 --setParameters MH=125.38' + ',' + cmd_XSEC
         elif opt.PHYSICSMODEL=='v2':
             cmd = cmd + ' -t -1 --setParameters MH=125.38,' + cmd_XSEC
         elif opt.PHYSICSMODEL=='v4':
@@ -296,10 +300,10 @@ def impactPlots():
     ### Third step
     if opt.PHYSICSMODEL=='v3':
         # for obsBin in range(nBins-1):
-        cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)+'.root -m 125.38 --setParameters MH=125.38,'+cmd_BR[:-1]+','+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
+        #cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)+'.root -m 125.38 --setParameters MH=125.38,'+cmd_BR[:-1]+','+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
+        cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)+'.root -m 125.38 --setParameters MH=125.38'+','+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
         #cmd += ' -o impacts_v3_'+obsName+'_'
-
-        cmd += ' --freezeParameters _paramFit_Test_K1Bin0,_paramFit_Test_K2Bin0' # SPENCER 11 2025
+        #cmd += ' --freezeParameters _paramFit_Test_K1Bin0,_paramFit_Test_K2Bin0' # SPENCER 11 2025
 
         if (not opt.UNBLIND):
             cmd += ' -t -1 -o impacts_'+opt.YEAR+'_v3_'+obsName+'_' # spencer
@@ -365,7 +369,7 @@ def impactPlots():
             print(cmd, '\n')
             print('---------------------------')
             cmds.append(cmd)
-            output = processCmd(cmd)
+            #output = processCmd(cmd)
 
     elif opt.PHYSICSMODEL=='v4':
         for nBin in range(nBins):
@@ -373,7 +377,7 @@ def impactPlots():
             cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v4_'+str(opt.YEAR)+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --setParameters MH=125.38,'+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
             #cmd += ' -o impacts_v4_'
 
-            cmd += ' --freezeParameters _paramFit_Test_K1Bin0,_paramFit_Test_K2Bin0' # SPENCER 11 2025
+            #cmd += ' --freezeParameters _paramFit_Test_K1Bin0,_paramFit_Test_K2Bin0' # SPENCER 11 2025
 
             if (not opt.UNBLIND):
                 cmd += ' -t -1 o impacts_v4_'
@@ -404,7 +408,7 @@ def impactPlots():
                 print(cmd, '\n')
                 print('---------------------------')
                 cmds.append(cmd)
-                output = processCmd(cmd)
+                #output = processCmd(cmd)
 
 
 # ----------------- Main -----------------
@@ -423,5 +427,11 @@ with open('commands_impacts_'+obsName+'_'+opt.PHYSICSMODEL+'.py', 'w') as f:
     for i in cmds:
         f.write(str(i)+' \n')
         f.write('\n')
+
+
+
+outdir = f"{path['plots_path']}IMPACTS/{obsName}/{opt.YEAR}/"
+os.makedirs(outdir, exist_ok=True)
+os.system(f"cp impacts*_{opt.YEAR}_*{obsName}*.pdf {outdir}")
 
 print("Impacts plots done.")

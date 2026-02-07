@@ -1,18 +1,20 @@
 import sys
-
 sys.path.append('../helperstuff/')
 from split import split
 
-DO_SPLIT = True
+DO_SPLIT = False
 
-
-#obsNames=["mass4l", "pT4l", "rapidity4l", "massZ1", "massZ2", "pTj1", "pTj2", "Nj", "mjj", "absdetajj", "dphijj", "pTHj", "pTHjj", "mHj", "massZ1_massZ2", "rapidity4l_pT4l", "pTj1_pTj2", "Nj_pT4l", "pT4l_pTHj", "absdetajj_mjj", "phi", "phi1", "costhetaZ1", "costhetaZ2",,"costhetastar"]   
+#obsNames=["mass4l", "pT4l", "rapidity4l", "massZ1", "massZ2", "pTj1", "pTj2", "Nj", "mjj", "absdetajj", "dphijj", "pTHj", "pTHjj", "mHj", "massZ1_massZ2", "rapidity4l_pT4l", "pTj1_pTj2", "Nj_pT4l", "pT4l_pTHj", "absdetajj_mjj", "phi", "phi1", "costhetaZ1", "costhetaZ2","costhetastar"]   
 #obsNames=["pT4l", "rapidity4l", "massZ1", "massZ2", "pTj1", "pTj2", "Nj", "mjj", "absdetajj", "dphijj", "pTHj", "pTHjj", "mHj", "phi", "phi1", "costhetaZ1", "costhetaZ2", "costhetastar"]
+
+#obsNames=[ "massZ1", "massZ2", "phi", "phi1", "costhetaZ1", "costhetaZ2", "costhetastar"]
+
 #obsNames=["massZ1_massZ2", "rapidity4l_pT4l", "pTj1_pTj2", "Nj_pT4l", "pT4l_pTHj", "absdetajj_mjj"]
-obsNames=["mass4l"]
+#obsNames=["mass4l"]
 
+obsNames=["mass4l", "pT4l", "rapidity4l", "pTj1"]
 
-YEARS = ["2022", "2022EE", "2023preBPix", "2023postBPix", "2024"]
+YEARS = ["2022", "2022EE"]#, "2023preBPix", "2023postBPix", "2024"]
 #YEARS = ["Run3"]
 
 #YEARS = ["2022", "2022EE", "2023preBPix", "2023postBPix"]

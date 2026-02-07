@@ -8,16 +8,16 @@ import itertools
 import math
 import json
 import ROOT
+import awkward as ak
 
 from paths import path
 
-jesNames = ['Total', 'Abs', 'Abs_year', 'BBEC1', 'BBEC1_year', 'EC2', 'EC2_year', 'FlavQCD', 'HF', 'HF_year', 'RelBal', 'RelSample_year']
-signals_original = ['ggH125', 'VBFH125', 'ttH125', 'WminusH125', 'WplusH125', 'ZH125']
-bkgs = ['ZZTo4l', 'ggTo2e2mu_Contin_MCFM701', 'ggTo2e2tau_Contin_MCFM701', 'ggTo2mu2tau_Contin_MCFM701',
-        'ggTo4e_Contin_MCFM701', 'ggTo4mu_Contin_MCFM701', 'ggTo4tau_Contin_MCFM701']
 
-#key = 'ZZTree/candTree'
-key = 'Events'
+signals_original = ['ggH125', 'VBFH125', 'ttH125', 'WminusH125', 'WplusH125', 'ZH125']
+bkgs = ['ggTo2e2mu_Contin_MCFM701', 'ggTo2e2tau_Contin_MCFM701', 'ggTo2mu2tau_Contin_MCFM701', 'ggTo4e_Contin_MCFM701', 'ggTo4mu_Contin_MCFM701', 'ggTo4tau_Contin_MCFM701', 'ZZTo4l'] 
+
+key = 'ZZTree/candTree'
+#key = 'Events'
 
 
 # ------------------------------- FUNCTIONS TO GENERATE DATAFRAMES ----------------------------------------------------
@@ -26,13 +26,13 @@ def weight(df, xsec, gen, lumi, additional = None):
     #Coefficient to calculate weights for histograms
     coeff = (lumi * 1000 * xsec) / gen
     #Reco
-    weight_reco = (df.overallEventWeight * df.L1prefiringWeight * df.SFcorr)
+    weight_reco = (df.overallEventWeight) # * df.L1prefiringWeight * df.SFcorr)
     if additional == 'ggH':
         weight_reco *= df.ggH_NNLOPS_weight
-    elif additional == 'qqzz':
-        weight_reco *= df.KFactor_EW_qqZZ*df.KFactor_QCD_qqZZ_M
-    elif additional == 'ggzz':
-        weight_reco *= df.KFactor_QCD_ggZZ_Nominal
+    #elif additional == 'qqzz':
+    #    weight_reco *= df.KFactor_EW_qqZZ*df.KFactor_QCD_qqZZ_M
+    #elif additional == 'ggzz':
+    #    weight_reco *= df.KFactor_QCD_ggZZ_Nominal
     weight_histo_reco = weight_reco * coeff
     #Columns in pandas
     df['weight_reco'] = weight_reco #Powheg
@@ -55,7 +55,10 @@ def prepareTrees(year):
     for bkg in bkgs:
         #fname = eos_path_sig + 'MC_samples_UL/%s_MELA' %year
         #fname += '/'+bkg+'/'+bkg+'_reducedTree_MC_'+str(year)+'.root'
-        fname = path['eos_path_sig']+year+"/"+bkg+"/ZZ4lAnalysis.root"
+
+        fname = path['eos_path_sig']+year+"_MC/"+bkg+"/ZZ4lAnalysis_SKIMMED.root"
+        #fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/{year}_MC/{bkg}/ZZ4lAnalysis_SKIMMED_addJES.root"
+
         print(fname)
 #         fname = eos_path_sig + '%i_MELA' %year
 # #         if year == 2016:
@@ -77,7 +80,10 @@ def prepareTrees(year):
             # else:
             #     fname += '/'+signal+'/'+signal+'_reducedTree_MC_'+str(year)+'.root'
             #fname += '/'+signal+'/'+signal+'_reducedTree_MC_'+str(year)+'.root'
-            fname = path['eos_path_sig']+year+"/"+signal+"/ZZ4lAnalysis.root"
+
+            fname = path['eos_path_sig']+year+"_MC/"+signal+"/ZZ4lAnalysis_SKIMMED.root"
+            #fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/{year}_MC/{signal}/ZZ4lAnalysis_SKIMMED_addJES.root"
+
             print(fname)
             d_sig[signal] = uproot.open(fname)[key]
 
@@ -126,7 +132,8 @@ def add_fin_state_reco(i, j):
         fin = '2tau2e'
     elif abs(i) == 225 and abs(j) == 225:
         fin = '4tau'
-    elif abs(i) == 0 and abs(j) == 0:
+    #elif abs(i) == 0 and abs(j) == 0:
+    else:
         fin = 'other'
     return fin
 
@@ -140,7 +147,9 @@ def generators(year):
         #fname = eos_path_sig + 'MC_samples_UL/%s_MELA' %year
         #fname += '/'+bkg+'/'+bkg+'_reducedTree_MC_'+str(year)+'.root'
 
-        fname = path['eos_path_sig']+year+"/"+bkg+"/ZZ4lAnalysis_SKIMMED.root"
+        fname = path['eos_path_sig']+year+"_MC/"+bkg+"/ZZ4lAnalysis_SKIMMED.root"
+        #fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/{year}_MC/{bkg}/ZZ4lAnalysis_SKIMMED_addJES.root"
+
         gen_bkg[bkg] = uproot.open(fname)["Counters"].values()[39] # spencer
         
     if year!='2016pre':
@@ -155,176 +164,68 @@ def generators(year):
             #     fname += '/'+signal+'/'+signal+'_reducedTree_MC_'+str(year)+'.root'
             #fname += '/'+signal+'/'+signal+'_reducedTree_MC_'+str(year)+'.root'
 
-            fname = path['eos_path_sig']+year+"/"+signal+"/ZZ4lAnalysis_SKIMMED.root"
+            fname = path['eos_path_sig']+year+"_MC/"+signal+"/ZZ4lAnalysis_SKIMMED.root"
+            #fname = f"/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/031125/{year}_MC/{signal}/ZZ4lAnalysis_SKIMMED_addJES.root"
+
             gen_sig[signal] = uproot.open(fname)["Counters"].values()[39] # spencer 
 
     return gen_sig, gen_bkg
 
-def add_leadjet(pt,eta,phi,mass):
-	_pTj1 = 0.0
-	_mj1 = 0.0
-	_etaj1 = 0.0
-	_phij1 = 0.0
-	index = -1
-	_j = ROOT.TLorentzVector()
-	if len(pt) == 0:
-		_j.SetPtEtaPhiM(0,0,0,0)
-	else:
-	    for i in range(len(pt)):
-	        if (pt[i]>30 and abs(eta[i])<4.7 and pt[i] > _pTj1):
-	        	_pTj1 = pt[i]
-	        	index = i
-	    _j.SetPtEtaPhiM(_pTj1,eta[index],phi[index],mass[index])
-	return _j
+def createDataframe(jesNames, year, dataFrame,isBkg,gen,xsec,signal,lumi,obs_reco,obs_reco_2nd='None'):
 
+    b_sig = ['overallEventWeight', 'Z1Flav', 'Z2Flav', 'ZZMass' ]
 
-def add_subleadjet(pt,eta,phi,mass,leadJet):
-    _pTj2 = 0.0
-    _mj2 = 0.0
-    _etaj2 = 0.0
-    _phij2 = 0.0
-    _j = ROOT.TLorentzVector()
-    for i in range(len(pt)):
-        if (pt[i]>30 and abs(eta[i])<4.7 and pt[i] > _pTj2 and leadJet.Pt()-pt[i] > 0.00001):
-            _pTj2 = pt[i]
-            _mj2 = mass[i]
-            _etaj2 = eta[i]
-            _phij2 = phi[i]
-    _j.SetPtEtaPhiM(_pTj2,_etaj2,_phij2,_mj2)
-    return _j
-
-
-def count_jets(pt,eta,phi,mass):
-    n = 0
-    for i in range(len(pt)):
-        if pt[i]>30 and abs(eta[i])<4.7: n = n + 1
-    return n
-
-def varHiggsOneJets_jes(jet,Hmass,Heta,Hphi,Hpt):
-    Higgs = ROOT.TLorentzVector()
-    Higgs.SetPtEtaPhiM(Hpt,Heta,Hphi,Hmass)
-    return (Higgs+jet).Pt()
-
-def varHiggsTwoJets_jes(jet1,jet2,Hmass,Heta,Hphi,Hpt):
-    Higgs = ROOT.TLorentzVector()
-    Higgs.SetPtEtaPhiM(Hpt,Heta,Hphi,Hmass)
-    return (Higgs+jet1+jet2).Pt()
-
-def tetra_Higgs(mass,eta,phi,pt):
-    h = ROOT.TLorentzVector()
-    h.SetPtEtaPhiM(pt,eta,phi,mass)
-    return h
-
-def tc(pt,eta,phi,mass,H):
-    _TCjmax = 0
-    for i in range(len(pt)):
-        theJet = ROOT.TLorentzVector()
-        theJet.SetPtEtaPhiM(pt[i],eta[i],phi[i],mass[i]);
-        _TCj = sqrt(theJet.Pt()**2 + theJet.M()**2)/(2*math.cosh(theJet.Rapidity() - H.Rapidity()))
-        if _TCj > _TCjmax: _TCjmax = _TCj
-    return _TCjmax
-
-def tb(pt,eta,phi,mass,H):
-    _TBjmax = 0
-    for i in range(len(pt)):
-        theJet = ROOT.TLorentzVector()
-        theJet.SetPtEtaPhiM(pt[i],eta[i],phi[i],mass[i]);
-        _TBj = sqrt(theJet.Pt()**2 + theJet.M()**2)*math.exp(-1*abs(theJet.Rapidity() - H.Rapidity()));
-        if _TBj > _TBjmax: _TBjmax = _TBj
-    return _TBjmax
-
-
-def createDataframe(dataFrame,isBkg,gen,xsec,signal,lumi,obs_reco,obs_reco_2nd='None'):
-    b_sig = ['EventNumber', 'PUWeight', 'genHEPMCweight',
-             'ZZMass', 'ZZPt','ZZEta', 'ZZPhi', 'Z1Flav', 'Z2Flav', 'JetPt', 'JetMass', 'JetEta', 'JetPhi',
-             'overallEventWeight', 'L1prefiringWeight','dataMCWeight', 'trigEffWeight', 'SFcorr',
-             'pTj1', 'Mj1', 'ETAj1', 'PHIj1',
-             'pTj2', 'Mj2', 'ETAj2', 'PHIj2']
-
-    if obs_reco == 'ZZPt' or obs_reco_2nd == 'ZZPt':
-        b_sig.remove('ZZPt')
 
     if signal == 'ggH125':
         b_sig.append('ggH_NNLOPS_weight') #Additional entry for the weight in case of ggH
-    elif signal == 'ZZTo4l':
-        b_sig.append('KFactor_EW_qqZZ')
-        b_sig.append('KFactor_QCD_qqZZ_M')
-    elif 'gg' in signal:
-        b_sig.append('KFactor_QCD_ggZZ_Nominal')
-    for i in jesNames:
-        #b_sig.extend(['JetPt_JESUp_'+i,'JetPt_JESDown_'+i])
-        b_sig.extend(['nCleanedJetsPt30_jesUp'+i,'nCleanedJetsPt30_jesDown'+i])
-    if obs_reco != 'pTj1' and obs_reco != 'pTj2': b_sig.append(obs_reco)
-    if (obs_reco_2nd!='None' and obs_reco_2nd != 'pTj1' and obs_reco_2nd != 'pTj2'): b_sig.append(obs_reco_2nd)
 
-    df = dataFrame.arrays(library="pd")
+    #elif signal == 'ZZTo4l':
+        #b_sig.append('KFactor_EW_qqZZ')
+        #b_sig.append('KFactor_QCD_qqZZ_M')
+
+    #elif 'gg' in signal:
+    #    b_sig.append('KFactor_QCD_ggZZ_Nominal')
+
+    if obs_reco == 'ZZMass':
+        b_sig.pop('ZZMass')
+    if obs_reco_2nd == 'ZZMass':
+        b_sig.pop('ZZMass')
+
+    b_sig.append(obs_reco)
+    if obs_reco_2nd != 'None': b_sig.append(obs_reco_2nd)
+
+    for name in jesNames:
+
+        if "year" in name:
+            name1st = name.split("_")[0]
+            name = name1st + "_" + year
+
+        b_sig.append(obs_reco+"_"+name+"_ScaleUp")
+        b_sig.append(obs_reco+"_"+name+"_ScaleDn")
+
+        if obs_reco_2nd != 'None':
+            b_sig.append(obs_reco_2nd+"_"+name+"_ScaleUp")
+            b_sig.append(obs_reco_2nd+"_"+name+"_ScaleDn")
+
+    df_np = dataFrame.arrays(library="np")
+    df = pd.DataFrame({var: df_np[var] for var in b_sig})
 
     df['gen'] = gen
     df['xsec'] = xsec
-    print(df.columns)
-    df['FinState_reco'] = [add_fin_state_reco(i, j) for i,j in zip(df.Z1Flav, df.Z2Flav)]
+    
+    df["FinState_reco"] = [add_fin_state_reco(i, j) for i, j in zip(df.Z1Flav, df.Z2Flav)]
 
-    # print df[['JetPt','JetPt_JESUp_Total', 'JetPt_JESDown_Total']]
-    # Leading jets
-    for i in jesNames:
-        df['j1_jesup_'+i] = [add_leadjet(row[0],row[1],row[2],row[3]) for row in df[['JetPt_JESUp_'+i,'JetEta','JetPhi','JetMass']].values]
-        df['j1_jesdn_'+i] = [add_leadjet(row[0],row[1],row[2],row[3]) for row in df[['JetPt_JESDown_'+i,'JetEta','JetPhi','JetMass']].values]
-    # Subleading jets
-    for i in jesNames:
-        df['j2_jesup_'+i] = [add_subleadjet(row[0],row[1],row[2],row[3],row[4]) for row in df[['JetPt_JESUp_'+i,'JetEta','JetPhi','JetMass','j1_jesup_'+i]].values]
-        df['j2_jesdn_'+i] = [add_subleadjet(row[0],row[1],row[2],row[3],row[4]) for row in df[['JetPt_JESDown_'+i,'JetEta','JetPhi','JetMass','j1_jesdn_'+i]].values]
-    # Calculus of up and down variations for observables different from leading jet
-    df['Higgs'] = [tetra_Higgs(row[0],row[1],row[2],row[3]) for row in df[['ZZMass', 'ZZEta', 'ZZPhi', 'ZZPt']].values]
-    for i in jesNames:
-        if obs_reco == 'pTj1' or obs_reco_2nd == 'pTj1':
-            df['pTj1_jesup_'+i] = [x.Pt() for x in df['j1_jesup_'+i]]
-            df['pTj1_jesdn_'+i] = [x.Pt() for x in df['j1_jesdn_'+i]]
-        if obs_reco == 'pTj2' or obs_reco_2nd == 'pTj2':
-            df['pTj2_jesup_'+i] = [x.Pt() for x in df['j2_jesup_'+i]]
-            df['pTj2_jesdn_'+i] = [x.Pt() for x in df['j2_jesdn_'+i]]
-        if 'njets' in obs_reco or 'njets' in obs_reco_2nd:
-            df['njets_pt30_eta4p7_jesup_'+i] = [count_jets(row[0],row[1],row[2],row[3]) for row in df[['JetPt_JESUp_'+i,'JetEta','JetPhi','JetMass']].values]
-            df['njets_pt30_eta4p7_jesdn_'+i] = [count_jets(row[0],row[1],row[2],row[3]) for row in df[['JetPt_JESDown_'+i,'JetEta','JetPhi','JetMass']].values]
-        if obs_reco == 'mjj' or obs_reco_2nd == 'mjj':
-            df['mjj_jesup_'+i] = [(j1+j2).M() if j2.Pt()>0 else -1 for j1,j2 in zip(df['j1_jesup_'+i],df['j2_jesup_'+i])]
-            df['mjj_jesdn_'+i] = [(j1+j2).M() if j2.Pt()>0 else -1 for j1,j2 in zip(df['j1_jesdn_'+i],df['j2_jesdn_'+i])]
-        if obs_reco == 'pTHj' or obs_reco_2nd == 'pTHj':
-            df['pTHj_jesup_'+i] = [(H+j1).Pt() if j1.Pt()>0 else -1 for H,j1 in zip(df['Higgs'],df['j1_jesup_'+i])]
-            df['pTHj_jesdn_'+i] = [(H+j1).Pt() if j1.Pt()>0 else -1 for H,j1 in zip(df['Higgs'],df['j1_jesdn_'+i])]
-        if obs_reco == 'pTHjj' or obs_reco_2nd == 'pTHjj':
-            df['pTHjj_jesup_'+i] = [(row[0]+row[1]+row[2]).Pt() if row[2].Pt()>0 else -1 for row in df[['Higgs','j1_jesup_'+i,'j2_jesup_'+i]].values]
-            df['pTHjj_jesdn_'+i] = [(row[0]+row[1]+row[2]).Pt() if row[2].Pt()>0 else -1 for row in df[['Higgs','j1_jesdn_'+i,'j2_jesdn_'+i]].values]
-        if obs_reco == 'mHj' or obs_reco_2nd == 'mHj':
-            df['mHj_jesup_'+i] = [(H+j1).M() if j1.Pt()>0 else -1 for H,j1 in zip(df['Higgs'],df['j1_jesup_'+i])]
-            df['mHj_jesdn_'+i] = [(H+j1).M() if j1.Pt()>0 else -1 for H,j1 in zip(df['Higgs'],df['j1_jesdn_'+i])]
-        if obs_reco == 'mHjj' or obs_reco_2nd == 'mHjj':
-            df['mHjj_jesup_'+i] = [(row[0]+row[1]+row[2]).M() if row[2].Pt()>0 else -1 for row in df[['Higgs','j1_jesup_'+i,'j2_jesup_'+i]].values]
-            df['mHjj_jesdn_'+i] = [(row[0]+row[1]+row[2]).M() if row[2].Pt()>0 else -1 for row in df[['Higgs','j1_jesdn_'+i,'j2_jesdn_'+i]].values]
-        if obs_reco == 'absdetajj' or obs_reco_2nd == 'absdetajj':
-            df['absdetajj_jesup_'+i] = [abs(j1.Eta()-j2.Eta()) if j2.Pt()>0 else -1 for j1,j2 in zip(df['j1_jesup_'+i],df['j2_jesup_'+i])]
-            df['absdetajj_jesdn_'+i] = [abs(j1.Eta()-j2.Eta()) if j2.Pt()>0 else -1 for j1,j2 in zip(df['j1_jesdn_'+i],df['j2_jesdn_'+i])]
-        if obs_reco == 'dphijj' or obs_reco_2nd == 'dphijj':
-            df['dphijj_jesup_'+i] = [math.atan2(math.sin(j1.Phi()-j2.Phi()), math.cos(j1.Phi()-j2.Phi())) if j2.Pt()>0 else -99 for j1,j2 in zip(df['j1_jesup_'+i],df['j2_jesup_'+i])]
-            df['dphijj_jesdn_'+i] = [math.atan2(math.sin(j1.Phi()-j2.Phi()), math.cos(j1.Phi()-j2.Phi())) if j2.Pt()>0 else -99 for j1,j2 in zip(df['j1_jesdn_'+i],df['j2_jesdn_'+i])]
-        if obs_reco == 'ZZPt' or obs_reco_2nd == 'ZZPt':
-            df['ZZPt_jesup_'+i] = df['ZZPt']
-            df['ZZPt_jesdn_'+i] = df['ZZPt']
-        if obs_reco == 'TCjmax' or obs_reco_2nd == 'TCjmax':
-            df['TCjmax_jesup_'+i] = [tc(row[0],row[1],row[2],row[3],row[4]) for row in df[['JetPt_JESUp_'+i,'JetEta','JetPhi','JetMass','Higgs']].values]
-            df['TCjmax_jesdn_'+i] = [tc(row[0],row[1],row[2],row[3],row[4]) for row in df[['JetPt_JESDown_'+i,'JetEta','JetPhi','JetMass','Higgs']].values]
-        if obs_reco == 'TBjmax' or obs_reco_2nd == 'TBjmax':
-            df['TBjmax_jesup_'+i] = [tb(row[0],row[1],row[2],row[3],row[4]) for row in df[['JetPt_JESUp_'+i,'JetEta','JetPhi','JetMass','Higgs']].values]
-            df['TBjmax_jesdn_'+i] = [tb(row[0],row[1],row[2],row[3],row[4]) for row in df[['JetPt_JESDown_'+i,'JetEta','JetPhi','JetMass','Higgs']].values]
-
-    # print df[['pTj1', 'pTj1_jesup_Total', 'pTj1_jesdn_Total']]
     if signal != 'ggH125':
         df = weight(df, xsec, gen, lumi)
+
     elif 'ZZTo' in signal and isBkg:
         df = weight(df, xsec, gen, lumi, 'qqzz')
-        df = df.drop(columns=['KFactor_EW_qqZZ','KFactor_QCD_qqZZ_M'])
+        #df = df.drop(columns=['KFactor_EW_qqZZ','KFactor_QCD_qqZZ_M'])
+
     elif 'ggTo' in signal and isBkg:
         df = weight(df, xsec, gen, lumi, 'ggzz')
-        df = df.drop(columns=['KFactor_EW_qqZZ','KFactor_QCD_qqZZ_M'])
+        #df = df.drop(columns=['KFactor_EW_qqZZ','KFactor_QCD_qqZZ_M'])
+
     else:
         df = weight(df, xsec, gen, lumi, 'ggH')
         df = df.drop(columns=['ggH_NNLOPS_weight'])
@@ -333,7 +234,7 @@ def createDataframe(dataFrame,isBkg,gen,xsec,signal,lumi,obs_reco,obs_reco_2nd='
 
 
 # Set up data frames
-def dataframes(year, doubleDiff, obs_reco, obs_reco_2nd):
+def dataframes(jesNames, year, doubleDiff, obs_reco, obs_reco_2nd):
     if year == '2016pre':
         lumi_bkg = 19.52
     elif year == '2016post':
@@ -348,6 +249,18 @@ def dataframes(year, doubleDiff, obs_reco, obs_reco_2nd):
     elif year == '2022':
         lumi_sig = 7.9804
         lumi_bkg = 7.9804
+    elif year == '2022EE':
+        lumi_sig = 26.6728
+        lumi_bkg = 26.6728
+    elif year == '2023preBPix':
+        lumi_sig = 17.794
+        lumi_bkg = 17.794
+    elif year == '2023postBPix':
+        lumi_sig = 9.451
+        lumi_bkg = 9.451
+    elif year == '2024':
+        lumi_sig = 109.08
+        lumi_bkg = 109.08
         
     d_df_sig = {}
     d_df_bkg = {}
@@ -358,18 +271,18 @@ def dataframes(year, doubleDiff, obs_reco, obs_reco_2nd):
     for bkg in bkgs:
         print ('Processing', bkg, year)
         if doubleDiff:
-            d_df_bkg[bkg] = createDataframe(d_bkg[bkg],True,gen_bkg[bkg],xsec_bkg[bkg],bkg,lumi_bkg,obs_reco,obs_reco_2nd)
+            d_df_bkg[bkg] = createDataframe(jesNames, year, d_bkg[bkg],True,gen_bkg[bkg],xsec_bkg[bkg],bkg,lumi_bkg,obs_reco,obs_reco_2nd)
         else:
-            d_df_bkg[bkg] = createDataframe(d_bkg[bkg],True,gen_bkg[bkg],xsec_bkg[bkg],bkg,lumi_bkg,obs_reco)
+            d_df_bkg[bkg] = createDataframe(jesNames, year, d_bkg[bkg],True,gen_bkg[bkg],xsec_bkg[bkg],bkg,lumi_bkg,obs_reco)
         print ('Background created')
 
     if year!='2016pre':
         for signal in signals_original:
             print ('Processing', signal, year)
             if doubleDiff:
-                d_df_sig[signal] = createDataframe(d_sig[signal],False,gen_sig[signal],xsec_sig[signal],signal,lumi_sig,obs_reco,obs_reco_2nd)
+                d_df_sig[signal] = createDataframe(jesNames, year, d_sig[signal],False,gen_sig[signal],xsec_sig[signal],signal,lumi_sig,obs_reco,obs_reco_2nd)
             else:
-                d_df_sig[signal] = createDataframe(d_sig[signal],False,gen_sig[signal],xsec_sig[signal],signal,lumi_sig,obs_reco)
+                d_df_sig[signal] = createDataframe(jesNames, year, d_sig[signal],False,gen_sig[signal],xsec_sig[signal],signal,lumi_sig,obs_reco)
             print ('Signal created')
 
 
@@ -377,8 +290,8 @@ def dataframes(year, doubleDiff, obs_reco, obs_reco_2nd):
 
 
 # Merge WplusH125 and WminusH125
-def skim_df(year, doubleDiff, obs_reco, obs_reco_2nd = ''):
-    d_df_sig, d_df_bkg = dataframes(year, doubleDiff, obs_reco, obs_reco_2nd)
+def skim_df(jesNames, year, doubleDiff, obs_reco, obs_reco_2nd = ''):
+    d_df_sig, d_df_bkg = dataframes(jesNames, year, doubleDiff, obs_reco, obs_reco_2nd)
     d_skim_sig = {}
     d_skim_bkg = {}
 

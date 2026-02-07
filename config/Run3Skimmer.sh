@@ -26,8 +26,8 @@ if [[ "$data_type" != "MC" && "$data_type" != "Data" ]]; then
 fi
 
 # Define paths
-#base_path="/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/122025"
-base_path="/eos/home-s/sellissp/HZZ/SAMPLES/122025"
+base_path="/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/"
+#base_path="/eos/home-s/sellissp/HZZ/SAMPLES/"
 full_path="$base_path/${subdir}_${data_type}"
 
 # Check directory
@@ -41,8 +41,8 @@ if [ "$data_type" == "MC" ]; then
     sample_list="$full_path/sampleList.txt"
 
     echo "Generating sample list for MC (excluding *Chunk*)..."
-    #find "$full_path" -mindepth 1 -maxdepth 1 -type d ! -name '*Chunk*' -exec basename {} \; | sort > "$sample_list"
-    find "$full_path" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort > "$sample_list"
+    find "$full_path" -mindepth 1 -maxdepth 1 -type d ! -name '*Chunk*' -exec basename {} \; | sort > "$sample_list"
+    #find "$full_path" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort > "$sample_list"
     echo "Sample list has $(wc -l < "$sample_list") entries."
     echo "Starting Run3Skimmer processing for MC..."
 
@@ -50,8 +50,8 @@ if [ "$data_type" == "MC" ]; then
         sample=$(echo "$sample" | xargs)
         if [ -n "$sample" ]; then
             input_file="$full_path/$sample/ZZ4lAnalysis.root"
-            #output_file="$full_path/$sample/ZZ4lAnalysis_SKIMMED.root"
-	    output_file="$full_path/$sample/ZZ4lAnalysis_FR.root" 
+            output_file="$full_path/$sample/ZZ4lAnalysis_SKIMMED.root"
+	    #output_file="$full_path/$sample/ZZ4lAnalysis_FR.root" 
 	    
             if [ -f "$input_file" ]; then
                 if [ "$retry_mode" = true ] && [ -f "$output_file" ]; then
@@ -59,8 +59,8 @@ if [ "$data_type" == "MC" ]; then
                     continue
                 fi
                 echo "-> Skimming $sample"
-                #python3 Run3Skimmer.py --input "$input_file" --output "$output_file" --mc
-		python3 NanoConverter.py --input "$input_file" --output "$output_file" --mc --skipZL
+                python3 Run3Skimmer.py --input "$input_file" --output "$output_file" --mc
+		#python3 NanoConverter.py --input "$input_file" --output "$output_file" --mc --skipZL
             else
                 echo "!! Missing input file for sample: $sample"
             fi
