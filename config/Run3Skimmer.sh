@@ -78,6 +78,26 @@ else
     elif [[ "$subdir" == *"2023"* ]]; then
         year="2023"
         data_files=("Data_eraC_preBPix.root" "Data_eraD_postBPix.root")
+    elif [[ "$subdir" == *"2024"* ]]; then
+	sample_list="$full_path/sampleList1.txt"
+	#find "$full_path" -mindepth 1 -maxdepth 1 -type d ! -name '*Chunk*' -exec basename {} \; | sort > "$sample_list"
+	echo "Sample list has $(wc -l < "$sample_list") entries."
+	echo "Starting Run3Skimmer processing for 2024 Data..."
+	while IFS= read -r sample; do
+	    input_file="$full_path/$sample/ZZ4lAnalysis.root"
+	    output_file="$full_path/$sample/ZZ4lAnalysis_SKIMMED.root"
+	    if [ -f "$input_file" ]; then
+		if [ "$retry_mode" = true ] && [ -f "$output_file" ]; then
+		    echo "-- Skipped (already skimmed): $sample"
+		    continue
+		fi
+		echo "-> Skimming $sample"
+		python3 Run3Skimmer.py --input "$input_file" --output "$output_file"
+	    else
+                echo "!! Missing input file for sample: $sample"
+            fi
+	done < "$sample_list"
+	
     else
         echo "Could not determine year (2022/2023) from directory name: $subdir"
         exit 4

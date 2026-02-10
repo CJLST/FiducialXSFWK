@@ -82,7 +82,13 @@ def getJes(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, obs
 
     for i in jesNames:
 
+        if year == "2023preBPix":
+            year = "2023"
+        if year == "2023postBPix":
+            year = "2023BPix"
+
         if "year" in i:
+
             name1st = i.split("_")[0]
             i = name1st + "_" + str(year)
 
@@ -244,17 +250,20 @@ elif (opt.YEAR == '2022EE'):
     years = ['2022EE']
     years_MC = ['2022EE']
 elif (opt.YEAR == '2023preBPix'):
-    years = [2023]
+    years = ['2023preBPix']
     years_MC = ['2023preBPix']
 elif (opt.YEAR == '2023postBPix'):
-    years = [2023]
+    years = ['2023postBPix']
     years_MC = ['2023postBPix']
 elif (opt.YEAR == '2024'):
-    years = [2024]
+    years = ['2024']
     years_MC = ['2024']
 elif (opt.YEAR == '2022full'):
     years = [2022]
     years_MC = ['2022', '2022EE']
+elif (opt.YEAR == 'Run3'):
+    years = ['2022', '2022EE', '2023preBPix', '2023postBPix', '2024']
+    years_MC = ['2022', '2022EE', '2023preBPix', '2023postBPix', '2024']
 else:
     print("{opt.YEAR} NOT DEFINED")
 
@@ -298,6 +307,21 @@ if (opt.YEAR == '2022'):
 if (opt.YEAR == '2022EE'):
     d_bkg['2022EE'] = d_bkg_tmp['2022EE']
     d_sig['2022EE'] = d_sig_tmp['2022EE']
+if (opt.YEAR == '2023preBPix'):
+    d_bkg['2023preBPix'] = d_bkg_tmp['2023preBPix']
+    d_sig['2023preBPix'] = d_sig_tmp['2023preBPix']
+if (opt.YEAR == '2023postBPix'):
+    d_bkg['2023postBPix'] = d_bkg_tmp['2023postBPix']
+    d_sig['2023postBPix'] = d_sig_tmp['2023postBPix']
+if (opt.YEAR == '2024'):
+    d_bkg['2024'] = d_bkg_tmp['2024']
+    d_sig['2024'] = d_sig_tmp['2024']
+if (opt.YEAR == 'Run3'):
+    d_bkg['2022'] = d_bkg_tmp['2022']
+    d_sig['2022EE'] = d_sig_tmp['2022EE']
+    d_bkg['2023preBPix'] = d_bkg_tmp['2023preBPix']
+    d_sig['2023postBPix'] = d_sig_tmp['2023postBPix']
+    d_bkg['2024'] = d_bkg_tmp['2024']
 
 #d_ZX = {}
 #if doubleDiff:

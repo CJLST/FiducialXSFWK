@@ -29,7 +29,7 @@ observables = {
 'phi1':
     {'obs_reco': 'Phi1',
     'obs_gen': 'GENPhi1'},
-'costhetastarZZ':
+'costhetastar':
     {'obs_reco': 'costhetastar',
     'obs_gen': 'GENcosthetastar'},
 'massZ1':
@@ -63,11 +63,11 @@ observables = {
     {'obs_reco': 'pTHjj',
     'obs_gen': 'GENpTHjj'},
 'TCjmax': {
-     'obs_reco': 'TCMax',
-     'obs_gen':  'GENTCMax'},
+     'obs_reco': 'TCjMax',
+     'obs_gen':  'GENTCjMax'},
 'TBjmax': {
-     'obs_reco': 'TBMax',
-     'obs_gen':  'GENTBMax'},
+     'obs_reco': 'TBjMax',
+     'obs_gen':  'GENTBjMax'},
 'D0m':
     {'obs_reco': 'D0m',
     'obs_gen': 'GEN_D0m'},
@@ -117,8 +117,8 @@ observables = {
 'TCjmax vs pT4l':
     {'obs_reco_2nd': 'ZZPt',
     'obs_gen_2nd': 'GENpT4l',
-    'obs_reco': 'TCMax',
-    'obs_gen': 'GENTCMax'},
+    'obs_reco': 'TCjMax',
+    'obs_gen': 'GENTCjMax'},
 'absdetajj vs mjj': # spencer
     {'obs_reco': 'absdetajj',
      'obs_gen': 'GENabsdetajj',

@@ -140,13 +140,13 @@ def dataframes(samples, year, year_mc, treename, type):
     elif year_mc == '2022EE':
         lumi = 26.6728
     elif year_mc == '2023preBPix':
-        lumi = 17.794
+        lumi = 18.06265
     elif year_mc == '2023postBPix':
-        lumi = 9.451
+        lumi = 9.693
     elif year_mc == '2024':
-        lumi = 109.08
+        lumi = 108.822
         if opt.doRun3:
-            lumi += 7.9804+26.6728+17.794+9.451
+            lumi += 7.9804+26.6728+18.06265+9.693
 
     d = {}
     df_all = prepareTrees(samples, year_mc, treename)
@@ -933,6 +933,9 @@ def get_init_binning_AMS(obs_name, dfs_sig, dfs_bkg, step_size, targetams, targe
     elif obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
         xmin = 0.0 # mjj, detajj, mHj, pTHj, pTHjj must be positive
         xmax = max(sig_values.max(), bkg_values.max())
+    elif obs_name == 'TBjmax' or obs_name == 'TCjmax':
+        xmin = 0.0 
+        xmax = max(sig_values.max(), bkg_values.max())
     elif obs_name == 'massZ1':
         xmin = 40
         xmax = 120
@@ -970,7 +973,7 @@ def get_init_binning_AMS(obs_name, dfs_sig, dfs_bkg, step_size, targetams, targe
     if abs(edges[-1] - xmax) > eps:
         edges.append(xmax)
 
-    if obs_name == 'pTj1' or obs_name == 'pTj2' or obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
+    if obs_name == 'pTj1' or obs_name == 'pTj2' or obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj' or obs_name == 'TBjmax' or obs_name == 'TCjmax':
         if edges[0] != -100:
             edges = [-100] + edges
 
@@ -1032,6 +1035,8 @@ def randomize_bins(obs_name, array_init):
         xmin = 30.0  # jets must have pT > 30 GeV
     elif obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
         xmin = 0.0 # mjj, detajj, mHj, pTHj, pTHjj must be positive
+    elif obs_name == 'TBjmax' or obs_name == 'TCjmax':
+        xmin = 0.0
     elif obs_name == 'massZ1':
         xmin = 40
         xmax = 120
@@ -1041,7 +1046,7 @@ def randomize_bins(obs_name, array_init):
 
     array = perturb_bins(bins, xmin, xmax)
 
-    if obs_name == 'pTj1' or obs_name == 'pTj2' or obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj':
+    if obs_name == 'pTj1' or obs_name == 'pTj2' or obs_name == 'mjj' or obs_name == 'absdetajj' or obs_name == 'mHj' or obs_name == 'pTHj' or obs_name == 'pTHjj' or obs_name == 'TBjmax' or obs_name == 'TCjmax':
         if array[0] != -100:
             array = [-100] + array
 
@@ -1127,7 +1132,7 @@ def get_res(obs_name, obs_bins, dfs_sig, doubleDiff_var = None, doubleDiff_const
     res = []
 
     # jet-related variables
-    jet_vars = {"pTj1", "pTj2", "mjj", "absdetajj", "mHj", "pTHj", "pTHjj"}
+    jet_vars = {"pTj1", "pTj2", "mjj", "absdetajj", "mHj", "pTHj", "pTHjj", "TBjmax", "TCjmax"}
 
     for i in range(len(obs_bins)-1):
         # if first bin and jet variable, assign tiny value
@@ -1172,13 +1177,21 @@ def doublediff_quantiles(obs_name, values, N):
     values = np.asarray(values, dtype=float)
     values = values[np.isfinite(values)]
 
-    if obs_name in {"pTj1","pTj2","mjj","absdetajj","mHj","pTHj","pTHjj"}:
+    if obs_name in {"pTj1","pTj2"}:#,"mjj","absdetajj","mHj","pTHj","pTHjj","TBjmax","TCjmax"}:
         vq = values[values >= 30]
         if vq.size == 0:
             return []
         qs = np.linspace(0, 1, N + 1)
         edges = np.quantile(vq, qs, method="lower")
         edges[0] = 30
+        edges[-1] = vq.max()
+    elif obs_name in {"mjj","absdetajj","mHj","pTHj","pTHjj","TBjmax","TCjmax"}:
+        vq = values[values >= 0]
+        if vq.size == 0:
+            return []
+        qs = np.linspace(0, 1, N + 1)
+        edges = np.quantile(vq, qs, method="lower")
+        edges[0] = 0
         edges[-1] = vq.max()
     else:
         qs = np.linspace(0, 1, N + 1)
@@ -1196,7 +1209,11 @@ def make2dbinning(obs_name, array, bins, swap_xy):
 
     if obs_name == "pTj1 vs pTj2":
         rects.append((-100.0, 30.0, -100.0, 30.0))
-        rects.append((30.0, 10000.0, -100.0, 30.0))
+        rects.append((30.0, 10000.0, -100.0, 30.0)) # 1j
+    elif obs_name == "pT4l vs pTHj":
+        rects.append((0.0, 10000.0, -100.0, 0.0)) # flip
+    elif obs_name == "TCjmax vs pT4l":
+        rects.append((-100.0, 0.0, 0.0, 10000.0))
 
     for xdef, (y1, y2) in zip(array, bins):
 
@@ -1214,6 +1231,19 @@ def make2dbinning(obs_name, array, bins, swap_xy):
 
                 # skip regions fully below 30
                 if x2 <= 30.0 or y2 <= 30.0:
+                    continue
+                if x2 <= x1c or y2 <= y1c:
+                    continue
+
+                rect = (y1c, y2, x1c, x2) if swap_xy else (x1c, x2, y1c, y2)
+
+            if obs_name == "TCjmax vs pT4l" or obs_name == "pT4l vs pTHj":
+                # force everything else to start at 30
+                x1c = max(x1, 0.0)
+                y1c = max(y1, 0.0)
+
+                # skip regions fully below 30
+                if x2 <= 0.0 or y2 <= 0.0:
                     continue
                 if x2 <= x1c or y2 <= y1c:
                     continue
@@ -1616,7 +1646,7 @@ if opt.AUTO:
 
     target_sig_count = 0.0
 
-    if obs_name in ("pTj1", "pTHj", "mHj"):  
+    if obs_name in ("pTj1", "pTHj", "mHj","TBjmax","TCjmax"):  
         eff = eff_4lep * eff_jet
         target_ams = 3
     elif obs_name in ("pTj2", "mjj", "absdetajj", "pTHjj"): 
@@ -1630,7 +1660,7 @@ if opt.AUTO:
         target_ams = 3
 
     if doubleDiff:
-        if obs_name_1st in ("pTj1", "pTHj", "mHj"):  
+        if obs_name_1st in ("pTj1", "pTHj", "mHj","TBjmax","TCjmax"):  
             eff1 = eff_4lep * eff_jet
             target_ams1 = 3
         elif obs_name_1st in ("pTj2", "mjj", "absdetajj", "pTHjj"): 
@@ -1643,7 +1673,7 @@ if opt.AUTO:
             eff1 = eff_4lep
             target_ams1 = 3
 
-        if obs_name_2nd in ("pTj1", "pTHj", "mHj"):  
+        if obs_name_2nd in ("pTj1", "pTHj", "mHj","TBjmax","TCjmax"):  
             eff2 = eff_4lep * eff_jet
             target_ams2 = 3
         elif obs_name_2nd in ("pTj2", "mjj", "absdetajj", "pTHjj"): 
@@ -1661,16 +1691,19 @@ if opt.AUTO:
             target_ams = 3
         elif obs_name == "massZ1 vs massZ2":
             eff = eff_4lep
-            target_ams = 3
+            target_ams = 3.75
         elif obs_name == "pTj1 vs pTj2":
             eff = eff_4lep * eff_jet**2
-            target_ams = 2
+            target_ams = 2.5
         elif obs_name == "pT4l vs pTHj":
             eff = eff_4lep * eff_jet
-            target_ams = 2.5
+            target_ams = 3
         elif obs_name == "Nj vs pT4l":
             eff = eff_4lep * eff_jet
             target_ams = 3
+        elif obs_name == "TCjmax vs pT4l":
+            eff = eff_4lep * eff_jet
+            target_ams = 2.75
         
 
 

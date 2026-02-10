@@ -124,7 +124,8 @@ def makeCR(_df, _flag, year):
         .Define('lep_Hindex', "getHindex(LepPt)")
         .Define('passedFullSelection', "1")
         #.Define('xsec', '1') ## Dummy
-        .Define('jet_idx', 'get_jet_idx(Jet_jetId, Jet_ZZMask, Jet_pt, Jet_eta)')
+        .Define('Leptons_ZZFullSel', "concatenate(Electron_ZZFullSel,Muon_ZZFullSel)")
+        .Define('jet_idx', f'get_jet_idx("{year}", Jet_jetId, Jet_ZZMask, Jet_pt, Jet_eta, Jet_phi, Leptons_ZZFullSel, Leptons_eta, Leptons_phi)')
         .Define('pTj1', "jet_idx.size()>0 ? Jet_pt[jet_idx[0]] : -99")
         .Define('Mj1',  "jet_idx.size()>0 ? Jet_mass[jet_idx[0]] : -99")
         .Define('Etaj1',"jet_idx.size()>0 ? Jet_eta[jet_idx[0]] : -99")
@@ -180,7 +181,7 @@ def makeGenCR(df, isfail):
                     .Define('GENZ_DaughtersId', "getGENlep_int(FidZ_DauPdgId)")
                     .Define('GENZ_MomId', "getGENlep_int(FidZ_MomPdgId)")
                     .Define('GENlep_Hindex', "getGENHindex(FidZZ_Z1l1Idx, FidZZ_Z1l2Idx, FidZZ_Z2l1Idx, FidZZ_Z2l2Idx)")
-                    .Define('genjet_idx', 'get_genjet_idx(GenJet_pt, GenJet_eta)')
+                    .Define('genjet_idx', f'get_genjet_idx("{year}", GenJet_pt, GenJet_eta, GenJet_phi, GENlep_eta, GENlep_phi)')
                     .Define('GENpTj1', "genjet_idx.size() > 0 ? GenJet_pt[genjet_idx[0]] : -99")
                     .Define('GENMj1', "genjet_idx.size() > 0 ? GenJet_mass[genjet_idx[0]] : -99")
                     .Define('GENEtaj1', "genjet_idx.size() > 0 ? GenJet_eta[genjet_idx[0]] : -99")
@@ -247,7 +248,8 @@ def makeZLCR(df, year):
                                             .Define('KFactor_QCD_ggZZ_Nominal', '1') ## Dummy
                                             .Define('xsec', '1') ## Dummy
                                             # not sure if these are necessary
-                                            .Define('jet_idx', 'get_jet_idx(Jet_jetId, Jet_ZZMask, Jet_pt, Jet_eta)')
+                                            .Define('Leptons_ZZFullSel', "concatenate(Electron_ZZFullSel,Muon_ZZFullSel)")
+                                            .Define('jet_idx', f'get_jet_idx("{year}", Jet_jetId, Jet_ZZMask, Jet_pt, Jet_eta, Jet_phi, Leptons_ZZFullSel, Leptons_eta, Leptons_phi)')
                                             .Define('pTj1', "jet_idx.size()>0 ? Jet_pt[jet_idx[0]] : -99")
                                             .Define('Mj1', "jet_idx.size()>0 ? Jet_mass[jet_idx[0]] : -99")
                                             .Define('Etaj1', "jet_idx.size()>0 ? Jet_eta[jet_idx[0]] : -99")
@@ -279,14 +281,14 @@ def makeZLCR(df, year):
 
     return df_ZL
 
-def add_jes(df, jes):
+def add_jes(df, jes, year):
 
     up_idx = f"jet_{jes}_ScaleUp_idx"
     dn_idx = f"jet_{jes}_ScaleDn_idx"
 
     df = (df
-        .Define(up_idx, f"get_jet_idx(Jet_jetId, Jet_ZZMask, Jet_{jes}_ScaleUp_pt, Jet_eta)")
-        .Define(dn_idx, f"get_jet_idx(Jet_jetId, Jet_ZZMask, Jet_{jes}_ScaleDn_pt, Jet_eta)")
+        .Define(up_idx, f'get_jet_idx("{year}", Jet_jetId, Jet_ZZMask, Jet_{jes}_ScaleUp_pt, Jet_eta, Jet_phi, Leptons_ZZFullSel, Leptons_eta, Leptons_phi)')
+        .Define(dn_idx, f'get_jet_idx("{year}", Jet_jetId, Jet_ZZMask, Jet_{jes}_ScaleDn_pt, Jet_eta, Jet_phi, Leptons_ZZFullSel, Leptons_eta, Leptons_phi)')
         .Define(f"pTj1_{jes}_ScaleUp", f"{up_idx}.size()>0 ? Jet_{jes}_ScaleUp_pt[{up_idx}[0]] : -99")
         .Define(f"pTj1_{jes}_ScaleDn", f"{dn_idx}.size()>0 ? Jet_{jes}_ScaleDn_pt[{dn_idx}[0]] : -99")
         .Define(f"Mj1_{jes}_ScaleUp",  f"{up_idx}.size()>0 ? Jet_{jes}_ScaleUp_mass[{up_idx}[0]] : -99")
@@ -497,31 +499,19 @@ std::vector<int> getGENlep_int(ROOT::VecOps::RVec<int> GENlep_input){
 """)
 
 ROOT.gInterpreter.Declare("""
-#include <ROOT/RVec.hxx>
 #include <cmath>
-#include <cstddef>
 
-ROOT::VecOps::RVec<int> get_jet_idx(const ROOT::VecOps::RVec<UChar_t>& jetId,
-                                        const ROOT::VecOps::RVec<Bool_t>& zzMask,
-                                        const ROOT::VecOps::RVec<Float_t>& jet_pt,
-                                        const ROOT::VecOps::RVec<Float_t>& jet_eta,
-                                        int requiredId = 6,
-                                        float minPt = 30.0,
-                                        float maxAbsEta = 5.0)
+bool pass_dR(float eta_1, float phi_1,
+             float eta_2, float phi_2,
+             float min_dR = 0.4f)
 {
-    ROOT::VecOps::RVec<int> jet_indices;
-    
-    const std::size_t n = jetId.size();
-    for (std::size_t i = 0; i < n; ++i) {
-        if (static_cast<int>(jetId[i]) == requiredId &&
-            !static_cast<bool>(zzMask[i]) &&
-            jet_pt[i] > minPt &&
-            std::abs(jet_eta[i]) < maxAbsEta)
-        {
-            jet_indices.push_back(i);
-        }
-    }
-    return jet_indices;
+    float deta = eta_1 - eta_2;
+
+    float dphi = std::fabs(phi_1 - phi_2);
+    if (dphi > M_PI) dphi = 2.0f*M_PI - dphi;
+
+    float dr = std::sqrt(deta*deta + dphi*dphi);
+    return dr > min_dR;
 }
 """)
 
@@ -530,24 +520,113 @@ ROOT.gInterpreter.Declare("""
 #include <cmath>
 #include <cstddef>
 
-ROOT::VecOps::RVec<int> get_genjet_idx(const ROOT::VecOps::RVec<Float_t>& jet_pt,
+ROOT::VecOps::RVec<int> get_jet_idx(const std::string& year,
+                                        const ROOT::VecOps::RVec<UChar_t>& jetId,
+                                        const ROOT::VecOps::RVec<Bool_t>& zzMask,
+                                        const ROOT::VecOps::RVec<Float_t>& jet_pt,
                                         const ROOT::VecOps::RVec<Float_t>& jet_eta,
+                                        const ROOT::VecOps::RVec<Float_t>& jet_phi,
+                                        const ROOT::VecOps::RVec<Float_t>& lep_zzfullsel,
+                                        const ROOT::VecOps::RVec<Float_t>& lep_eta,
+                                        const ROOT::VecOps::RVec<Float_t>& lep_phi,
+                                        int requiredId = 6,
                                         float minPt = 30.0,
                                         float maxAbsEta = 5.0)
 {
-    ROOT::VecOps::RVec<int> jet_indices;
     
-    const std::size_t n = jet_pt.size();
-    for (std::size_t i = 0; i < n; ++i) {
-        if (jet_pt[i] > minPt &&
-            std::abs(jet_eta[i]) < maxAbsEta)
+    ROOT::VecOps::RVec<int> jet_indices_final;
+
+    const std::size_t njet = jet_eta.size();
+    const std::size_t nlep = lep_eta.size();
+
+    for (std::size_t i = 0; i < njet; ++i) {
+
+        if ((int)jetId[i] != requiredId) continue;
+        if ((bool)zzMask[i]) continue;
+        if (std::abs(jet_eta[i]) >= maxAbsEta) continue;
+
+        // mask checks jep lep energy fraction so dr cut not necessary
+        //bool passdR = true;
+        //for (std::size_t j = 0; j < nlep; ++j) {
+        //    if (!lep_zzfullsel[j]) continue;
+        //    if (!pass_dR(jet_eta[i], jet_phi[i], lep_eta[j], lep_phi[j])) {
+        //        passdR = false;
+        //        break;
+        //    }
+        //}
+        //if (!passdR) continue;
+
+        float pt_cut = minPt;
+
+        // Example: raise pT threshold in endcap region; and in forward region for Run-3 years
+        if ((std::abs(jet_eta[i]) >= 2.5f && std::abs(jet_eta[i]) < 3.0f) ||
+            (std::abs(jet_eta[i]) >= 3.0f && (year == "2022" || year == "2022EE" || year == "2023" || year == "2023BPix")))
         {
-            jet_indices.push_back(i);
+            pt_cut = 50.0f;
+        }
+
+        if (jet_pt[i] > pt_cut) {
+            jet_indices_final.push_back(i);
         }
     }
-    return jet_indices;
+
+    return jet_indices_final;
 }
 """)
+
+
+ROOT.gInterpreter.Declare("""
+#include <ROOT/RVec.hxx>
+#include <cmath>
+#include <cstddef>
+
+ROOT::VecOps::RVec<int> get_genjet_idx(const std::string& year,
+                                        const ROOT::VecOps::RVec<Float_t>& jet_pt,
+                                        const ROOT::VecOps::RVec<Float_t>& jet_eta,
+                                        const ROOT::VecOps::RVec<Float_t>& jet_phi,
+                                        std::vector<float>& lep_eta,
+                                        std::vector<float>& lep_phi,
+                                        float minPt = 30.0,
+                                        float maxAbsEta = 5.0)
+{
+    
+    ROOT::VecOps::RVec<int> genjet_indices_final;
+
+    // Be defensive about sizes
+    const std::size_t njet = jet_eta.size();
+    const std::size_t nlep = lep_eta.size();
+
+    for (std::size_t i = 0; i < njet; ++i) {
+
+        if (std::abs(jet_eta[i]) >= maxAbsEta) continue;
+
+        bool passdR = true;
+        for (std::size_t j = 0; j < nlep; ++j) {
+            if (!pass_dR(jet_eta[i], jet_phi[i], lep_eta[j], lep_phi[j])) {
+                passdR = false;
+                break;
+            }
+        }
+        if (!passdR) continue;
+
+        float pt_cut = minPt;
+
+        // Example: raise pT threshold in endcap region; and in forward region for Run-3 years
+        if ((std::abs(jet_eta[i]) >= 2.5f && std::abs(jet_eta[i]) < 3.0f) ||
+            (std::abs(jet_eta[i]) >= 3.0f && (year == "2022" || year == "2022EE" || year == "2023" || year == "2023BPix")))
+        {
+            pt_cut = 50.0f;
+        }
+
+        if (jet_pt[i] > pt_cut) {
+            genjet_indices_final.push_back(i);
+        }
+    }
+
+    return genjet_indices_final;
+}
+""")
+
 
 ROOT.gInterpreter.Declare("""
 #include <ROOT/RVec.hxx>
@@ -839,10 +918,9 @@ if "ZZTo4l" in inFileName: do_CR = True
 year = None
 if "2022EE" in inFileName: year = "2022EE"
 elif "2022" in inFileName: year = "2022"
-elif "2023preBPix" in inFileName: year = "2023"
 elif "2023postBPix" in inFileName: year = "2023BPix"
+elif "2023" in inFileName: year = "2023"
 elif "2024" in inFileName: year = "2024"
-else: raise RuntimeError(f"Could not infer year from inFileName: {inFileName}")
 
 jesNames = ['Absolute', f'Absolute_{year}','BBEC1', f'BBEC1_{year}','EC2', f'EC2_{year}','FlavorQCD','HF', f'HF_{year}','RelativeBal',f'RelativeSample_{year}']
 
@@ -870,7 +948,7 @@ if MC:
     if 'ggTo' in inFileName: df_SR = df_SR.Define('KFactor_QCD_ggZZ_Nominal_weight', "KFactor_QCD_ggZZ_Nominal_Weight")
 
     for jes in jesNames:
-        df_SR = add_jes(df_SR, jes)
+        df_SR = add_jes(df_SR, jes, year)
 
     if "H12" in inFileName:
 
