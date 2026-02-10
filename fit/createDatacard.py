@@ -73,15 +73,24 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     _temp = __import__('inputs_bkg_'+obsName+'_'+year, globals(), locals(), ['fractionsBackground'], 0) # spencer 
     fractionsBackground = _temp.fractionsBackground
     if jes:
+
         sys.path.append('../coefficients/JES')
-        jesNames = ['Absolute', 'Absolute_year', 'BBEC1', 'BBEC1_year', 'EC2', 'EC2_year', 'FlavorQCD', 'HF', 'HF_year', 'RelativeBal', 'RelativeSample_year']
-        jesNames_datacard = [j.replace('year',year) for j in jesNames] # The name of the nuisance in the datacard should have the correspoding year
         #_temp = __import__('JESNP_'+obsName, globals(), locals(), ['JESNP'], -1)
         _temp = __import__('JESNP_'+obsName+'_'+year, globals(), locals(), ['JESNP'], 0) # spencer
         jesnp = _temp.JESNP
         #_temp = __import__('JESNP_evts_'+obsName, globals(), locals(), ['evts_noWeight'], -1)
         _temp = __import__('JESNP_evts_'+obsName+'_'+year, globals(), locals(), ['evts_noWeight'], 0) # spencer
         jes_evts_noWeight = _temp.evts_noWeight
+
+        if year == "2023preBPix":
+            year_jes = "2023"
+        elif year == "2023postBPix":
+            year_jes = "2023BPix"
+        else:
+            year_jes = year 
+
+        jesNames = ['Absolute', 'Absolute_year', 'BBEC1', 'BBEC1_year', 'EC2', 'EC2_year', 'FlavorQCD', 'HF', 'HF_year', 'RelativeBal', 'RelativeSample_year']
+        jesNames_datacard = [j.replace('year',year_jes) for j in jesNames] # The name of the nuisance in the datacard should have the correspoding year
         sys.path.remove('../coefficients/JES')
     sys.path.remove('../inputs')
 
@@ -415,6 +424,12 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
 
     # JES
     if jes == True:
+
+        if year == "2023preBPix":
+            year = "2023"
+        if year == "2023postBPix":
+            year = "2023BPix"
+
         for index,jesName in enumerate(jesNames_datacard):
             file.write('CMS_scale_j_'+jesName+' lnN ')
             for i in range(nBins+2): # Signals + out + fake
@@ -465,14 +480,27 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     _temp = __import__('inputs_bkgTemplate_'+obsName, globals(), locals(), ['expected_yield'], 0) # spencer
     expected_yield = _temp.expected_yield
     if jes:
+
         sys.path.append('../coefficients/JES')
-        jesNames = ['Absolute', 'Absolute_year', 'BBEC1', 'BBEC1_year', 'EC2', 'EC2_year', 'FlavorQCD', 'HF', 'HF_year', 'RelativeBal', 'RelativeSample_year']
-        jesNames_datacard = [j.replace('year',year) for j in jesNames] # The name of the nuisance in the datacard should have the correspoding year
         #_temp = __import__('JESNP_'+obsName+'_'+str(year), globals(), locals(), ['JESNP'], -1)
         _temp = __import__('JESNP_'+obsName+'_'+str(year), globals(), locals(), ['JESNP'], 0) # spencer
         jesnp = _temp.JESNP
+
+        if year == "2023preBPix":
+            year_jes = "2023"
+        elif year == "2023postBPix":
+            year_jes = "2023BPix"
+        else:
+            year_jes = year 
+
+        jesNames = ['Absolute', 'Absolute_year', 'BBEC1', 'BBEC1_year', 'EC2', 'EC2_year', 'FlavorQCD', 'HF', 'HF_year', 'RelativeBal', 'RelativeSample_year']
+        jesNames_datacard = [j.replace('year',year_jes) for j in jesNames] # The name of the nuisance in the datacard should have the correspoding year
+
+
         sys.path.remove('../coefficients/JES')
         # print(jesnp)
+
+
     sys.path.remove('../inputs')
 
     # lumi

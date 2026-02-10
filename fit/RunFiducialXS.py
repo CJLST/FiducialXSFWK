@@ -214,10 +214,19 @@ def runv3(years, observableBins, obsName, fitName, physicalModel, fStates=['4e',
 
             parts = []
 
+
             for name in jesNames:
                 if name.endswith('_year'):
-                    base = name.replace('_year','')
-                    parts += [f'CMS_scale_j_{base}_{y}' for y in years]
+
+                    for year in years:
+                        if year == "2023preBPix":
+                            year_jes = "2023"
+                        elif year == "2023postBPix":
+                            year_jes = "2023BPix"
+                        else:
+                            year_jes = year 
+                        base = name.replace('_year','')
+                        parts += [f'CMS_scale_j_{base}_{year_jes}']
                 else:
                     parts.append(f'CMS_scale_j_{name}')
 
@@ -660,8 +669,16 @@ def runFiducialXS():
 
                 for name in jesNames:
                     if name.endswith('_year'):
-                        base = name.replace('_year','')
-                        parts += [f'CMS_scale_j_{base}_{y}' for y in years]
+
+                        for year in years:
+                            if year == "2023preBPix":
+                                year_jes = "2023"
+                            elif year == "2023postBPix":
+                                year_jes = "2023BPix"
+                            else:
+                                year_jes = year 
+                            base = name.replace('_year','')
+                            parts += [f'CMS_scale_j_{base}_{year_jes}']
                     else:
                         parts.append(f'CMS_scale_j_{name}')
 
@@ -797,11 +814,18 @@ def runFiducialXS():
                 jesNames = ['Absolute','Absolute_year','BBEC1','BBEC1_year','EC2','EC2_year','FlavorQCD','HF','HF_year','RelativeBal','RelativeSample_year']
 
                 parts = []
-                for n in jesNames:
-                    if n.endswith('_year'):
-                        parts.append(f'CMS_scale_j_{n.replace("_year","")}_'+str(opt.YEAR))
+                for name in jesNames:
+                    if name.endswith('_year'):
+                        if opt.YEAR == "2023preBPix":
+                            year_jes = "2023"
+                        elif opt.YEAR  == "2023postBPix":
+                            year_jes = "2023BPix"
+                        else:
+                            year_jes = opt.YEAR  
+                        base = name.replace('_year','')
+                        parts += [f'CMS_scale_j_{base}_{year_jes}']
                     else:
-                        parts.append(f'CMS_scale_j_{n}')
+                        parts.append(f'CMS_scale_j_{name}')
 
                 cmd += ' ' + ' '.join(parts) 
 
@@ -993,8 +1017,8 @@ def runFiducialXS():
                 fidxs2e2mu_sm = tmp_xs_sm['2e2mu_genbin'+str(obsBin)]
                 frac4e_sm = fidxs4e_sm/(fidxs4e_sm+fidxs4mu_sm+fidxs2e2mu_sm)
                 frac4mu_sm = fidxs4mu_sm/(fidxs4e_sm+fidxs4mu_sm+fidxs2e2mu_sm)
-                K1 = frac4e/frac4e_sm
-                K2 = frac4mu/frac4mu_sm * (1.0-frac4e_sm)/(1.0-frac4e)
+                #K1 = frac4e/frac4e_sm
+                #K2 = frac4mu/frac4mu_sm * (1.0-frac4e_sm)/(1.0-frac4e)
 
                 #cmd_BR += 'K1Bin'+str(obsBin)+'='+str(K1)+',K2Bin'+str(obsBin)+'='+str(K2)+','
 

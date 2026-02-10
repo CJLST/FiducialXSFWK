@@ -270,7 +270,7 @@ elif(obsName == 'pT4l vs pTj1'):
     doubleDiff = True
     
 # _poi    = 'SigmaBin'
-_obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
+_obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'NJ'}
 if obsName not in _obsName:
     _obsName[obsName] = obsName
 # _poi    = 'r_smH_'+_obsName[obsName]+'_'
@@ -1103,7 +1103,7 @@ for i in range(nBins):
     c.Update()
     #c.SaveAs("plots/lhscan_compare_"+obsName+"_"+poi+".pdf")
     #c.SaveAs("plots/"+year+"_lhscan_compare_"+obsName+"_"+poi+".png")
-    c.SaveAs(path['plots_path']+"SCANS/"+year+"_lhscan_compare_"+obsName+"_"+poi+".png")
+    c.SaveAs(path['plots_path']+"SCANS/"+obsName"/"+year+"_lhscan_compare_"+obsName+"_"+poi+".png")
 
 if v4_flag:
     if opt.UNBLIND:
