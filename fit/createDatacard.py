@@ -434,6 +434,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
 
         if obsName == "TCjmax": obsName_jes = "TCjMax"
         elif obsName == "TBjmax": obsName_jes = "TBjMax"
+        elif obsName == "TCjmax_pT4l": obsName_jes = "TCjMax_ZZPt"
         else: obsName_jes = obsName
 
 

@@ -698,7 +698,7 @@ for variable in variable_list:
         plt.xlabel(r"$" + var + r"$" + current_config["x_unit"] + fs_label, fontsize=20)
 
         fontsizex=20
-        if variable == "Nj_pT4l":
+        if variable == "Nj_pT4l" or "rapidity4l_pT4l":
             fontsizex=16
             
         plt.xticks(fontsize=fontsizex)

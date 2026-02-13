@@ -14,7 +14,8 @@ DO_SPLIT = False
 
 #obsNames=["TCjmax", "TBjmax"]
 #obsNames=["mjj"]
-obsNames=["absdetajj_mjj"]
+#obsNames=["absdetajj_mjj"]
+obsNames=["TCjmax_pT4l"]
 
 #YEARS = ["2022", "2022EE", "2023preBPix", "2023postBPix", "2024"]
 YEARS = ["Run3"]
