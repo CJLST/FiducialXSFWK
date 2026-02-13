@@ -30,7 +30,7 @@ def parseOptions():
     parser.add_option('',   '--doHIG', action='store_true', dest='DOHIG', default=False, help='use HIG 19 001 acceptances')
     parser.add_option('',   '--nnlops', action='store_true', dest='NNLOPS', default=False, help='nnlops prediction')
     parser.add_option('',   '--split', action='store_true', dest='SPLIT', default=False, help='use HIG 19 001 acceptances')
-
+    parser.add_option('',   '--interpolation', action='store_true', dest='INTER', default=False, help='Calculate acceptances at 124 and 126 GeV')
     # store options and arguments as global variables
     global opt, args
     (opt, args) = parser.parse_args()
@@ -70,10 +70,13 @@ def exp_xsec():
     higgs4l_br = _temp.higgs4l_br
 
 
-    if opt.SPLIT:
-        fname = path['eos_path']+'inputs/inputs_sig_'+obsName+'_'+opt.YEAR+'.py'
+    #if opt.SPLIT:
+    #    fname = path['eos_path']+'inputs/inputs_sig_'+obsName+'_'+opt.YEAR+'.py'
+    #else:
+    if opt.INTER:
+        fname = path['eos_path']+'inputs/inputs_sig_extrap_'+obsName+'_'+opt.YEAR+".py"
     else:
-        fname = '../inputs/inputs_sig_'+obsName+'_'+opt.YEAR+'.py'
+        fname = path['eos_path']+'inputs/inputs_sig_'+obsName+'_'+opt.YEAR+".py"
 
     if opt.DOHIG: fname = fname + '_HIG19001'
 
@@ -85,10 +88,13 @@ def exp_xsec():
     acc = _temp.acc
     if opt.NNLOPS:
 
-        if opt.SPLIT:
-            fname = path['eos_path']+'inputs/inputs_sig_'+obsName+'_NNLOPS_'+opt.YEAR+'.py'
+        #if opt.SPLIT:
+        #    fname = path['eos_path']+'inputs/inputs_sig_'+obsName+'_NNLOPS_'+opt.YEAR+'.py'
+        #else:
+        if opt.INTER:
+            fname = path['eos_path']+'inputs/inputs_sig_extrap_'+obsName+'_NNLOPS_'+opt.YEAR+".py"
         else:
-            fname = '../inputs/inputs_sig_'+obsName+'_NNLOPS_'+opt.YEAR+'.py'
+            fname = path['eos_path']+'inputs/inputs_sig_'+obsName+'_NNLOPS_'+opt.YEAR+".py"
 
         module_name = os.path.splitext(os.path.basename(fname))[0]
         spec = importlib.util.spec_from_file_location(module_name, fname)
@@ -253,7 +259,7 @@ def exp_xsec():
             f.write('fidXS_pdf_dn = '+str(clean)+'\n')
             f.write('fidXS_alpha_up = '+str(clean)+'\n')
             f.write('fidXS_alpha_dn = '+str(clean)+'\n')
-
+    
     if obsName == 'mass4l' or obsName == 'massZ1' or obsName == 'massZ2' or obsName == 'costhetaZ1' or obsName == 'costhetaZ2' or obsName == 'costhetastar' or obsName == 'phi' or obsName == 'phi1':
 
         # --- existing 4l-summed outputs (UNCHANGED behavior) ---
@@ -279,6 +285,7 @@ def exp_xsec():
         # --------------------------------------------------------------
 
     else:
+    
         # --- existing non-mass4l behavior (UNCHANGED) ---
         write_fid_file('../inputs/fidXS_'+suffix+obsFull+'_ggH_'+opt.YEAR+'.py', observableBins, list(xs_ggh.values()))
         write_fid_file('../inputs/fidXS_'+obsFull+'_VBFH_'+opt.YEAR+'.py',       observableBins, list(xs_vbf.values()))

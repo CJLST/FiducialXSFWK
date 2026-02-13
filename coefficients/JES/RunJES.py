@@ -17,6 +17,7 @@ from tabulate import tabulate
 print('Welcome in RunJES!')
 
 jesNames = ['Absolute', 'Absolute_year', 'BBEC1', 'BBEC1_year', 'EC2', 'EC2_year', 'FlavorQCD', 'HF', 'HF_year', 'RelativeBal', 'RelativeSample_year']
+jesVars = ["pTj1", "pTj2", "Nj", "mjj", "absdetajj", "dphijj", "mHj", "pTHj", "pTHjj", "mHj", "TBjmax", "TCjmax"]
 
 def parseOptions():
 
@@ -130,26 +131,69 @@ def getJes(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, obs
     #     else:
     #         processBin = '_'+i+'_'+channel+'_'+str(year)+'_'+obs_reco+'_recobin'+str(recobin)
 
-        cutobs_reco = (datafr[obs_reco] >= obs_reco_low) & (datafr[obs_reco] < obs_reco_high)
-        cutobs_reco_qqzz = (datafr_qqzz[obs_reco] >= obs_reco_low) & (datafr_qqzz[obs_reco] < obs_reco_high)
-        cutobs_reco_ggzz = (datafr_ggzz[obs_reco] >= obs_reco_low) & (datafr_ggzz[obs_reco] < obs_reco_high)
-        cutobs_reco_jesup = (datafr[obs_reco+'_'+i+'_ScaleUp'] >= obs_reco_low) & (datafr[obs_reco+'_'+i+'_ScaleUp'] < obs_reco_high)
-        cutobs_reco_jesdn = (datafr[obs_reco+'_'+i+'_ScaleDn'] >= obs_reco_low) & (datafr[obs_reco+'_'+i+'_ScaleDn'] < obs_reco_high)
-        cutobs_reco_jesup_qqzz = (datafr_qqzz[obs_reco+'_'+i+'_ScaleUp'] >= obs_reco_low) & (datafr_qqzz[obs_reco+'_'+i+'_ScaleUp'] < obs_reco_high)
-        cutobs_reco_jesdn_qqzz = (datafr_qqzz[obs_reco+'_'+i+'_ScaleDn'] >= obs_reco_low) & (datafr_qqzz[obs_reco+'_'+i+'_ScaleDn'] < obs_reco_high)
-        cutobs_reco_jesup_ggzz = (datafr_ggzz[obs_reco+'_'+i+'_ScaleUp'] >= obs_reco_low) & (datafr_ggzz[obs_reco+'_'+i+'_ScaleUp'] < obs_reco_high)
-        cutobs_reco_jesdn_ggzz = (datafr_ggzz[obs_reco+'_'+i+'_ScaleDn'] >= obs_reco_low) & (datafr_ggzz[obs_reco+'_'+i+'_ScaleDn'] < obs_reco_high)
+        if not doubleDiff:
+
+            cutobs_reco = (datafr[obs_reco] >= obs_reco_low) & (datafr[obs_reco] < obs_reco_high)
+            cutobs_reco_qqzz = (datafr_qqzz[obs_reco] >= obs_reco_low) & (datafr_qqzz[obs_reco] < obs_reco_high)
+            cutobs_reco_ggzz = (datafr_ggzz[obs_reco] >= obs_reco_low) & (datafr_ggzz[obs_reco] < obs_reco_high)
+            cutobs_reco_jesup = (datafr[obs_reco+'_'+i+'_ScaleUp'] >= obs_reco_low) & (datafr[obs_reco+'_'+i+'_ScaleUp'] < obs_reco_high)
+            cutobs_reco_jesdn = (datafr[obs_reco+'_'+i+'_ScaleDn'] >= obs_reco_low) & (datafr[obs_reco+'_'+i+'_ScaleDn'] < obs_reco_high)
+            cutobs_reco_jesup_qqzz = (datafr_qqzz[obs_reco+'_'+i+'_ScaleUp'] >= obs_reco_low) & (datafr_qqzz[obs_reco+'_'+i+'_ScaleUp'] < obs_reco_high)
+            cutobs_reco_jesdn_qqzz = (datafr_qqzz[obs_reco+'_'+i+'_ScaleDn'] >= obs_reco_low) & (datafr_qqzz[obs_reco+'_'+i+'_ScaleDn'] < obs_reco_high)
+            cutobs_reco_jesup_ggzz = (datafr_ggzz[obs_reco+'_'+i+'_ScaleUp'] >= obs_reco_low) & (datafr_ggzz[obs_reco+'_'+i+'_ScaleUp'] < obs_reco_high)
+            cutobs_reco_jesdn_ggzz = (datafr_ggzz[obs_reco+'_'+i+'_ScaleDn'] >= obs_reco_low) & (datafr_ggzz[obs_reco+'_'+i+'_ScaleDn'] < obs_reco_high)
 
         if doubleDiff:
-            cutobs_reco &= (datafr[obs_reco_2nd] >= obs_reco_2nd_low) & (datafr[obs_reco_2nd] < obs_reco_2nd_high)
-            cutobs_reco_jesup &= (datafr[obs_reco_2nd+'_'+i+'_ScaleUp'] >= obs_reco_2nd_low) & (datafr[obs_reco_2nd+'_'+i+'_ScaleUp'] < obs_reco_2nd_high)
-            cutobs_reco_jesdn &= (datafr[obs_reco_2nd+'_'+i+'_ScaleDn'] >= obs_reco_2nd_low) & (datafr[obs_reco_2nd+'_'+i+'_ScaleDn'] < obs_reco_2nd_high)
-            cutobs_reco_qqzz &= (datafr_qqzz[obs_reco_2nd] >= obs_reco_2nd_low) & (datafr_qqzz[obs_reco_2nd] < obs_reco_2nd_high)
-            cutobs_reco_jesup_qqzz &= (datafr_qqzz[obs_reco_2nd+'_'+i+'_ScaleUp'] >= obs_reco_2nd_low) & (datafr_qqzz[obs_reco_2nd+'_'+i+'_ScaleUp'] < obs_reco_2nd_high)
-            cutobs_reco_jesdn_qqzz &= (datafr_qqzz[obs_reco_2nd+'_'+i+'_ScaleDn'] >= obs_reco_2nd_low) & (datafr_qqzz[obs_reco_2nd+'_'+i+'_ScaleDn'] < obs_reco_2nd_high)
-            cutobs_reco_ggzz &= (datafr_ggzz[obs_reco_2nd] >= obs_reco_2nd_low) & (datafr_ggzz[obs_reco_2nd] < obs_reco_2nd_high)
-            cutobs_reco_jesup_ggzz &= (datafr_ggzz[obs_reco_2nd+'_'+i+'_ScaleUp'] >= obs_reco_2nd_low) & (datafr_ggzz[obs_reco_2nd+'_'+i+'_ScaleUp'] < obs_reco_2nd_high)
-            cutobs_reco_jesdn_ggzz &= (datafr_ggzz[obs_reco_2nd+'_'+i+'_ScaleDn'] >= obs_reco_2nd_low) & (datafr_ggzz[obs_reco_2nd+'_'+i+'_ScaleDn'] < obs_reco_2nd_high)
+
+            if obs_reco in jesVars:
+
+                cutobs_reco = (datafr[obs_reco] >= obs_reco_low) & (datafr[obs_reco] < obs_reco_high)
+                cutobs_reco_jesup = (datafr[obs_reco+'_'+i+'_ScaleUp'] >= obs_reco_low) & (datafr[obs_reco+'_'+i+'_ScaleUp'] < obs_reco_high)
+                cutobs_reco_jesdn = (datafr[obs_reco+'_'+i+'_ScaleDn'] >= obs_reco_low) & (datafr[obs_reco+'_'+i+'_ScaleDn'] < obs_reco_high)
+                cutobs_reco_qqzz = (datafr_qqzz[obs_reco] >= obs_reco_low) & (datafr_qqzz[obs_reco] < obs_reco_high)
+                cutobs_reco_jesup_qqzz = (datafr_qqzz[obs_reco+'_'+i+'_ScaleUp'] >= obs_reco_low) & (datafr_qqzz[obs_reco+'_'+i+'_ScaleUp'] < obs_reco_high)
+                cutobs_reco_jesdn_qqzz = (datafr_qqzz[obs_reco+'_'+i+'_ScaleDn'] >= obs_reco_low) & (datafr_qqzz[obs_reco+'_'+i+'_ScaleDn'] < obs_reco_high)
+                cutobs_reco_ggzz = (datafr_ggzz[obs_reco] >= obs_reco_low) & (datafr_ggzz[obs_reco] < obs_reco_high)
+                cutobs_reco_jesup_ggzz = (datafr_ggzz[obs_reco+'_'+i+'_ScaleUp'] >= obs_reco_low) & (datafr_ggzz[obs_reco+'_'+i+'_ScaleUp'] < obs_reco_high)
+                cutobs_reco_jesdn_ggzz = (datafr_ggzz[obs_reco+'_'+i+'_ScaleDn'] >= obs_reco_low) & (datafr_ggzz[obs_reco+'_'+i+'_ScaleDn'] < obs_reco_high)
+
+            else:
+                
+                cutobs_reco = (datafr[obs_reco] >= obs_reco_low) & (datafr[obs_reco] < obs_reco_high)
+                cutobs_reco_jesup = (datafr[obs_reco] >= obs_reco_low) & (datafr[obs_reco] < obs_reco_high)
+                cutobs_reco_jesdn = (datafr[obs_reco] >= obs_reco_low) & (datafr[obs_reco] < obs_reco_high)
+                cutobs_reco_qqzz = (datafr_qqzz[obs_reco] >= obs_reco_low) & (datafr_qqzz[obs_reco] < obs_reco_high)
+                cutobs_reco_jesup_qqzz = (datafr_qqzz[obs_reco] >= obs_reco_low) & (datafr_qqzz[obs_reco] < obs_reco_high)
+                cutobs_reco_jesdn_qqzz = (datafr_qqzz[obs_reco] >= obs_reco_low) & (datafr_qqzz[obs_reco] < obs_reco_high)
+                cutobs_reco_ggzz = (datafr_ggzz[obs_reco] >= obs_reco_low) & (datafr_ggzz[obs_reco] < obs_reco_high)
+                cutobs_reco_jesup_ggzz = (datafr_ggzz[obs_reco] >= obs_reco_low) & (datafr_ggzz[obs_reco] < obs_reco_high)
+                cutobs_reco_jesdn_ggzz = (datafr_ggzz[obs_reco] >= obs_reco_low) & (datafr_ggzz[obs_reco] < obs_reco_high)
+            
+            if obs_reco_2nd in jesVars:
+
+                cutobs_reco &= (datafr[obs_reco_2nd] >= obs_reco_2nd_low) & (datafr[obs_reco_2nd] < obs_reco_2nd_high)
+                cutobs_reco_jesup &= (datafr[obs_reco_2nd+'_'+i+'_ScaleUp'] >= obs_reco_2nd_low) & (datafr[obs_reco_2nd+'_'+i+'_ScaleUp'] < obs_reco_2nd_high)
+                cutobs_reco_jesdn &= (datafr[obs_reco_2nd+'_'+i+'_ScaleDn'] >= obs_reco_2nd_low) & (datafr[obs_reco_2nd+'_'+i+'_ScaleDn'] < obs_reco_2nd_high)
+                cutobs_reco_qqzz &= (datafr_qqzz[obs_reco_2nd] >= obs_reco_2nd_low) & (datafr_qqzz[obs_reco_2nd] < obs_reco_2nd_high)
+                cutobs_reco_jesup_qqzz &= (datafr_qqzz[obs_reco_2nd+'_'+i+'_ScaleUp'] >= obs_reco_2nd_low) & (datafr_qqzz[obs_reco_2nd+'_'+i+'_ScaleUp'] < obs_reco_2nd_high)
+                cutobs_reco_jesdn_qqzz &= (datafr_qqzz[obs_reco_2nd+'_'+i+'_ScaleDn'] >= obs_reco_2nd_low) & (datafr_qqzz[obs_reco_2nd+'_'+i+'_ScaleDn'] < obs_reco_2nd_high)
+                cutobs_reco_ggzz &= (datafr_ggzz[obs_reco_2nd] >= obs_reco_2nd_low) & (datafr_ggzz[obs_reco_2nd] < obs_reco_2nd_high)
+                cutobs_reco_jesup_ggzz &= (datafr_ggzz[obs_reco_2nd+'_'+i+'_ScaleUp'] >= obs_reco_2nd_low) & (datafr_ggzz[obs_reco_2nd+'_'+i+'_ScaleUp'] < obs_reco_2nd_high)
+                cutobs_reco_jesdn_ggzz &= (datafr_ggzz[obs_reco_2nd+'_'+i+'_ScaleDn'] >= obs_reco_2nd_low) & (datafr_ggzz[obs_reco_2nd+'_'+i+'_ScaleDn'] < obs_reco_2nd_high)
+
+            else:
+
+                cutobs_reco &= (datafr[obs_reco_2nd] >= obs_reco_2nd_low) & (datafr[obs_reco_2nd] < obs_reco_2nd_high)
+                cutobs_reco_jesup &= (datafr[obs_reco_2nd] >= obs_reco_2nd_low) & (datafr[obs_reco_2nd] < obs_reco_2nd_high)
+                cutobs_reco_jesdn &= (datafr[obs_reco_2nd] >= obs_reco_2nd_low) & (datafr[obs_reco_2nd] < obs_reco_2nd_high)
+                cutobs_reco_qqzz &= (datafr_qqzz[obs_reco_2nd] >= obs_reco_2nd_low) & (datafr_qqzz[obs_reco_2nd] < obs_reco_2nd_high)
+                cutobs_reco_jesup_qqzz &= (datafr_qqzz[obs_reco_2nd] >= obs_reco_2nd_low) & (datafr_qqzz[obs_reco_2nd] < obs_reco_2nd_high)
+                cutobs_reco_jesdn_qqzz &= (datafr_qqzz[obs_reco_2nd] >= obs_reco_2nd_low) & (datafr_qqzz[obs_reco_2nd] < obs_reco_2nd_high)
+                cutobs_reco_ggzz &= (datafr_ggzz[obs_reco_2nd] >= obs_reco_2nd_low) & (datafr_ggzz[obs_reco_2nd] < obs_reco_2nd_high)
+                cutobs_reco_jesup_ggzz &= (datafr_ggzz[obs_reco_2nd] >= obs_reco_2nd_low) & (datafr_ggzz[obs_reco_2nd] < obs_reco_2nd_high)
+                cutobs_reco_jesdn_ggzz &= (datafr_ggzz[obs_reco_2nd] >= obs_reco_2nd_low) & (datafr_ggzz[obs_reco_2nd] < obs_reco_2nd_high)
+
+
 
         cutm4l_reco = (datafr['ZZMass'] > m4l_low) & (datafr['ZZMass'] < m4l_high) & (datafr['FinState_reco'] == channel)
         cutm4l_reco_qqzz = (datafr_qqzz['ZZMass'] > m4l_low) & (datafr_qqzz['ZZMass'] < m4l_high) & (datafr_qqzz['FinState_reco'] == channel)

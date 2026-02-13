@@ -5,7 +5,8 @@ source setup.sh
 cmsenv
 cd FiducialXSFWK/fit
 
-obsName="${1//_/ }"
+#obsName="${1//_/ }"
+obsName="${1//_/' vs '}"
 year="$2"
 
 python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --split

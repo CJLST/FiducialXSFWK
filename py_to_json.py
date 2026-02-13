@@ -9,7 +9,8 @@ from observables import observables
 from binning import binning
 from paths import path
 
-SPECIAL_OBS = {"massZ1","massZ2","costhetaZ1","costhetaZ2","costhetastar","phi","phi1"}
+#SPECIAL_OBS = {"massZ1","massZ2","costhetaZ1","costhetaZ2","costhetastar","phi","phi1"}
+SPECIAL_OBS = {}
 
 def load_results(file_path):
     # Dynamically import the Python file to get the 'resultsXS' dictionary
@@ -190,6 +191,7 @@ def parse_results(channel, variable_name, year):
             x_lim = [0, 4]
             y_lim_bottom = 0
             y_lim_top = 6
+            x_unit = ""
             y_unit = " (fb)"
         elif variable_name == "pT4l":
             x_lim = [0, 280]
@@ -250,6 +252,10 @@ def parse_results(channel, variable_name, year):
             y_lim_top = 1000
             x_unit = ""
             y_unit = " (fb)"
+        elif variable_name == "TCjmax":
+            x_lim = [-20, 80]
+        elif variable_name == "TBjmax":
+            x_lim = [-20, 80]
         else:
             x_lim = [-1000, 1000]
 

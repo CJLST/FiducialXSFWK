@@ -88,7 +88,8 @@ def load_mass4l_final_states(inclusive_mass4l_json_path: str, era: str):
 
 #####################################################################################
 
-SPECIAL_OBS = {'massZ1','massZ2','costhetaZ1','costhetaZ2','costhetastar','phi','phi1'}
+#SPECIAL_OBS = {'massZ1','massZ2','costhetaZ1','costhetaZ2','costhetastar','phi','phi1'}
+SPECIAL_OBS = {}
 
 def load_var_config(json_path: str, variable: str):
     with open(json_path, "r") as f:
@@ -630,9 +631,9 @@ for variable in variable_list:
             frame2.get_xticklabels()[0].set_ha('right')
 
         if variable == "mHj":
-            custom_xtick_labels = [r'$\sigma(\it{N}_{\rm{Jets}}=0)$', '110', '220', '330', '440', '550', '660', '770', '880']
-            custom_xticks = [25, 110, 220, 330,440,550,660,770,880]
-            plt.axvline(x=25, color='black', ls='dashed', lw=1, alpha=1)
+            custom_xtick_labels = [r'$\sigma(\it{N}_{\rm{Jets}}=0)$', '0', '110', '220', '330', '440', '550', '660', '770', '880']
+            custom_xticks = [-50, 0, 110, 220, 330,440,550,660,770,880]
+            plt.axvline(x=0, color='black', ls='dashed', lw=1, alpha=1)
             frame2.set_xticklabels(custom_xtick_labels)
             frame2.set_xticks(custom_xticks)
             frame2.xaxis.set_minor_locator(plt.NullLocator())
@@ -660,10 +661,24 @@ for variable in variable_list:
             frame2.get_xticklabels()[0].set_ha('right')
             
         if variable == "TCjmax":
-            plt.axvline(x=15, color='black', ls='dashed', lw=1, alpha=1)
+            custom_xtick_labels = [r'$\sigma(\it{N}_{\rm{Jets}}=0)$', '0', '20', '40', '60', '80']
+            custom_xticks = [-10,0,20,40,60,80]
+            plt.axvline(x=0, color='black', ls='dashed', lw=1, alpha=1)
+            frame2.set_xticklabels(custom_xtick_labels)
+            frame2.set_xticks(custom_xticks)
+            frame2.xaxis.set_minor_locator(plt.NullLocator())
+            frame2.get_xticklabels()[0].set_rotation(30)
+            frame2.get_xticklabels()[0].set_ha('right')
 
         if variable == "TBjmax":
-            plt.axvline(x=30, color='black', ls='dashed', lw=1, alpha=1)
+            custom_xtick_labels = [r'$\sigma(\it{N}_{\rm{Jets}}=0)$', '0', '20', '40', '60', '80']
+            custom_xticks = [-10,0,20,40,60,80]
+            plt.axvline(x=0, color='black', ls='dashed', lw=1, alpha=1)
+            frame2.set_xticklabels(custom_xtick_labels)
+            frame2.set_xticks(custom_xticks)
+            frame2.xaxis.set_minor_locator(plt.NullLocator())
+            frame2.get_xticklabels()[0].set_rotation(30)
+            frame2.get_xticklabels()[0].set_ha('right')
 
         if doubleDiff:
             custom_xtick_labels = []
@@ -679,7 +694,7 @@ for variable in variable_list:
 
         plt.ylabel(r'Ratio to MG5+NNLOPS', fontsize=15) #Not MC, since NNLOPS is based on a calculation
 
-        fs_label = "" if ch_label == "4l" else f" ({ch_label})"
+        fs_label = "" #if ch_label == "4l" else f" ({ch_label})"
         plt.xlabel(r"$" + var + r"$" + current_config["x_unit"] + fs_label, fontsize=20)
 
         fontsizex=20

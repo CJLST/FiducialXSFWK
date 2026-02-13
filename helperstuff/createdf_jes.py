@@ -15,7 +15,7 @@ from paths import path
 
 signals_original = ['ggH125', 'VBFH125', 'ttH125', 'WminusH125', 'WplusH125', 'ZH125']
 bkgs = ['ggTo2e2mu_Contin_MCFM701', 'ggTo2e2tau_Contin_MCFM701', 'ggTo2mu2tau_Contin_MCFM701', 'ggTo4e_Contin_MCFM701', 'ggTo4mu_Contin_MCFM701', 'ggTo4tau_Contin_MCFM701', 'ZZTo4l'] 
-
+jesVars = ["pTj1", "pTj2", "Nj", "mjj", "absdetajj", "dphijj", "mHj", "pTHj", "pTHjj", "mHj", "TBjMax", "TCjMax"]
 key = 'ZZTree/candTree'
 #key = 'Events'
 
@@ -92,6 +92,7 @@ def prepareTrees(year):
 
 
 # Calculate cross sections
+'''
 def xsecs(year):
     xsec_sig = {}
     xsec_bkg = {}
@@ -116,6 +117,49 @@ def xsecs(year):
     #     xsec_sig[signal] = d_sig[signal].pandas.df('xsec').xsec[0]
     # for bkg in bkgs:
     #     xsec_bkg[bkg] = d_bkg[bkg].pandas.df('xsec').xsec[0]
+    return xsec_sig, xsec_bkg
+'''
+
+def xsecs(year):
+
+    xsec_sig = {}
+    xsec_bkg = {}
+
+    d_sig, d_bkg = prepareTrees(year)
+    for signal in signals_original:
+        
+        #total_weight = d_sig[signal].pandas.df('overallEventWeight').overallEventWeight
+        #puweight = d_sig[signal].pandas.df('PUWeight').PUWeight
+        #genweight = d_sig[signal].pandas.df('genHEPMCweight').genHEPMCweight
+        if 'ggH' in signal:  df = d_sig[signal].arrays(['overallEventWeight', 'PUWeight', 'genHEPMCweight', 'ggH_NNLOPS_weight'], library="pd") # spencer
+        else: df = d_sig[signal].arrays(['overallEventWeight', 'PUWeight', 'genHEPMCweight'], library="pd") # spencer
+        total_weight = df['overallEventWeight'] # spencer
+        puweight = df['PUWeight'] # spencer
+        genweight = df['genHEPMCweight'] # spencer
+
+        if 'ggH' in signal:
+            #nnlops = d_sig[signal].pandas.df('ggH_NNLOPS_weight').ggH_NNLOPS_weight
+            nnlops = df['ggH_NNLOPS_weight'] # spencer
+            xsec = total_weight/(puweight*genweight*nnlops)
+
+        else:
+            xsec = total_weight/(puweight*genweight)
+            
+        xsec_sig[signal] = xsec[0]
+        print(signal, xsec_sig[signal])
+
+    for bkg in bkgs:
+        
+        df = d_bkg[bkg].arrays(['overallEventWeight', 'PUWeight', 'genHEPMCweight'], library="pd") # spencer
+        total_weight = df['overallEventWeight'] # spencer
+        puweight = df['PUWeight'] # spencer
+        genweight = df['genHEPMCweight'] # spencer
+
+        xsec = total_weight/(puweight*genweight)
+            
+        xsec_bkg[bkg] = xsec[0]
+        print(bkg, xsec_bkg[bkg])
+
     return xsec_sig, xsec_bkg
 
 
@@ -196,16 +240,37 @@ def createDataframe(jesNames, year, dataFrame,isBkg,gen,xsec,signal,lumi,obs_rec
 
     for name in jesNames:
 
-        if "year" in name:
-            name1st = name.split("_")[0]
-            name = name1st + "_" + year
+        if obs_reco in jesVars:
 
-        b_sig.append(obs_reco+"_"+name+"_ScaleUp")
-        b_sig.append(obs_reco+"_"+name+"_ScaleDn")
+            if "year" in name:
+                if year == "2023preBPix":
+                    year = "2023"
+                if year == "2023postBPix":
+                    year = "2023BPix"
+                    
+                name1st = name.split("_")[0]
+                name = name1st + "_" + year
+
+
+            b_sig.append(obs_reco+"_"+name+"_ScaleUp")
+            b_sig.append(obs_reco+"_"+name+"_ScaleDn")
 
         if obs_reco_2nd != 'None':
-            b_sig.append(obs_reco_2nd+"_"+name+"_ScaleUp")
-            b_sig.append(obs_reco_2nd+"_"+name+"_ScaleDn")
+
+            if obs_reco_2nd in jesVars:
+
+                if "year" in name:
+                    if year == "2023preBPix":
+                        year = "2023"
+                    if year == "2023postBPix":
+                        year = "2023BPix"
+                        
+                    name1st = name.split("_")[0]
+                    name = name1st + "_" + year
+
+
+                b_sig.append(obs_reco_2nd+"_"+name+"_ScaleUp")
+                b_sig.append(obs_reco_2nd+"_"+name+"_ScaleDn")
 
     df_np = dataFrame.arrays(library="np")
     df = pd.DataFrame({var: df_np[var] for var in b_sig})
@@ -232,7 +297,6 @@ def createDataframe(jesNames, year, dataFrame,isBkg,gen,xsec,signal,lumi,obs_rec
 
     return df
 
-
 # Set up data frames
 def dataframes(jesNames, year, doubleDiff, obs_reco, obs_reco_2nd):
     if year == '2016pre':
@@ -253,14 +317,14 @@ def dataframes(jesNames, year, doubleDiff, obs_reco, obs_reco_2nd):
         lumi_sig = 26.6728
         lumi_bkg = 26.6728
     elif year == '2023preBPix':
-        lumi_sig = 17.794
-        lumi_bkg = 17.794
+        lumi_sig = 18.06265
+        lumi_bkg = 18.06265
     elif year == '2023postBPix':
-        lumi_sig = 9.451
-        lumi_bkg = 9.451
+        lumi_sig = 9.693
+        lumi_bkg = 9.693
     elif year == '2024':
-        lumi_sig = 109.08
-        lumi_bkg = 109.08
+        lumi_sig = 108.822
+        lumi_bkg = 108.822
         
     d_df_sig = {}
     d_df_bkg = {}

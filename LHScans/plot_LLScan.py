@@ -6,6 +6,7 @@ import plotting as plot
 import json
 import argparse, optparse
 import os.path, sys
+import os
 
 sys.path.append('../helperstuff/')
 from paths import path
@@ -34,7 +35,7 @@ def parseOptions():
     parser.add_option('',   '--year',  dest='YEAR',  type='string',default='',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--unblind', action='store_true', dest='UNBLIND', default=False, help='Use real data')
     parser.add_option('',   '--v4', action='store_true', dest='V4', default= False, help='Print NLL scans for v4 physics model')
-
+    parser.add_option('',   '--interpolation', action='store_true', dest='INTER', default=False, help='Calculate acceptances at 124 and 126 GeV')
     # store options and arguments as global variables
     global opt, args
     (opt, args) = parser.parse_args()
@@ -276,13 +277,17 @@ if obsName not in _obsName:
 # _poi    = 'r_smH_'+_obsName[obsName]+'_'
 
 
-sys.path.append('../inputs')
-_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins']) #, -1)
+sys.path.append(path['eos_path']+'inputs')
+if opt.INTER:
+    _temp = __import__('inputs_sig_extrap_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins']) #, -1)
+else:
+    _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins']) #, -1)
+
 obs_bins = _temp.observableBins
 print(obs_bins)
 _temp = __import__('xsec_'+obsName+'_'+opt.YEAR, globals(), locals(), ['xsec']) # , -1)
 xsec = _temp.xsec
-sys.path.remove('../inputs')
+sys.path.remove(path['eos_path']+'inputs')
 
 nBins = len(obs_bins)
 if not doubleDiff: nBins = nBins-1 #in case of 1D measurement the number of bins is -1 the length of the list of bin boundaries
@@ -1103,7 +1108,13 @@ for i in range(nBins):
     c.Update()
     #c.SaveAs("plots/lhscan_compare_"+obsName+"_"+poi+".pdf")
     #c.SaveAs("plots/"+year+"_lhscan_compare_"+obsName+"_"+poi+".png")
-    c.SaveAs(path['plots_path']+"SCANS/"+obsName"/"+year+"_lhscan_compare_"+obsName+"_"+poi+".png")
+
+    outdir = os.path.join(path['plots_path'], "SCANS", obsName)
+    os.makedirs(outdir, exist_ok=True)
+
+    c.SaveAs(os.path.join(outdir,
+            year + "_lhscan_compare_" + obsName + "_" + poi + ".png"))
+
 
 if v4_flag:
     if opt.UNBLIND:

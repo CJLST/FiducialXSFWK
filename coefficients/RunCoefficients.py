@@ -1035,7 +1035,7 @@ if opt.MERGE:
         suffix = ''
         #orig = '_ORIG'
 
-    if opt.INT:
+    if opt.INTER:
         prefix = '_1'+opt.HYP
     else:
         prefix = ''
@@ -1053,28 +1053,33 @@ if opt.MERGE:
 
     eff_num_var_totals, eff_den_var_totals = {}, {}
 
-    if opt.INTER:
-        obs_name = "1" + opt.HYP + "_" + obs_name
 
     for year in years:
 
         #fname = f'../inputs/inputs_sig_{obs_name}_{suffix}{year}{orig}.py'
         #fname = f'../inputs/inputs_sig_{obs_name}_{suffix}{year}.py'
 
-        if opt.SPLIT:
-            fname = path['eos_path']+"inputs/inputs_sig_"+prefix+"_"+obs_name+"_"+suffix+year+".py"
-        else:
-            fname = "../inputs/inputs_sig_"+prefix+"_"+obs_name+"_"+suffix+year+".py"
+        #if opt.SPLIT:
+        #    fname = path['eos_path']+"inputs/inputs_sig"+prefix+"_"+obs_name+"_"+suffix+year+".py"
+        #else:
+        #    fname = "../inputs/inputs_sig"+prefix+"_"+obs_name+"_"+suffix+year+".py"
 
-        print( fname )
+        fname = os.path.join(
+            path["eos_path"],
+            f"inputs/inputs_sig{prefix}_{obs_name}_{suffix}{year}.py"
+        )
+
+        print(fname)
+
         if os.path.exists(fname):
-            if opt.SPLIT:
-                module_name = path['eos_path']+"inputs/inputs_sig_"+prefix+"_"+obs_name+"_"+suffix+year+".py"
-            else:
-                module_name = "../inputs/inputs_sig_"+prefix+"_"+obs_name+"_"+suffix+year+".py"
-            spec = importlib.util.spec_from_file_location(module_name, fname)
+            modname = f"inputs_sig{prefix}_{obs_name}_{suffix}{year}" 
+            spec = importlib.util.spec_from_file_location(modname, fname)
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Could not load spec for {fname}")
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
+        else:
+            raise FileNotFoundError(fname)
 
         if opt.NNLOPS:
             for key in module.acc.keys():
@@ -1093,46 +1098,49 @@ if opt.MERGE:
                 if module.binwf_num.get(key, 0.0) >= 0: binwrongfracnum_totals[key] = binwrongfracnum_totals.get(key, 0.0) + module.binwf_num.get(key, 0.0)
                 if module.binwf_den.get(key, 0.0) >= 0: binwrongfracden_totals[key] = binwrongfracden_totals.get(key, 0.0) + module.binwf_den.get(key, 0.0)
 
-                for subkey, subdict in module.eff_num_var.get(key, {}).items():
-                    for subsubkey, value in subdict.items():
-                        if value >= 0:
-                            eff_num_var_totals.setdefault(key, {})
-                            eff_num_var_totals[key].setdefault(subkey, {})
-                            eff_num_var_totals[key][subkey][subsubkey] = (
-                                eff_num_var_totals[key][subkey].get(subsubkey, 0.0) + value
-                            )
+                if not opt.INTER:
+                    for subkey, subdict in module.eff_num_var.get(key, {}).items():
+                        for subsubkey, value in subdict.items():
+                            if value >= 0:
+                                eff_num_var_totals.setdefault(key, {})
+                                eff_num_var_totals[key].setdefault(subkey, {})
+                                eff_num_var_totals[key][subkey][subsubkey] = (
+                                    eff_num_var_totals[key][subkey].get(subsubkey, 0.0) + value
+                                )
 
-                for subkey, subdict in module.eff_den_var.get(key, {}).items():
-                    for subsubkey, value in subdict.items():
-                        if value >= 0:
-                            eff_den_var_totals.setdefault(key, {})
-                            eff_den_var_totals[key].setdefault(subkey, {})
-                            eff_den_var_totals[key][subkey][subsubkey] = (
-                                eff_den_var_totals[key][subkey].get(subsubkey, 0.0) + value
-                            )
+                    for subkey, subdict in module.eff_den_var.get(key, {}).items():
+                        for subsubkey, value in subdict.items():
+                            if value >= 0:
+                                eff_den_var_totals.setdefault(key, {})
+                                eff_den_var_totals[key].setdefault(subkey, {})
+                                eff_den_var_totals[key][subkey][subsubkey] = (
+                                    eff_den_var_totals[key][subkey].get(subsubkey, 0.0) + value
+                                )
 
     if opt.NNLOPS:
         acceptance = {k: (accnum_totals[k] / accden_totals[k]) if accden_totals[k] != 0 else 0 for k in module.acc.keys()}
         err_acceptance = { k: math.sqrt((acceptance[k] * (1 - acceptance[k])) / accden_totals[k]) if acceptance[k] != 0 and accden_totals[k] > 0 else 0 for k in acceptance }
     else:
-        acceptance = {k: (accnum_totals[k] / accden_totals[k]) if accden_totals[k] != 0 else 0 for k in module.acc.keys()}
-        effrecotofid = {k: (effnum_totals[k] / effden_totals[k]) if effden_totals[k] != 0 else 0 for k in module.eff.keys()}
-        outinratio = {k: (oirnum_totals[k] / oirden_totals[k]) if oirden_totals[k] != 0 else 0 for k in module.outinratio.keys()}
-        wrongfrac = {k: (wrongfracnum_totals[k] / wrongfracden_totals[k]) if wrongfracden_totals[k] != 0 else 0 for k in module.inc_wrongfrac.keys()}
-        binfrac_wrongfrac = {k: (binwrongfracnum_totals[k] / binwrongfracden_totals[k]) if binwrongfracden_totals[k] != 0 else 0 for k in module.binfrac_wrongfrac.keys()}
-        err_acceptance = { k: math.sqrt((acceptance[k] * (1 - acceptance[k])) / accden_totals[k]) if acceptance[k] != 0 and accden_totals[k] > 0 else 0 for k in acceptance }
-        err_effrecotofid = { k: math.sqrt((effrecotofid[k] * (1 - effrecotofid[k])) / effden_totals[k]) if effrecotofid[k] != 0 and effden_totals[k] > 0 else 0 for k in effrecotofid }
-        err_outinratio = {
-            k: math.sqrt(max(outinratio[k] * (1 - outinratio[k]), 0.0) / oirden_totals[k])
-            if 0 <= outinratio[k] <= 1 and oirden_totals[k] > 0
-            else 0
-            for k in outinratio
-        }
+        acc_keys   = set(accnum_totals) | set(accden_totals)
+        eff_keys   = set(effnum_totals) | set(effden_totals)
+        oir_keys   = set(oirnum_totals) | set(oirden_totals)
+        wf_keys    = set(wrongfracnum_totals) | set(wrongfracden_totals)
+        binwf_keys = set(binwrongfracnum_totals) | set(binwrongfracden_totals)
+
+        acceptance = {k: (accnum_totals.get(k,0.0) / accden_totals.get(k,0.0))if accden_totals.get(k,0.0) != 0 else 0.0 for k in acc_keys}
+        effrecotofid = {k: (effnum_totals.get(k,0.0) / effden_totals.get(k,0.0))if effden_totals.get(k,0.0) != 0 else 0.0 for k in eff_keys}
+        outinratio = {k: (oirnum_totals.get(k,0.0) / oirden_totals.get(k,0.0))if oirden_totals.get(k,0.0) != 0 else 0.0 for k in oir_keys}
+        wrongfrac = {k: (wrongfracnum_totals.get(k,0.0) / wrongfracden_totals.get(k,0.0))if wrongfracden_totals.get(k,0.0) != 0 else 0.0 for k in wf_keys}
+        binfrac_wrongfrac = {k: (binwrongfracnum_totals.get(k,0.0) / binwrongfracden_totals.get(k,0.0))if binwrongfracden_totals.get(k,0.0) != 0 else 0.0 for k in binwf_keys}
+
+        err_acceptance   = {k: math.sqrt(max(acceptance[k]   * (1.0 - acceptance[k]),   0.0) / accden_totals[k]) if accden_totals.get(k, 0) > 0 and math.isfinite(acceptance[k])   and 0.0 <= acceptance[k]   <= 1.0 else 0.0 for k in acceptance}
+        err_effrecotofid = {k: math.sqrt(max(effrecotofid[k] * (1.0 - effrecotofid[k]), 0.0) / effden_totals[k]) if effden_totals.get(k, 0) > 0 and math.isfinite(effrecotofid[k]) and 0.0 <= effrecotofid[k] <= 1.0 else 0.0 for k in effrecotofid}
+        err_outinratio   = {k: math.sqrt(max(outinratio[k]   * (1.0 - outinratio[k]),   0.0) / oirden_totals[k]) if oirden_totals.get(k, 0) > 0 and math.isfinite(outinratio[k])   and 0.0 <= outinratio[k]   <= 1.0 else 0.0 for k in outinratio}
         numberFake   = {k: -1.0 for k in acceptance}
         lambdajesup  = {k:  0.0 for k in acceptance}
         lambdajesdn  = {k:  0.0 for k in acceptance}
 
-    with open('../inputs/inputs_sig_' +prefix+"_"+ obs_name + '_' + suffix + str(opt.YEAR) + '.py', 'w') as f:
+    with open(path['eos_path']+'inputs/inputs_sig' +prefix+"_"+ obs_name + '_' + suffix + str(opt.YEAR) + '.py', 'w') as f:
         if opt.NNLOPS:
             f.write('observableBins = '+str(obs_bins)+';\n')
             f.write('acc = '+str(acceptance)+' \n')
@@ -1156,8 +1164,9 @@ if opt.MERGE:
             f.write('acc_den = '+str(accden_totals)+' \n')
             f.write('eff_num = '+str(effnum_totals)+' \n')
             f.write('eff_den = '+str(effden_totals)+' \n')
-            f.write('eff_num_var = '+str(eff_num_var_totals)+' \n')
-            f.write('eff_den_var = '+str(eff_den_var_totals)+' \n')
+            if not opt.INTER:
+                f.write('eff_num_var = '+str(eff_num_var_totals)+' \n')
+                f.write('eff_den_var = '+str(eff_den_var_totals)+' \n')
             f.write('oir_num = '+str(oirnum_totals)+' \n')
             f.write('oir_den = '+str(oirden_totals)+' \n')
             f.write('wf_num = '+str(wrongfracnum_totals)+' \n')

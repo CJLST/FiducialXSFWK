@@ -5,12 +5,13 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import mplhep as hep
 import optparse,sys,os
+import importlib.util
 
 # sys.path.append('../inputs/')
 #from observables import observables
 sys.path.append('../helperstuff/')
 from binning import binning
-
+from paths import path
 print ('Welcome in RunInterpolation!')
 
 def parseOptions():
@@ -40,6 +41,13 @@ def parseOptions():
 global opt, args, runAllSteps
 parseOptions()
 
+def load_module_from_path(file_path, module_name):
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not create import spec for: {file_path}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 # -----------------------------------------------------------------------------------------
 # ------------------------------- MAIN ----------------------------------------------------
@@ -69,12 +77,12 @@ else:
 if doubleDiff: obsName = obs_name+'_'+obs_name_2nd
 else: obsName = obs_name
 
-if opt.NNLOPS and opt.YEAR!='Full':
-    print('NNLOPS only with full run2')
-    sys.exit()
+#if opt.NNLOPS and opt.YEAR!='Full':
+#    print('NNLOPS only with full run2')
+#    sys.exit()
 
 
-sys.path.append('../inputs')
+sys.path.append(path['eos_path']+'inputs')
 if opt.NNLOPS:
     nnlopsFlag = '_NNLOPS'
     inputs = ['acc']
@@ -86,10 +94,23 @@ else:
 
 for m in mass_points:
     if m == 125:
-        _temp = __import__('inputs_sig_'+obsName+nnlopsFlag+'_'+opt.YEAR, globals(), locals(), inputs+['observableBins'])
+        file_path = os.path.join(
+            path['eos_path'], "inputs",
+            f"inputs_sig_{obsName}{nnlopsFlag}_{opt.YEAR}.py"
+        )
+        mod_name = f"inputs_sig_{obsName}{nnlopsFlag}_{opt.YEAR}"
+        _temp = load_module_from_path(file_path, mod_name)
+
+        # grab observableBins only for 125
         observableBins = _temp.observableBins
     else:
-        _temp = __import__('inputs_sig_'+str(m)+'_'+obsName+nnlopsFlag+'_'+opt.YEAR, globals(), locals(), inputs)
+        file_path = os.path.join(
+            path['eos_path'], "inputs",
+            f"inputs_sig_{m}_{obsName}{nnlopsFlag}_{opt.YEAR}.py"
+        )
+        mod_name = f"inputs_sig_{m}_{obsName}{nnlopsFlag}_{opt.YEAR}"
+        _temp = load_module_from_path(file_path, mod_name)
+
     acc[m] = _temp.acc
     if opt.NNLOPS:
         continue
@@ -105,7 +126,7 @@ if opt.YEAR == 'Full':
     _temp = __import__('inputs_sig_'+obsName+'_aMC', globals(), locals(), inputs+['observableBins'])
     acc_aMC = _temp.acc
 
-sys.path.remove('../inputs')
+sys.path.remove(path['eos_path']+'inputs')
 
 spline = {}
 extrap_acc = {}
@@ -118,8 +139,8 @@ if not doubleDiff: nBins = len(obs_bins)-1 #In case of 1D measurement the number
 for channel in ['2e2mu', '4e', '4mu', '4l']:
     for genBin in range(nBins):
         for recoBin in range(nBins):
-            fig,axs = plt.subplots(2, 3, figsize=(30,10), dpi=80)
-            axs.ravel()
+            #fig,axs = plt.subplots(2, 3, figsize=(30,10), dpi=80)
+            #axs.ravel()
             plt.style.use(hep.style.CMS)
             # hep.cms.text('Simulation')
             if doubleDiff: hep.cms.lumitext(obs_name+'vs'+obs_name_2d+' bin'+str(genBin)+' '+channel+' Run2')
@@ -140,6 +161,7 @@ for channel in ['2e2mu', '4e', '4mu', '4l']:
                 spline_acc = interpolate.splrep(mass_points, acc_points, k=2)
                 extrap_acc[processBin_acc] = float(interpolate.splev(opt.EXTRAP, spline_acc))
                 # acc plot interpolation
+                '''
                 x = np.linspace(mass_points[0], mass_points[len(mass_points)-1], 200)
                 y = interpolate.splev(x, spline_acc)
                 axs[0,0].plot(mass_points, acc_points, 'ro')
@@ -148,7 +170,8 @@ for channel in ['2e2mu', '4e', '4mu', '4l']:
                 axs[0,0].set_ylabel('acceptance')
                 axs[0,0].axvline(opt.EXTRAP, 0, 3000, ls='--', c='black')
                 axs[0,0].legend()
-
+                '''
+                
                 if opt.NNLOPS:
                     continue
 
@@ -159,6 +182,7 @@ for channel in ['2e2mu', '4e', '4mu', '4l']:
                 spline_eff = interpolate.splrep(mass_points, eff_points, k=2)
                 extrap_eff[processBin] = float(interpolate.splev(opt.EXTRAP, spline_eff))
                 # eff plot interpolation
+                '''
                 x = np.linspace(mass_points[0], mass_points[len(mass_points)-1], 200)
                 y = interpolate.splev(x, spline_eff)
                 axs[0,1].plot(mass_points, eff_points, 'ro')
@@ -167,6 +191,7 @@ for channel in ['2e2mu', '4e', '4mu', '4l']:
                 axs[0,1].set_ylabel('eff')
                 axs[0,1].axvline(opt.EXTRAP, 0, 3000, ls='--', c='black')
                 axs[0,1].legend()
+                '''
 
                 #Outinratio
                 outinratio_points = [outinratio[124][pMode+'124_'+channel+'_'+obsName+'_genbin'+str(genBin)+'_recobin'+str(recoBin)],
@@ -175,6 +200,7 @@ for channel in ['2e2mu', '4e', '4mu', '4l']:
                 spline_outinratio = interpolate.splrep(mass_points, outinratio_points, k=2)
                 extrap_outinratio[processBin] = float(interpolate.splev(opt.EXTRAP, spline_outinratio))
                 # outinratio plot interpolation
+                '''
                 x = np.linspace(mass_points[0], mass_points[len(mass_points)-1], 200)
                 y = interpolate.splev(x, spline_outinratio)
                 axs[0,2].plot(mass_points, outinratio_points, 'ro')
@@ -183,6 +209,7 @@ for channel in ['2e2mu', '4e', '4mu', '4l']:
                 axs[0,2].set_ylabel('outinratio')
                 axs[0,2].axvline(opt.EXTRAP, 0, 3000, ls='--', c='black')
                 axs[0,2].legend()
+                '''
 
                 #inc_wrongfrac
                 inc_wrongfrac_points = [inc_wrongfrac[124][pMode+'124_'+channel+'_'+obsName+'_genbin'+str(genBin)+'_recobin'+str(recoBin)],
@@ -191,6 +218,7 @@ for channel in ['2e2mu', '4e', '4mu', '4l']:
                 spline_inc_wrongfrac = interpolate.splrep(mass_points, inc_wrongfrac_points, k=2)
                 extrap_inc_wrongfrac[processBin] = float(interpolate.splev(opt.EXTRAP, spline_inc_wrongfrac))
                 # inc_wrongfrac plot interpolation
+                '''
                 x = np.linspace(mass_points[0], mass_points[len(mass_points)-1], 200)
                 y = interpolate.splev(x, spline_inc_wrongfrac)
                 axs[1,0].plot(mass_points, inc_wrongfrac_points, 'ro')
@@ -199,6 +227,7 @@ for channel in ['2e2mu', '4e', '4mu', '4l']:
                 axs[1,0].set_ylabel('inc_wrongfrac')
                 axs[1,0].axvline(opt.EXTRAP, 0, 3000, ls='--', c='black')
                 axs[1,0].legend()
+                '''
 
                 #binfrac_wrongfrac
                 binfrac_wrongfrac_points = [binfrac_wrongfrac[124][pMode+'124_'+channel+'_'+obsName+'_genbin'+str(genBin)+'_recobin'+str(recoBin)],
@@ -207,6 +236,7 @@ for channel in ['2e2mu', '4e', '4mu', '4l']:
                 spline_binfrac_wrongfrac = interpolate.splrep(mass_points, binfrac_wrongfrac_points, k=2)
                 extrap_binfrac_wrongfrac[processBin] = float(interpolate.splev(opt.EXTRAP, spline_binfrac_wrongfrac))
                 # binfrac_wrongfrac plot interpolation
+                '''
                 x = np.linspace(mass_points[0], mass_points[len(mass_points)-1], 200)
                 y = interpolate.splev(x, spline_binfrac_wrongfrac)
                 axs[1,1].plot(mass_points, binfrac_wrongfrac_points, 'ro')
@@ -215,9 +245,10 @@ for channel in ['2e2mu', '4e', '4mu', '4l']:
                 axs[1,1].set_ylabel('binfrac_wrongfrac')
                 axs[1,1].axvline(opt.EXTRAP, 0, 3000, ls='--', c='black')
                 axs[1,1].legend()
+                '''
 
 
-            plt.savefig('extrapolation/extrap_%s_%s_%s_Bin%i_%i%s.png' %(opt.YEAR, obsName, channel, genBin, recoBin, nnlopsFlag), bbox_inches='tight')
+            #plt.savefig('extrapolation/extrap_%s_%s_%s_Bin%i_%i%s.png' %(opt.YEAR, obsName, channel, genBin, recoBin, nnlopsFlag), bbox_inches='tight')
             # plt.show()
             plt.close()
 
@@ -259,15 +290,15 @@ for channel in ['2e2mu', '4e', '4mu', '4l']:
 # if doubleDiff: obs_name_dic = obs_name+'_'+obs_name_2nd
 # else: obs_name_dic = obs_name
 if opt.NNLOPS:
-    if (os.path.exists('../inputs/inputs_sig_extrap_'+obsName+'_NNLOPS_'+str(opt.YEAR)+'_ORIG.py')):
-        os.system('rm ../inputs/inputs_sig_extrap_'+obsName+'_NNLOPS_'+str(opt.YEAR)+'_ORIG.py')
-    with open('../inputs/inputs_sig_extrap_'+obsName+'_NNLOPS_'+str(opt.YEAR)+'.py', 'w') as f:
+    if (os.path.exists(path['eos_path']+'inputs/inputs_sig_extrap_'+obsName+'_NNLOPS_'+str(opt.YEAR)+'_ORIG.py')):
+        os.system('rm ' + path['eos_path']+'inputs/inputs_sig_extrap_'+obsName+'_NNLOPS_'+str(opt.YEAR)+'_ORIG.py')
+    with open(path['eos_path']+'inputs/inputs_sig_extrap_'+obsName+'_NNLOPS_'+str(opt.YEAR)+'.py', 'w') as f:
         f.write('observableBins = '+str(observableBins)+' \n')
         f.write('acc = '+str(extrap_acc))
 else:
-    if (os.path.exists('../inputs/inputs_sig_extrap_'+obsName+'_'+str(opt.YEAR)+'_ORIG.py')):
-        os.system('rm ../inputs/inputs_sig_extrap_'+obsName+'_'+str(opt.YEAR)+'_ORIG.py')
-    with open('../inputs/inputs_sig_extrap_'+obsName+'_'+str(opt.YEAR)+'.py', 'w') as f:
+    if (os.path.exists(path['eos_path']+'inputs/inputs_sig_extrap_'+obsName+'_'+str(opt.YEAR)+'_ORIG.py')):
+        os.system('rm ' + path['eos_path']+'inputs/inputs_sig_extrap_'+obsName+'_'+str(opt.YEAR)+'_ORIG.py')
+    with open(path['eos_path']+'inputs/inputs_sig_extrap_'+obsName+'_'+str(opt.YEAR)+'.py', 'w') as f:
         f.write('observableBins = '+str(observableBins)+' \n')
         f.write('acc = '+str(extrap_acc)+' \n')
         # f.write('err_acc = '+str(err_acc[125])+' \n')

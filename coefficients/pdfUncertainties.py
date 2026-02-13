@@ -239,8 +239,9 @@ def get_th_xsec(process, obs_gen, suffix, year, doubleDiff, channel, obs_gen_2nd
         "GENmassZ1": "massZ1", "GENmassZ2": "massZ2", "GENpTj1": "pTj1",
         "GENpTj2": "pTj2", "GENmjj": "mjj", "GENabsdetajj": "absdetajj",
         "GENdphijj": "dphijj", "GENmHj":  "mHj", "GENpTHj": "pTHj",
-        "GENpTHjj": "pTHjj", "GENNj": "Nj", "GENTBMax": "TBMax", "GENTCMax": "TCMax"
+        "GENpTHjj": "pTHjj", "GENNj": "Nj", "GENTBjMax": "TBjmax", "GENTCjMax": "TCjmax"
     }
+
     obs_name = obs_name_dict[obs_gen]
 
     chan_tag = f'_{channel}' if channel != '4l' else ''
@@ -646,6 +647,20 @@ if __name__ == '__main__':
         obs_gen_2nd = None
         length = len(bins)-1
 
+    if obs_name == "TCjMax": 
+        obs_name = "TCjmax"
+        obs_gen = "GENTCjmax"
+    if obs_name == "TBjMax": 
+        obs_name = "TBjmax"
+        obs_gen = "GENTBjmax"
+    if doubleDiff:
+        if obs_name_2nd == "TCjMax": 
+            obs_name_2nd = "TCjmax"
+            obs_gen_2nd = "GENTCjmax"
+        if obs_name_2nd == "TBjMax": 
+            obs_name_2nd = "TBjmax"
+            obs_gen_2nd = "GENTBjmax"
+
     channels = ['4l']
 
     if opt.OBSNAME == 'mass4l':
@@ -980,7 +995,7 @@ if __name__ == '__main__':
                     suffix = "NNLOPS_" if (proc_nom == "ggH125" and use_NNLOPS_flag) else ""
                     _write_combined_4e4mu_module(
                         process=proc_nom,
-                        obs_name=opt.OBSNAME if not doubleDiff else f"{obs_name}_{obs_name_2nd}",
+                        obs_name=obs_name if not doubleDiff else f"{obs_name}_{obs_name_2nd}",
                         suffix=suffix,
                         out_year=year,          # this is the era module name you just wrote (e.g. 2022)
                         era_to_read=year,       # read 4e and 4mu for the same era

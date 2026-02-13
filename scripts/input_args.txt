@@ -1,8 +1,1 @@
-mass4l 2022
-mass4l 2022EE
-pT4l 2022
-pT4l 2022EE
-rapidity4l 2022
-rapidity4l 2022EE
-pTj1 2022
-pTj1 2022EE
+absdetajj_mjj Run3

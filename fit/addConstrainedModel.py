@@ -3,6 +3,25 @@ import sys, os, string, re, pwd, subprocess, ast, optparse, shlex, time # spence
 from array import array
 from math import *
 from decimal import *
+import os
+import importlib.util
+
+sys.path.append('../helperstuff/')
+from binning import binning
+from paths import path
+
+sys.path.append(path['eos_path']+'inputs')
+
+def load_module_from_path(file_path, module_name=None):
+    if module_name is None:
+        module_name = os.path.splitext(os.path.basename(file_path))[0]
+
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not create import spec for: {file_path}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
 grootargs = []
 def callback_rootargs(option, opt, value, parser):
@@ -27,6 +46,7 @@ def parseOptions():
     parser.add_option('-f', '--doFit', action="store_true", dest='DOFIT', default=False, help='doFit, default false')
     parser.add_option('', '--doubleDiff', action="store_true", dest='DOUBLEDIFF', default=False, help='double-differential measurements, default false')
     parser.add_option('-p', '--doPlots', action="store_true", dest='DOPLOTS', default=False, help='doPlots, default false')
+    parser.add_option('',   '--interpolation', action='store_true', dest='INTER', default=False, help='Calculate acceptances at 124 and 126 GeV')
     parser.add_option("-l",action="callback",callback=callback_rootargs)
     parser.add_option("-q",action="callback",callback=callback_rootargs)
     parser.add_option("-b",action="callback",callback=callback_rootargs)
@@ -40,13 +60,26 @@ global opt, args, runAllSteps
 parseOptions()
 sys.argv = grootargs
 
-sys.path.append('../inputs')
+sys.path.append(path['eos_path']+'inputs')
 obsName = opt.OBSNAME
 
-#_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins','acc','eff','err_eff','outinratio','err_outinratio','inc_wrongfrac','binfrac_wrongfrac'], -1)
-_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins','acc','eff','err_eff','outinratio','err_outinratio','inc_wrongfrac','binfrac_wrongfrac'], 0)
+if opt.INTER:
+    file_path = os.path.join(path['eos_path'], "inputs", f"inputs_sig_extrap_{obsName}_{opt.YEAR}.py")
+else:
+    file_path = os.path.join(path['eos_path'], "inputs", f"inputs_sig_{obsName}_{opt.YEAR}.py")
 
+_temp = load_module_from_path(file_path)
+
+observableBins   = _temp.observableBins
+acc              = _temp.acc
+eff              = _temp.eff
+err_eff          = _temp.err_eff
+outinratio       = _temp.outinratio
+err_outinratio   = _temp.err_outinratio
+inc_wrongfrac    = _temp.inc_wrongfrac
+binfrac_wrongfrac= _temp.binfrac_wrongfrac
 observableBins = _temp.observableBins
+
 if not opt.DOUBLEDIFF: lenObsBins = len(observableBins)-1
 elif opt.DOUBLEDIFF: lenObsBins = len(observableBins)
 acc = _temp.acc
@@ -113,7 +146,7 @@ for fState in fStates:
 
         for genbin in range(lenObsBins):
 
-            print('ggH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin))
+            #print('ggH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin))
             ggHxs = higgs_xs['ggH_125.38']*higgs4l_br['125.38_'+fState]*acc['ggH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]
             #ggHxs = acc['ggH_HRes_125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]
             VBFxs = higgs_xs['VBF_125.38']*higgs4l_br['125.38_'+fState]*acc['VBFH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(genbin)]
@@ -223,9 +256,17 @@ for fState in fStates:
             outinratio['SMup_125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(recobin)] = outinUp
             outinratio['SMdn_125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(recobin)] = outinDn
 
-os.system('cp ../inputs/inputs_sig_'+opt.OBSNAME+'_'+opt.YEAR+'.py ../inputs/inputs_sig_'+opt.OBSNAME+'_'+opt.YEAR+'_ORIG.py')
+if opt.INTER:
+    os.system('cp ' + path['eos_path']+'inputs/inputs_sig_extrap_'+opt.OBSNAME+'_'+opt.YEAR+'.py ' + path['eos_path']+'inputs/inputs_sig_extrap_'+opt.OBSNAME+'_'+opt.YEAR+'_ORIG.py')
+else:
+    os.system('cp ' + path['eos_path']+'inputs/inputs_sig_'+opt.OBSNAME+'_'+opt.YEAR+'.py ' + path['eos_path']+'inputs/inputs_sig_'+opt.OBSNAME+'_'+opt.YEAR+'_ORIG.py')
 
-with open('../inputs/inputs_sig_'+opt.OBSNAME+'_'+opt.YEAR+'.py', 'w') as f:
+if opt.INTER:
+    file = path['eos_path']+'inputs/inputs_sig_extrap_'+opt.OBSNAME+'_'+opt.YEAR+'.py'
+else:
+    file = path['eos_path']+'inputs/inputs_sig_'+opt.OBSNAME+'_'+opt.YEAR+'.py'
+
+with open(file, 'w') as f:
     f.write('observableBins = '+str(observableBins)+' \n')
     f.write('acc = '+str(acc)+' \n')
     f.write('eff = '+str(eff)+' \n')
@@ -235,4 +276,4 @@ with open('../inputs/inputs_sig_'+opt.OBSNAME+'_'+opt.YEAR+'.py', 'w') as f:
     f.write('inc_wrongfrac = '+str(inc_wrongfrac)+' \n')
     f.write('binfrac_wrongfrac = '+str(binfrac_wrongfrac))
 
-sys.path.remove('../inputs')
+sys.path.remove(path['eos_path']+'inputs')

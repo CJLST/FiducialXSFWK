@@ -11,6 +11,18 @@ year="$2"
 python3 RunCoefficients.py --obsName "$obsName" --year "$year" --merge
 python3 RunCoefficients.py --obsName "$obsName" --year "$year" --merge --nnlops
 
+python3 RunCoefficients.py --obsName "$obsName" --year "$year" --merge --interpolation --hypothesis "24"
+python3 RunCoefficients.py --obsName "$obsName" --year "$year" --merge --nnlops --interpolation --hypothesis "24"
+
+python3 RunCoefficients.py --obsName "$obsName" --year "$year" --merge --interpolation --hypothesis "26"
+python3 RunCoefficients.py --obsName "$obsName" --year "$year" --merge --nnlops --interpolation --hypothesis "26"
+
+python3 RunInterpolation.py --obsName "$obsName" --year "$year"
+python3 RunInterpolation.py --obsName "$obsName" --year "$year" --nnlops
+
+python3 RunPlotCoefficients.py --obsName "$obsName" --year "$year" --interpolation
+#python3 RunPlotCoefficients.py --obsName "$obsName" --year "$year" --nnlops --interpolation
+
 cd ../templates
 
 python3 RunTemplates.py --obsName "$obsName" --year "$year"
@@ -18,12 +30,11 @@ python3 plot_templates.py --obsName "$obsName" --year "$year"
 
 cd ../fit
 
-#python3 RunFiducialXS.py --obsName "$obsName" --year "$year"
-python3 RunFiducialXS.py --obsName "$obsName" --year "$year" --eff_unc
-python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year"
-python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --nnlops
-python3 impacts.py --obsName "$obsName" --year "$year"
+python3 RunFiducialXS.py --obsName "$obsName" --year "$year" --eff_unc --interpolation
+python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --interpolation
+python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --nnlops --interpolation
+#python3 impacts.py --obsName "$obsName" --year "$year" --interpolation
 
 cd ../LHScans
 
-python3 plot_LLScan.py --obsName "$obsName" --year "$year"
+python3 plot_LLScan.py --obsName "$obsName" --year "$year" --interpolation

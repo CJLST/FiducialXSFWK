@@ -31,7 +31,7 @@ def parseOptions():
     parser.add_option('',   '--year',  dest='YEAR',  type='string',default='',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--doHIG', action='store_true', dest='DOHIG', default=False, help='use HIG 19 001 acceptances')
     parser.add_option('',   '--split', action='store_true', dest='SPLIT', default=False, help='')
-
+    parser.add_option('',   '--interpolation', action='store_true', dest='INTER', default=False, help='Calculate acceptances at 124 and 126 GeV')
     # store options and arguments as global variables
     global opt, args
     (opt, args) = parser.parse_args()
@@ -69,10 +69,13 @@ def exp_xsec():
         higgs_xs = _temp.higgs_xs
     higgs4l_br = _temp.higgs4l_br
 
-    if opt.SPLIT:
-        fname = path['eos_path']+'inputs/inputs_sig_'+obsName+'_'+opt.YEAR+".py"
+    #if opt.SPLIT:
+    #    fname = path['eos_path']+'inputs/inputs_sig_'+obsName+'_'+opt.YEAR+".py"
+    #else:
+    if opt.INTER:
+        fname = path['eos_path']+'inputs/inputs_sig_extrap_'+obsName+'_'+opt.YEAR+".py"
     else:
-        fname = '../inputs/inputs_sig_'+obsName+'_'+opt.YEAR+".py"
+        fname = path['eos_path']+'inputs/inputs_sig_'+obsName+'_'+opt.YEAR+".py"
 
     if opt.DOHIG: fname = fname + '_HIG19001'
     #_temp = __import__(fname, globals(), locals(), ['acc'], -1)

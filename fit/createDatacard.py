@@ -117,11 +117,11 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
         '2024':'1.0020',
         }
         # Additional reduced nuisances for Run-3:
-        # lumi_2 applies to 2023 & 2024
-        # lumi_3 applies to 2024 only
+        # lumi_13p6TeV_correlated_2023_2024 applies to 2023 & 2024
+        # lumi_13p6TeV_2024 applies to 2024 only
         lumi_extra = {
-        'lumi_2': {'2023preBPix': '1.0127', '2023postBPix': '1.0127', '2024': '1.0068'},
-        'lumi_3': {'2024': '1.0144'}
+        'lumi_13p6TeV_correlated_2023_2024': {'2023preBPix': '1.0127', '2023postBPix': '1.0127', '2024': '1.0068'},
+        'lumi_13p6TeV_2024': {'2024': '1.0144'}
         }
     else:
         lumi = {}
@@ -150,19 +150,20 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     eff_mu['2017_4mu'] = '0.981/1.009'
     eff_mu['2018_2e2mu'] = '0.986/1.006'
     eff_mu['2018_4mu'] = '0.981/1.008'
-    # [PRELIMINARY] Run3 numbers
-    eff_mu['2022_2e2mu'] = '0.986/1.008'
-    eff_mu['2022_4mu'] = '0.981/1.01'
-    eff_mu['2022EE_2e2mu'] = '0.986/1.007'
-    eff_mu['2022EE_4mu'] = '0.981/1.009'
 
-    eff_mu['2023preBPix_2e2mu'] = '0.986/1.008' #spencer
-    eff_mu['2023preBPix_4mu'] = '0.981/1.01' #spencer
-    eff_mu['2023postBPix_2e2mu'] = '0.986/1.008' # spencer
-    eff_mu['2023postBPix_4mu'] = '0.981/1.01' # spencer
+    # Latest updated values for Run3
+    eff_mu['2022_2e2mu'] = '0.983/1.012' #ok
+    eff_mu['2022_4mu'] = '0.977/1.015' #ok
+    eff_mu['2022EE_2e2mu'] = '0.986/1.008' #ok
+    eff_mu['2022EE_4mu'] = '0.981/1.009'#ok
 
-    eff_mu['2024_2e2mu'] = '0.986/1.008' # spencer
-    eff_mu['2024_4mu'] = '0.981/1.01' # spencer
+    eff_mu['2023preBPix_2e2mu'] = '0.987/1.005' # ok
+    eff_mu['2023preBPix_4mu'] = '0.982/1.006' # ok
+    eff_mu['2023postBPix_2e2mu'] = '0.987/1.006' # ok
+    eff_mu['2023postBPix_4mu'] = '0.982/1.007' # ok
+
+    eff_mu['2024_2e2mu'] = '0.988/1.003' # ok
+    eff_mu['2024_4mu'] = '0.996/1.017' # ok
     
     eff_e = {}
     eff_e['2016_2e2mu'] = '0.934/1.062'
@@ -171,20 +172,19 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     eff_e['2017_4e'] = '0.915/1.064'
     eff_e['2018_2e2mu'] = '0.95/1.052'
     eff_e['2018_4e'] = '0.905/1.077'
-    # Run3 numbers
-    # TODO: Add reference
-    eff_e['2022_4e'] = '0.884/1.103'
-    eff_e['2022_2e2mu'] = '0.927/1.069'
-    eff_e['2022EE_4e'] =  '0.897/1.088'
-    eff_e['2022EE_2e2mu'] = '0.938/1.059'
 
-    eff_e['2023preBPix_2e2mu'] = '0.927/1.069' # spencer
-    eff_e['2023preBPix_4e'] = '0.884/1.103' # spencer
-    eff_e['2023postBPix_2e2mu'] = '0.927/1.069' # spencer
-    eff_e['2023postBPix_4e'] = '0.884/1.103' # spencer
+    eff_e['2022_4e'] = '0.884/1.103' #perfect agreement w/ our measurement
+    eff_e['2022_2e2mu'] = '0.928/1.069' #perfect agreement w/ our measurement
+    eff_e['2022EE_4e'] =  '0.897/1.088' #perfect agreement w/ our measurement
+    eff_e['2022EE_2e2mu'] = '0.938/1.059' #perfect agreement w/ our measurement
 
-    eff_e['2024_2e2mu'] = '0.927/1.069' # spencer using 2023post
-    eff_e['2024_4e'] = '0.884/1.103' # spencer using 2023post
+    eff_e['2023preBPix_2e2mu'] = '0.882/1.116' # ok
+    eff_e['2023preBPix_4e'] = '0.814/1.177' # ok
+    eff_e['2023postBPix_2e2mu'] = '0.852/1.146' # ok
+    eff_e['2023postBPix_4e'] = '0.778/1.215' # ok
+
+    eff_e['2024_2e2mu'] = '0.933/1.064'# ok
+    eff_e['2024_4e'] = '0.887/1.098'# ok
     
 
     # ZX
@@ -329,25 +329,25 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     elif yearSetting == 'Run3':
 
         # correlated Run-3 lumi nuisances
-        # lumi_1 (2022,2023,2024)
-        file.write('lumi_1 lnN ')
+        # lumi_13p6TeV_correlated_2022_2023_2024 (2022,2023,2024)
+        file.write('lumi_13p6TeV_correlated_2022_2023_2024 lnN ')
         for i in range(2*nBins+4): 
             # All except ZX
             file.write(lumi[year]+' ')
         file.write('-\n')
 
-        # lumi_2 if applicable
-        if year in lumi_extra['lumi_2']:
-            file.write('lumi_2 lnN ')
+        # lumi_13p6TeV_correlated_2023_2024 if applicable
+        if year in lumi_extra['lumi_13p6TeV_correlated_2023_2024']:
+            file.write('lumi_13p6TeV_correlated_2023_2024 lnN ')
             for i in range(2*nBins+4):
-                file.write(lumi_extra['lumi_2'][year]+' ')
+                file.write(lumi_extra['lumi_13p6TeV_correlated_2023_2024'][year]+' ')
             file.write('-\n')
 
-        # lumi_3 if applicable
-        if year in lumi_extra['lumi_3']:
-            file.write('lumi_3 lnN ')
+        # lumi_13p6TeV_2024 if applicable
+        if year in lumi_extra['lumi_13p6TeV_2024']:
+            file.write('lumi_13p6TeV_2024 lnN ')
             for i in range(2*nBins+4):
-                file.write(lumi_extra['lumi_3'][year]+' ')
+                file.write(lumi_extra['lumi_13p6TeV_2024'][year]+' ')
             file.write('-\n')
 
     else:
@@ -355,8 +355,10 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
         # lumi
         if year == '2022' or year == '2022EE':
             file.write('lumi_13p6TeV_2022 lnN ')
+
         elif year == '2023preBPix' or year == '2023postBPix':
             file.write('lumi_13p6TeV_2023 lnN ')
+
         elif year == '2024':
             file.write('lumi_13p6TeV_2024 lnN ')
         else:
@@ -401,11 +403,11 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
 
     # Theoretical
     if not zzfloating:
-        file.write('QCDscale_ggVV lnN ')
+        file.write('QCD_scale_ggVV lnN ')
         for i in range(nBins+3): # Signal + out + fake + qqzz
             file.write('- ')
         file.write('1.039/0.961 -\n')
-        file.write('QCDscale_VV lnN ')
+        file.write('QCD_scale_VV lnN ')
         for i in range(nBins+2): # Signal + out + fake
             file.write('- ')
         file.write('1.0325/0.958 - -\n')
@@ -417,7 +419,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
         for i in range(nBins+2): # Signal + out + fake
             file.write('- ')
         file.write('1.031/0.966 - -\n')
-        file.write('kfactor_ggzz lnN ')
+        file.write('CMS_HIG25015_kfactor_ggzz lnN ')
         for i in range(nBins+3): # Signal + out + fake  + bkg_qqzz
             file.write('- ')
         file.write('1.1 -\n')
@@ -430,15 +432,20 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
         if year == "2023postBPix":
             year = "2023BPix"
 
+        if obsName == "TCjmax": obsName_jes = "TCjMax"
+        elif obsName == "TBjmax": obsName_jes = "TBjMax"
+        else: obsName_jes = obsName
+
+
         for index,jesName in enumerate(jesNames_datacard):
             file.write('CMS_scale_j_'+jesName+' lnN ')
             for i in range(nBins+2): # Signals + out + fake
-                file.write(str(fixJes(jesnp['signal_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)],
-                                      jes_evts_noWeight['signal_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)])))
-            file.write(str(fixJes(jesnp['qqzz_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)],
-                                jes_evts_noWeight['qqzz_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)])))
-            file.write(str(fixJes(jesnp['ggzz_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)],
-                                jes_evts_noWeight['ggzz_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)])))
+                file.write(str(fixJes(jesnp['signal_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName_jes.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)],
+                                      jes_evts_noWeight['signal_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName_jes.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)])))
+            file.write(str(fixJes(jesnp['qqzz_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName_jes.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)],
+                                jes_evts_noWeight['qqzz_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName_jes.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)])))
+            file.write(str(fixJes(jesnp['ggzz_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName_jes.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)],
+                                jes_evts_noWeight['ggzz_'+jesNames_datacard[index]+'_'+channel+'_'+year+'_'+obsName_jes.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)])))
             #file.write(str(fixJes(jesnp['ZX_'+jesNames[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)],
             #                      jes_evts_noWeight['ZX_'+jesNames[index]+'_'+channel+'_'+year+'_'+obsName.replace('pT4l', 'ZZPt')+'_recobin'+str(obsBin)]))+'\n')
 
@@ -526,10 +533,10 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
         '2024':'1.0020',
         }
         # Additional reduced nuisances for Run-3:
-        # lumi_2 applies to 2023 & 2024 / lumi_3 applies to 2024 only
+        # lumi_13p6TeV_correlated_2023_2024 applies to 2023 & 2024 / lumi_13p6TeV_2024 applies to 2024 only
         lumi_extra = {
-        'lumi_2': {'2023preBPix': '1.0127', '2023postBPix': '1.0127', '2024': '1.0068'},
-        'lumi_3': {'2024': '1.0144'}
+        'lumi_13p6TeV_correlated_2023_2024': {'2023preBPix': '1.0127', '2023postBPix': '1.0127', '2024': '1.0068'},
+        'lumi_13p6TeV_2024': {'2024': '1.0144'}
         }
     else:
         lumi = {}
@@ -555,14 +562,20 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     eff_mu['2018_2e2mu'] = '0.986/1.006'
     eff_mu['2018_4mu'] = '0.981/1.008'
 
-    eff_mu['2023preBPix_2e2mu'] = '0.986/1.008' #spencer
-    eff_mu['2023preBPix_4mu'] = '0.981/1.01' #spencer
-    eff_mu['2023postBPix_2e2mu'] = '0.986/1.008' # spencer
-    eff_mu['2023postBPix_4mu'] = '0.981/1.01' # spencer
+    # Latest updated values for Run3
+    eff_mu['2022_2e2mu'] = '0.983/1.012' #ok
+    eff_mu['2022_4mu'] = '0.977/1.015' #ok
+    eff_mu['2022EE_2e2mu'] = '0.986/1.008' #ok
+    eff_mu['2022EE_4mu'] = '0.981/1.009'#ok
 
-    eff_mu['2024_2e2mu'] = '0.986/1.008' # spencer using 2023post values
-    eff_mu['2024_4mu'] = '0.981/1.01' # spencer using 2023post values
+    eff_mu['2023preBPix_2e2mu'] = '0.987/1.005' # ok
+    eff_mu['2023preBPix_4mu'] = '0.982/1.006' # ok
+    eff_mu['2023postBPix_2e2mu'] = '0.987/1.006' # ok
+    eff_mu['2023postBPix_4mu'] = '0.982/1.007' # ok
 
+    eff_mu['2024_2e2mu'] = '0.988/1.003' # ok
+    eff_mu['2024_4mu'] = '0.996/1.017' # ok
+    
     eff_e = {}
     eff_e['2016_2e2mu'] = '0.934/1.062'
     eff_e['2016_4e'] = '0.891/1.093'
@@ -571,13 +584,18 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     eff_e['2018_2e2mu'] = '0.95/1.052'
     eff_e['2018_4e'] = '0.905/1.077'
 
-    eff_e['2023preBPix_2e2mu'] = '0.927/1.069' # spencer
-    eff_e['2023preBPix_4e'] = '0.884/1.103' # spencer
-    eff_e['2023postBPix_2e2mu'] = '0.927/1.069' # spencer
-    eff_e['2023postBPix_4e'] = '0.884/1.103' # spencer
+    eff_e['2022_4e'] = '0.884/1.103' #perfect agreement w/ our measurement
+    eff_e['2022_2e2mu'] = '0.928/1.069' #perfect agreement w/ our measurement
+    eff_e['2022EE_4e'] =  '0.897/1.088' #perfect agreement w/ our measurement
+    eff_e['2022EE_2e2mu'] = '0.938/1.059' #perfect agreement w/ our measurement
 
-    eff_e['2024_2e2mu'] = '0.927/1.069' # spencer using 2023post values
-    eff_e['2024_4e'] = '0.884/1.103' # spencer  using 2023post values
+    eff_e['2023preBPix_2e2mu'] = '0.882/1.116' # ok
+    eff_e['2023preBPix_4e'] = '0.814/1.177' # ok
+    eff_e['2023postBPix_2e2mu'] = '0.852/1.146' # ok
+    eff_e['2023postBPix_4e'] = '0.778/1.215' # ok
+
+    eff_e['2024_2e2mu'] = '0.933/1.064'# ok
+    eff_e['2024_4e'] = '0.887/1.098'# ok
 
 
     
@@ -713,25 +731,25 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     elif yearSetting == 'Run3':
 
         # correlated Run-3 lumi nuisances
-        # lumi_1 (2022,2023,2024)
-        file.write('lumi_1 lnN ')
+        # lumi_13p6TeV_correlated_2022_2023_2024 (2022,2023,2024)
+        file.write('lumi_13p6TeV_correlated_2022_2023_2024 lnN ')
         for i in range(2*nBins+4): 
             # All except ZX
             file.write(lumi[year]+' ')
         file.write('-\n')
 
-        # lumi_2 if applicable
-        if year in lumi_extra['lumi_2']:
-            file.write('lumi_2 lnN ')
+        # lumi_13p6TeV_correlated_2023_2024 if applicable
+        if year in lumi_extra['lumi_13p6TeV_correlated_2023_2024']:
+            file.write('lumi_13p6TeV_correlated_2023_2024 lnN ')
             for i in range(2*nBins+4):
-                file.write(lumi_extra['lumi_2'][year]+' ')
+                file.write(lumi_extra['lumi_13p6TeV_correlated_2023_2024'][year]+' ')
             file.write('-\n')
 
-        # lumi_3 if applicable
-        if year in lumi_extra['lumi_3']:
-            file.write('lumi_3 lnN ')
+        # lumi_13p6TeV_2024 if applicable
+        if year in lumi_extra['lumi_13p6TeV_2024']:
+            file.write('lumi_13p6TeV_2024 lnN ')
             for i in range(2*nBins+4):
-                file.write(lumi_extra['lumi_3'][year]+' ')
+                file.write(lumi_extra['lumi_13p6TeV_2024'][year]+' ')
             file.write('-\n')
 
     else:

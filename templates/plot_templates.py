@@ -14,7 +14,7 @@ print('Welcome in plot_templates!')
 decimal = {
 'mass4l': False,
 'mass4l_zzfloating': False,
-'njets_pt30_eta4p7': False,
+'Nj': False,
 'pT4l': False,
 'pT4l_kL': False,
 'rapidity4l': True,
@@ -42,7 +42,7 @@ decimal = {
 'DL1': True,
 'DL1Zg': True,
 'rapidity4l vs pT4l': True,
-'njets_pt30_eta4p7 vs pT4l': False,
+'Nj vs pT4l': False,
 'pTj1 vs pTj2': False,
 'pT4l vs pTHj': False,
 'massZ1 vs massZ2': False,
@@ -75,7 +75,7 @@ def parseOptions():
 global opt, args, runAllSteps
 parseOptions()
 
-sPlotsStore = path['plots_path']+"TEMPLATES/"+opt.OBSNAME
+sPlotsStore = path['plots_path']+"TEMPLATES"
 
 def setHistProperties(hist, lineWidth, lineStyle, lineColor, fillStyle=0, fillColor=0, xAxisTitle = "skip", yAxisTitle = "skip"):
     if not hist: return

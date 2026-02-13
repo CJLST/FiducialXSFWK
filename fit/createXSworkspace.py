@@ -73,7 +73,7 @@ PARAM_PATH = os.path.join(PARAM_PATH, "param")
 sys.path.append('../../inputs/')
 sys.path.append('../../templates/')
 
-def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH, modelName, physicalModel, year, JES, doubleDiff, lowerBound, upperBound, rawObsName):
+def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH, modelName, physicalModel, year, JES, INTER, doubleDiff, lowerBound, upperBound, rawObsName):
     print('\n')
     print('Creating WorkSpace', year)
 
@@ -109,7 +109,11 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
 
     # from inputs_sig imports some coefficients
     #_temp = __import__('inputs_sig_'+obsName+'_'+year, globals(), locals(), ['acc','eff','inc_wrongfrac','binfrac_wrongfrac','outinratio'], -1)
-    _temp = __import__('inputs_sig_'+obsName+'_'+year, globals(), locals(), ['acc','eff','inc_wrongfrac','binfrac_wrongfrac','outinratio'], 0) # spencer
+    if INTER: 
+        file = 'inputs_sig_extrap_'+obsName+'_'+year
+    else:
+        file = 'inputs_sig_'+obsName+'_'+year
+    _temp = __import__(file, globals(), locals(), ['acc','eff','inc_wrongfrac','binfrac_wrongfrac','outinratio'], 0) # spencer
     acc = _temp.acc
     eff = _temp.eff
     print("eff", eff)
@@ -182,7 +186,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     CMS_zz4l_mean_e_err = ROOT.RooRealVar("CMS_zz4l_mean_e_err","CMS_zz4l_mean_e_err",0.002,0.002,0.002)
 
     if(year == '2022'):
-        lumi = ROOT.RooRealVar("lumi_132022","lumi_132022", 7.9804)
+        lumi = ROOT.RooRealVar("lumi_2022","lumi_2022", 7.9804)
         if (channel=='2e2mu'):
             CMS_zz4l_n_sig_3_2022 = ROOT.RooRealVar("CMS_zz4l_n_sig_3_2022","CMS_zz4l_n_sig_3_2022",-10,10)
             CMS_zz4l_mean_sig_3_centralValue_2e2murecobin2022 = ROOT.RooFormulaVar("CMS_zz4l_mean_sig_3_centralValue_2e2mu" + recobin + "2022","CMS_zz4l_mean_sig_3_centralValue_2e2mu" + recobin + "2022", "(%s) + (@0*@1*@3 + @0*@2*@4)/2" %(massParaMap["mean_"+channel+"_"+year]), ROOT.RooArgList(MH,CMS_zz4l_mean_m_sig,CMS_zz4l_mean_e_sig,CMS_zz4l_mean_m_err,CMS_zz4l_mean_e_err))
@@ -234,7 +238,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
             p2_32022 = ROOT.RooFormulaVar("CMS_"+comb_name+"_p2_32022","p2_32022","11.485371-0.07875*(MH-125)",ROOT.RooArgList(MH))
             nonResH = ROOT.RooLandau(comb_name, "landau", m, p1_32022, p2_32022)
     elif(year == '2022EE'):
-        lumi = ROOT.RooRealVar("lumi_132022EE","lumi_132022EE", 26.6728)
+        lumi = ROOT.RooRealVar("lumi_2022EE","lumi_2022EE", 26.6728)
         if (channel=='2e2mu'):
             CMS_zz4l_n_sig_3_2022EE = ROOT.RooRealVar("CMS_zz4l_n_sig_3_2022EE","CMS_zz4l_n_sig_3_2022EE",-10,10)
             CMS_zz4l_mean_sig_3_centralValue_2e2murecobin2022EE = ROOT.RooFormulaVar("CMS_zz4l_mean_sig_3_centralValue_2e2mu" + recobin + "2022EE","CMS_zz4l_mean_sig_3_centralValue_2e2mu" + recobin + "2022EE", "(%s) + (@0*@1*@3 + @0*@2*@4)/2" %(massParaMap["mean_"+channel+"_"+year]), ROOT.RooArgList(MH,CMS_zz4l_mean_m_sig,CMS_zz4l_mean_e_sig,CMS_zz4l_mean_m_err,CMS_zz4l_mean_e_err))
@@ -286,7 +290,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
             p2_32022EE = ROOT.RooFormulaVar("CMS_"+comb_name+"_p2_32022EE","p2_32022EE","13.499466+0.124465*(MH-125)",ROOT.RooArgList(MH))
             nonResH = ROOT.RooLandau(comb_name, "landau", m, p1_32022EE, p2_32022EE)
     elif(year =='2023preBPix'):
-        lumi = ROOT.RooRealVar("lumi_132023preBPix","lumi_132023preBPix", 17.794)
+        lumi = ROOT.RooRealVar("lumi_2023preBPix","lumi_2023preBPix", 18.06265)
         if (channel=='2e2mu'):
             CMS_zz4l_n_sig_3_2023preBPix = ROOT.RooRealVar("CMS_zz4l_n_sig_3_2023preBPix","CMS_zz4l_n_sig_3_2023preBPix",-10,10)
             CMS_zz4l_mean_sig_3_centralValue_2e2murecobin2023preBPix = ROOT.RooFormulaVar("CMS_zz4l_mean_sig_3_centralValue_2e2mu" + recobin + "2023preBPix","CMS_zz4l_mean_sig_3_centralValue_2e2mu" + recobin + "2023preBPix", "(%s) + (@0*@1*@3 + @0*@2*@4)/2" %(massParaMap["mean_"+channel+"_"+year]), ROOT.RooArgList(MH,CMS_zz4l_mean_m_sig,CMS_zz4l_mean_e_sig,CMS_zz4l_mean_m_err,CMS_zz4l_mean_e_err))
@@ -339,7 +343,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
             nonResH = ROOT.RooLandau(comb_name, "landau", m, p1_32023preBPix, p2_32023preBPix)
 
     elif(year =='2023postBPix'):
-        lumi = ROOT.RooRealVar("lumi_132023postBPix","lumi_132023postBPix", 9.451)
+        lumi = ROOT.RooRealVar("lumi_2023postBPix","lumi_2023postBPix", 9.693)
         if (channel=='2e2mu'):
             CMS_zz4l_n_sig_3_2023postBPix = ROOT.RooRealVar("CMS_zz4l_n_sig_3_2023postBPix","CMS_zz4l_n_sig_3_2023postBPix",-10,10)
             CMS_zz4l_mean_sig_3_centralValue_2e2murecobin2023postBPix = ROOT.RooFormulaVar("CMS_zz4l_mean_sig_3_centralValue_2e2mu" + recobin + "2023postBPix","CMS_zz4l_mean_sig_3_centralValue_2e2mu" + recobin + "2023postBPix", "(%s) + (@0*@1*@3 + @0*@2*@4)/2" %(massParaMap["mean_"+channel+"_"+year]), ROOT.RooArgList(MH,CMS_zz4l_mean_m_sig,CMS_zz4l_mean_e_sig,CMS_zz4l_mean_m_err,CMS_zz4l_mean_e_err))
@@ -391,7 +395,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
             nonResH = ROOT.RooLandau(comb_name, "landau", m, p1_32023postBPix, p2_32023postBPix)
 
     elif(year =='2024'):
-        lumi = ROOT.RooRealVar("lumi_132024","lumi_132024", 109.08)
+        lumi = ROOT.RooRealVar("lumi_2024","lumi_2024", 108.822)
         if (channel=='2e2mu'):
             CMS_zz4l_n_sig_3_2024 = ROOT.RooRealVar("CMS_zz4l_n_sig_3_2024","CMS_zz4l_n_sig_3_2024",-10,10)
             CMS_zz4l_mean_sig_3_centralValue_2e2murecobin2024 = ROOT.RooFormulaVar("CMS_zz4l_mean_sig_3_centralValue_2e2mu" + recobin + "2024","CMS_zz4l_mean_sig_3_centralValue_2e2mu" + recobin + "2024", "(%s) + (@0*@1*@3 + @0*@2*@4)/2" %(massParaMap["mean_"+channel+"_"+year]), ROOT.RooArgList(MH,CMS_zz4l_mean_m_sig,CMS_zz4l_mean_e_sig,CMS_zz4l_mean_m_err,CMS_zz4l_mean_e_err))

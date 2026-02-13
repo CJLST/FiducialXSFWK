@@ -10,8 +10,13 @@ import itertools
 import math
 import json
 import copy
+import os
+import importlib.util
 
-sys.path.append('../inputs/')
+sys.path.append('../helperstuff/')
+from paths import path
+
+sys.path.append(path['eos_path']+'inputs/')
 
 def parseOptions():
 
@@ -25,6 +30,7 @@ def parseOptions():
     parser.add_option('',   '--obsName',  dest='OBSNAME',  type='string',default='costhetaZ1',   help='Name of the observable, supported: "inclusive", "pT4l", "eta4l", "massZ2", "nJets"')
     parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='|-1.0|-0.75|-0.50|-0.25|0.0|0.25|0.50|0.75|1.0|',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
     parser.add_option('',   '--year',  dest='YEAR',  type='string',default='2022',   help='Year -> 2016 or 2017 or 2018 or Full')
+    parser.add_option('',   '--interpolation', action='store_true', dest='INTER', default=False, help='Calculate acceptances at 124 and 126 GeV')
     # store options and arguments as global variables
     global opt, args
     (opt, args) = parser.parse_args()
@@ -38,10 +44,19 @@ def parseOptions():
 global opt, args, runAllSteps
 parseOptions()
 
+def load_module_from_path(file_path, module_name):
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not create import spec for: {file_path}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def tickBin(binning, name): # Create labels for each bin
     tick = []
     if doubleDiff: # Double differential
-        if name == 'njets_pt30_eta2p5_pT4l': # Do not print range but just the number of jets
+        if name == 'Nj': # Do not print range but just the number of jets
             for i in range(len(binning)):
                 if trunc(binning[i][0])==3: # Last bin-> >=3
                     tick.append('$\geq$'+str(trunc(binning[i][0]))+'/'+str(trunc(binning[i][2]))+'-'+str(trunc(binning[i][3])))
@@ -71,8 +86,16 @@ def matrix(obs_bins, obs_name, label):
     print(tickLabel)
 
     for year in years:
-        #_temp = __import__('inputs_sig_extrap_'+obs_name+'_'+str(year), globals(), locals(), ['eff', 'err_eff']) # Open file with coefficients
-        _temp = __import__('inputs_sig_'+obs_name+'_'+str(year), globals(), locals(), ['eff', 'err_eff']) # spencer
+        if opt.INTER:
+            fname = f"inputs_sig_extrap_{obs_name}_{year}.py"
+        else:
+            fname = f"inputs_sig_{obs_name}_{year}.py"
+
+        file_path = os.path.join(path['eos_path'], "inputs", fname)
+        module_name = fname.replace(".py", "")
+
+        _temp = load_module_from_path(file_path, module_name)
+
         eff = _temp.eff
         err_eff = _temp.err_eff
         for signal in signals:
@@ -163,8 +186,13 @@ def matrix(obs_bins, obs_name, label):
                 else:
                     signal_output = signal
                 plt.title('%s - %s - %s' %(year, signal_output, fState), loc = 'left', fontweight = 'bold')
-                plt.savefig('matrix_eff/%s/eff_%s_%s_%s_%s.png' %(year, year, obs_name, signal_output, fState), bbox_inches='tight')
-                plt.savefig('matrix_eff/%s/eff_%s_%s_%s_%s.pdf' %(year, year, obs_name, signal_output, fState), bbox_inches='tight')
+
+                outdir = path['plots_path'] + 'MATRICES/%s/%s' % (obs_name, year)
+                os.makedirs(outdir, exist_ok=True)
+
+                plt.savefig(outdir + '/eff_%s_%s_%s_%s.png' % (year, obs_name, signal_output, fState),bbox_inches='tight')
+                plt.savefig(outdir + '/eff_%s_%s_%s_%s.pdf' % (year, obs_name, signal_output, fState),bbox_inches='tight')
+
                 plt.tight_layout()
                 plt.close()
 
@@ -189,8 +217,16 @@ def nonFid(obs_bins, obs_name, label):
     print(tickLabel)
 
     for year in years:
-        #_temp = __import__('inputs_sig_extrap_'+obs_name+'_'+str(year), globals(), locals(), ['outinratio', 'err_outinratio']) # Open file with coefficients
-        _temp = __import__('inputs_sig_'+obs_name+'_'+str(year), globals(), locals(), ['outinratio', 'err_outinratio']) ## spencer
+        if opt.INTER:
+            fname = f"inputs_sig_extrap_{obs_name}_{year}.py"
+        else:
+            fname = f"inputs_sig_{obs_name}_{year}.py"
+
+        file_path = os.path.join(path['eos_path'], "inputs", fname)
+        module_name = fname.replace(".py", "")
+
+        _temp = load_module_from_path(file_path, module_name)
+
         outinratio = _temp.outinratio
         err_outinratio = _temp.err_outinratio
         for fState in ['4e', '4mu', '2e2mu']:
@@ -255,8 +291,11 @@ def nonFid(obs_bins, obs_name, label):
                 tick.tick1line.set_markersize(5)
             #Final steps
             plt.title('%s - %s' %(year, fState), loc = 'left', fontweight = 'bold')
-            plt.savefig('matrix_nonfid/%s/nonFid_%s_%s_%s.png' %(year, year, obs_name, fState), bbox_inches='tight')
-            plt.savefig('matrix_nonfid/%s/nonFid_%s_%s_%s.pdf' %(year, year, obs_name, fState), bbox_inches='tight')
+
+            outdir = os.path.join(path['plots_path'], 'MATRICES', obs_name, year)
+            os.makedirs(outdir, exist_ok=True)
+            plt.savefig(os.path.join(outdir,'nonFid_%s_%s_%s.png' % (year, obs_name, fState)),bbox_inches='tight')
+            plt.savefig(os.path.join(outdir,'nonFid_%s_%s_%s.pdf' % (year, obs_name, fState)),bbox_inches='tight')
             plt.tight_layout()
             plt.close()
 
@@ -276,14 +315,15 @@ if (opt.YEAR == '2017'): years = [2017]
 if (opt.YEAR == '2018'): years = [2018]
 if (opt.YEAR == 'Full'): years = [2016,2017,2018]
 
-if (opt.YEAR == '2022'): years = [2022]
+if (opt.YEAR == '2022'): years = ["2022"]
 if (opt.YEAR == '2022EE'): years = ["2022EE"]
 if (opt.YEAR == '2023preBPix'): years = ["2023preBPix"]
 if (opt.YEAR == '2023postBPix'): years = ["2023postBPix"]
+if (opt.YEAR == '2024'): years = ["2024"]
 
-if (opt.YEAR == '2022full'): years = [2022, "2022EE"]
+if (opt.YEAR == '2022full'): years = ["2022", "2022EE"]
 if (opt.YEAR == '2023full'): years = ["2023preBPix", "2023postBPix"]
-if (opt.YEAR == 'Run3'): years = [2022, "2022EE", "2023preBPix", "2023postBPix"]
+if (opt.YEAR == 'Run3'): years = ["2022", "2022EE", "2023preBPix", "2023postBPix", "2024"]
 
 # obs_bins = {0:(opt.OBSBINS.split("|")[1:(len(opt.OBSBINS.split("|"))-1)]),1:['0','inf']}[opt.OBSBINS=='inclusive']
 # obs_bins = [float(i) for i in obs_bins] #Convert a list of str to a list of float
@@ -296,10 +336,10 @@ elif(obs_name == 'massZ1'):
     label = 'm$_{Z1}$ (GeV)'
 elif(obs_name == 'massZ2'):
     label = 'm$_{Z2}$ (GeV)'
-elif (obs_name == "njets_pt30_eta2p5"):
+elif (obs_name == "Nj"):
     label = 'N$_{jet}$'
-elif(obs_name == 'njets_pt30_eta2p5 vs pT4l'):
-    obs_name = 'njets_pt30_eta2p5_pT4l' #Change name of obs_name
+elif(obs_name == 'Nj vs pT4l'):
+    obs_name = 'Nj_pT4l' #Change name of obs_name
     label = 'N$_{jet}$/p$_T^H$(GeV)'
 elif(obs_name == 'massZ1_massZ2'):
     obs_name = 'massZ1_massZ2' #Change name of obs_name
@@ -316,8 +356,17 @@ elif(obs_name == 'DL1'):
     label = 'DL1'
 elif(obs_name == 'pTj1'):
     label = 'p$_T^{j1}$ (GeV)'
+elif(obs_name == 'pTj2'):
+    label = 'p$_T^{j2}$ (GeV)'
+elif(obs_name == 'pTj1 vs pTj2'):
+    obs_name = 'pTj1_pTj2'
+    label = 'p$_T^{j1}$(GeV)/p$_T^{j2}$(GeV)'
 elif(obs_name == 'pTHj'):
     label = 'p$_T^{Hj}$ (GeV)'
+elif(obs_name == 'pTHjj'):
+    label = 'p$_T^{Hjj}$ (GeV)'
+elif(obs_name == 'mHj'):
+    label = 'm$^{Hj}$ (GeV)'
 elif(obs_name == 'mass4l'):
     label = 'm$_4/ell$ (GeV)'
 elif(obs_name == 'mass4l_zzfloating'):
@@ -326,14 +375,30 @@ elif(obs_name == 'costhetaZ1'):
     label = 'costhetaZ1'
 elif(obs_name == 'costhetaZ2'):
     label = 'costhetaZ2'
-elif(obs_name == 'costhetastarZZ'):
-    label = 'costhetastarZZ'
+elif(obs_name == 'costhetastar'):
+    label = 'costhetastar'
 elif(obs_name == 'phi'):
     label = 'phi'
 elif(obs_name == 'phi1'):
     label = 'phi1'
+elif(obs_name == 'absdetajj'):
+    label = '$|\Delta\eta_{jj}|$'
+elif(obs_name == 'mjj'):
+    label = '$m_{jj}$(GeV)'
+elif(obs_name == 'dphijj'):
+    label = '$\Delta\Phi_{jj}$'
 elif(obs_name == 'rapidity4l_pT4l'):
-    label = '|y$_H$| vs. p$_T^H$ (GeV)'
+    label = '|y$_H$|/p$_T^H$ (GeV)'
+elif(obs_name == 'TCjmax'):
+    label = '$\mathcal{T}_{\text{C}}^{\text{max}}$ (GeV)'
+elif(obs_name == 'TBjmax'):
+    label = '$\mathcal{T}_{\text{B}}^{\text{max}}$ (GeV)'
+elif(obs_name == 'TCjmax vs pT4l'):
+    obs_name = 'TCjmax_pT4l' 
+    label = '$\mathcal{T}_{\text{C}}^{\text{max}}$(GeV)/p$_T^H$(GeV)'
+elif(obs_name == 'absdetajj vs mjj'):
+    obs_name = 'absdetajj_mjj' 
+    label = '$|\Delta\eta_{jj}|$/$m_{jj}$(GeV)'
 else:
     label = ''
 
@@ -346,4 +411,4 @@ if type(obs_bins) is dict: doubleDiff = True # If binning is a dictionary it is 
 signals.append('SM_125')
 matrix(obs_bins, obs_name, label)
 nonFid(obs_bins, obs_name, label)
-sys.path.remove('../inputs/')
+sys.path.remove(path['eos_path']+'inputs/')

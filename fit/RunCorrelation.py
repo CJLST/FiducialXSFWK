@@ -139,7 +139,7 @@ def RunCombineCorrelation():
 
 
         elif physicalModel == 'v3':
-            _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
+            _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'NJ'}
             if obsName not in _obsName:
                 _obsName[obsName] = obsName
             fitName = _obsName[obsName]

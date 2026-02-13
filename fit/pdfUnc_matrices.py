@@ -256,7 +256,7 @@ def compute_percent_variations(matrices, matrices_all):
 
     return percent_diffs_all
 
-def plot_and_save_matrices(matrices, genbins, recobins, input_file, dir):
+def plot_and_save_matrices(matrices, obsName, year, genbins, recobins, input_file, dir):
     import os
     import numpy as np
     import matplotlib.pyplot as plt
@@ -273,7 +273,7 @@ def plot_and_save_matrices(matrices, genbins, recobins, input_file, dir):
 
     # Extract base name for labeling
     base_name = os.path.splitext(os.path.basename(input_file))[0]
-    name = base_name.split('_')[2]
+    name = obsName
 
     # Loop over production modes
     for prod in sorted(matrices.keys()):
@@ -307,7 +307,7 @@ def plot_and_save_matrices(matrices, genbins, recobins, input_file, dir):
                     plt.yticks(ticks=np.arange(len(genbins)), labels=genbins)
                     plt.tight_layout()
 
-                    filename = f"{path['plots_path']}UNC_MATRICES/{name}/{dir}/{base_name}_{prod}_{fs}_{var}_varIdx{idx}.png"
+                    filename = f"{path['plots_path']}UNC_MATRICES/{name}/{year}/{dir}/{base_name}_{prod}_{fs}_{var}_varIdx{idx}.png"
                     os.makedirs(os.path.dirname(filename), exist_ok=True)
                     plt.savefig(filename)
                     plt.close()
@@ -366,19 +366,18 @@ def safe_get(x, j):
     
     return val
 
-def append_uncertainties(input_file, physicalModel, percent_diffs_all):
+def append_uncertainties(input_file, obsName, year, physicalModel, percent_diffs_all):
  
-    if "ORIG" in input_file:
-        year = input_file.split('_')[-2].split('.')[0]
-    else:
-        year = input_file.split('_')[-1].split('.')[0]
-    variable = input_file.split('_')[2]
+    variable = obsName
 
     if variable == "pT4l":
         variable = "PTH"
     
     if variable == "rapidity4l":
         variable = "YH"
+
+    if variable == "Nj":
+        variable = "NJ"
 
     out_dir = Path(f"../datacard/datacard_{year}")
 
@@ -430,9 +429,9 @@ def append_uncertainties(input_file, physicalModel, percent_diffs_all):
                 as_.append(" ")
 
             # Join into strings
-            pdf_str = "pdf_sig lnN " + "".join(pdf_) + "- - - - -\n"
-            qcd_str = "qcd_sig lnN " + "".join(qcd_) + "- - - - -\n"
-            as_str  = "as_sig lnN " + "".join(as_) + "- - - - -\n"
+            pdf_str = "CMS_HIG25015_pdf_effMatrix lnN " + "".join(pdf_) + "- - - - -\n"
+            qcd_str = "CMS_HIG25015_QCDscale_effMatrix lnN " + "".join(qcd_) + "- - - - -\n"
+            as_str  = "CMS_HIG25015_alphaS_effMatrix lnN " + "".join(as_) + "- - - - -\n"
 
             new_lines = [pdf_str, qcd_str, as_str]
 
@@ -445,7 +444,7 @@ def append_uncertainties(input_file, physicalModel, percent_diffs_all):
             else:
                 print(f"file {datacard_path} does not exist")
                 
-            filtered = [line for line in lines if not line.strip().startswith(("pdf_sig", "qcd_sig", "as_sig"))]
+            filtered = [line for line in lines if not line.strip().startswith(("CMS_HIG25015_pdf_effMatrix", "CMS_HIG25015_QCDscale_effMatrix", "CMS_HIG25015_alphaS_effMatrix"))]
             filtered.extend(new_lines)
 
             # Append to datacard
@@ -455,7 +454,7 @@ def append_uncertainties(input_file, physicalModel, percent_diffs_all):
             print(f"Appended uncertainties to {datacard_path}")
 
 
-def run_pdf_unc_matrices(input_file, physicalModel):
+def run_pdf_unc_matrices(input_file, obsName, year, physicalModel):
     if "NNLOPS" in input_file:
         NNLOPS = True
     else:
@@ -468,11 +467,11 @@ def run_pdf_unc_matrices(input_file, physicalModel):
     matrices_all, genbins, recobins, keys = build_all_matrices(eff_num_var, eff_den_var, NNLOPS)
     matrices = build_matrices(matrices_all, genbins, recobins)
     percent_diffs = compute_percent_variations(matrices, matrices_all)
-    append_uncertainties(input_file, physicalModel, transpose_all(percent_diffs)['allH125'])
+    append_uncertainties(input_file, obsName, year, physicalModel, transpose_all(percent_diffs)['allH125'])
 
-    #plot_and_save_matrices(matrices_all, genbins, recobins, input_file, "all")
-    #plot_and_save_matrices(matrices, genbins, recobins, input_file, "variations")
-    #plot_and_save_matrices(percent_diffs, genbins, recobins, input_file, "percent_diffs")
+    #plot_and_save_matrices(matrices_all, obsName, year, genbins, recobins, input_file, "all")
+    #plot_and_save_matrices(matrices, obsName, year, genbins, recobins, input_file, "variations")
+    #plot_and_save_matrices(percent_diffs, obsName, year, genbins, recobins, input_file, "percent_diffs")
 
 
     print("Processing complete.")
