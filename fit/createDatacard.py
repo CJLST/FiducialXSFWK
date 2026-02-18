@@ -151,19 +151,21 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     eff_mu['2018_2e2mu'] = '0.986/1.006'
     eff_mu['2018_4mu'] = '0.981/1.008'
 
-    # Latest updated values for Run3
-    eff_mu['2022_2e2mu'] = '0.983/1.012' #ok
-    eff_mu['2022_4mu'] = '0.977/1.015' #ok
-    eff_mu['2022EE_2e2mu'] = '0.986/1.008' #ok
-    eff_mu['2022EE_4mu'] = '0.981/1.009'#ok
+    # Latest updated values for Run3 (Muons efficiencies, Trigger efficiency is set to 0 here)
+    eff_mu['2022_2e2mu'] = '0.989/1.011' #ok
+    eff_mu['2022_4mu'] = '0.986/1.014' #ok
 
-    eff_mu['2023preBPix_2e2mu'] = '0.987/1.005' # ok
-    eff_mu['2023preBPix_4mu'] = '0.982/1.006' # ok
-    eff_mu['2023postBPix_2e2mu'] = '0.987/1.006' # ok
-    eff_mu['2023postBPix_4mu'] = '0.982/1.007' # ok
+    eff_mu['2022EE_2e2mu'] = '0.993/1.007' #ok
+    eff_mu['2022EE_4mu'] = '0.992/1.008'#ok
 
-    eff_mu['2024_2e2mu'] = '0.988/1.003' # ok
-    eff_mu['2024_4mu'] = '0.996/1.017' # ok
+    eff_mu['2023preBPix_2e2mu'] = '0.995/1.005' # ok
+    eff_mu['2023preBPix_4mu'] = '0.994/1.006' # ok
+
+    eff_mu['2023postBPix_2e2mu'] = '0.994/1.006' # ok
+    eff_mu['2023postBPix_4mu'] = '0.992/1.008' # ok
+
+    eff_mu['2024_2e2mu'] = '0.997/1.003' # ok
+    eff_mu['2024_4mu'] = '0.997/1.003' # ok
     
     eff_e = {}
     eff_e['2016_2e2mu'] = '0.934/1.062'
@@ -172,6 +174,8 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     eff_e['2017_4e'] = '0.915/1.064'
     eff_e['2018_2e2mu'] = '0.95/1.052'
     eff_e['2018_4e'] = '0.905/1.077'
+
+    #CORRELATED
 
     eff_e['2022_4e'] = '0.884/1.103' #perfect agreement w/ our measurement
     eff_e['2022_2e2mu'] = '0.928/1.069' #perfect agreement w/ our measurement
@@ -185,7 +189,111 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
 
     eff_e['2024_2e2mu'] = '0.933/1.064'# ok
     eff_e['2024_4e'] = '0.887/1.098'# ok
-    
+
+    #DECORRELATED
+    eff_e_reco_stat = {}
+    eff_e_reco_syst = {}
+    eff_e_id_stat = {}
+    eff_e_id_syst = {}
+
+    # 2022
+    eff_e_reco_stat['2022_4e'] = '0.947/1.053' 
+    eff_e_reco_stat['2022_2e2mu'] = '0.964/1.036'
+
+    eff_e_reco_syst['2022_4e'] = '0.953/1.047' 
+    eff_e_reco_syst['2022_2e2mu'] = '0.967/1.033'
+
+    eff_e_id_stat['2022_4e'] = '0.957/1.043' 
+    eff_e_id_stat['2022_2e2mu'] = '0.971/1.029' 
+
+    eff_e_id_syst['2022_4e'] = '0.986/1.014' 
+    eff_e_id_syst['2022_2e2mu'] = '0.991/1.009'
+
+    # 2022EE
+    eff_e_reco_stat['2022EE_4e'] = '0.946/1.054' 
+    eff_e_reco_stat['2022EE_2e2mu'] = '0.964/1.036'
+
+    eff_e_reco_syst['2022EE_4e'] = '0.9503/1.0497' 
+    eff_e_reco_syst['2022EE_2e2mu'] = '0.966/1.034'
+
+    eff_e_id_stat['2022EE_4e'] = '0.978/1.022' 
+    eff_e_id_stat['2022EE_2e2mu'] = '0.985/1.015' 
+
+    eff_e_id_syst['2022EE_4e'] = '0.982/1.018' 
+    eff_e_id_syst['2022EE_2e2mu'] = '0.988/1.012'
+
+    # 2023preBPix
+    eff_e_reco_stat['2023preBPix_4e'] = '0.945/1.055'
+    eff_e_reco_stat['2023preBPix_2e2mu'] = '0.964/1.036'
+
+    eff_e_reco_syst['2023preBPix_4e'] = '0.841/1.159' 
+    eff_e_reco_syst['2023preBPix_2e2mu'] = '0.897/1.103'
+
+    eff_e_id_stat['2023preBPix_4e'] = '0.962/1.038' 
+    eff_e_id_stat['2023preBPix_2e2mu'] = '0.976/1.024'
+
+    eff_e_id_syst['2023preBPix_4e'] = '0.990/1.010' 
+    eff_e_id_syst['2023preBPix_2e2mu'] = '0.994/1.006'
+
+    # 2023postBPix
+    eff_e_reco_stat['2023postBPix_4e'] = '0.924/1.076' 
+    eff_e_reco_stat['2023postBPix_2e2mu'] = '0.949/1.051'
+
+    eff_e_reco_syst['2023postBPix_4e'] = '0.838/1.162'
+    eff_e_reco_syst['2023postBPix_2e2mu'] = '0.890/1.110'
+
+    eff_e_id_stat['2023postBPix_4e'] = '0.941/1.059' 
+    eff_e_id_stat['2023postBPix_2e2mu'] = '0.958/1.042' 
+
+    eff_e_id_syst['2023postBPix_4e'] = '0.972/1.028' 
+    eff_e_id_syst['2023postBPix_2e2mu'] = '0.981/1.019'
+
+    # 2024 (to cross check numbers)
+    eff_e_reco_stat['2024_4e'] = '0.944/1.056' 
+    eff_e_reco_stat['2024_2e2mu'] = '0.962/1.038'
+
+    eff_e_reco_syst['2024_4e'] = '0.949/1.051' 
+    eff_e_reco_syst['2024_2e2mu'] = '0.965/1.035'
+
+    eff_e_id_stat['2024_4e'] = '0.978/1.022' 
+    eff_e_id_stat['2024_2e2mu'] = '0.983/1.017' 
+
+    eff_e_id_syst['2024_4e'] = '0.982/1.018' 
+    eff_e_id_syst['2024_2e2mu'] = '0.987/1.013'
+
+
+    #Trigger (from Run 2)
+    trig_mu = {}
+
+    trig_mu['2022_4mu'] = '0.983/1.001'
+    trig_mu['2022_2e2mu'] = '0.988/1.002'
+
+    trig_mu['2022EE_4mu'] =  '0.983/1.001'
+    trig_mu['2022EE_2e2mu'] = '0.988/1.002'
+
+    trig_mu['2023preBPix_2e2mu'] = '0.988/1.002'
+    trig_mu['2023preBPix_4mu'] = '0.983/1.001'
+    trig_mu['2023postBPix_2e2mu'] = '0.988/1.002'
+    trig_mu['2023postBPix_4mu'] = '0.983/1.001'
+
+    trig_mu['2024_2e2mu'] = '0.988/1.002'
+    trig_mu['2024_4mu'] = '0.983/1.001'
+
+    trig_e = {}
+    trig_e['2022_4e'] = '0.945/1.011' 
+    trig_e['2022_2e2mu'] = '0.979/1.002'
+
+    trig_e['2022EE_4e'] =  '0.945/1.011'
+    trig_e['2022EE_2e2mu'] = '0.979/1.002'
+
+    trig_e['2023preBPix_2e2mu'] = '0.979/1.002'
+    trig_e['2023preBPix_4e'] = '0.945/1.011'
+    trig_e['2023postBPix_2e2mu'] = '0.979/1.002'
+    trig_e['2023postBPix_4e'] = '0.945/1.011'
+
+    trig_e['2024_2e2mu'] = '0.979/1.002'
+    trig_e['2024_4e'] = '0.945/1.011'
+
 
     # ZX
     ZX = {}
@@ -199,6 +307,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     ZX['2018_4e'] = '0.650486/1.35893'
     ZX['2018_4mu'] = '0.69554/1.30465'
 
+    # 2022 values taken from https://indico.cern.ch/event/1360904/contributions/5896503/attachments/2832114/4948339/HZZmeeting_050424.pdf (slide 14)
     ZX['2022_2e2mu'] = '0.724/1.263'
     ZX['2022_4e'] = '0.495/1.451'
     ZX['2022_4mu'] = '0.677/1.321'
@@ -371,18 +480,49 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
 
             
     # Lepton efficiency
+
     if channel == '4mu' or channel == '2e2mu':
         file.write('CMS_eff_m lnN ')
-        # for i in range(nBins+4): # All except ZX
         for i in range(nBins+4): # All except ZX
             file.write(eff_mu[year+'_'+channel]+' ')
-        file.write('-\n') # ZX
-    if channel == '4e' or channel == '2e2mu':
-        file.write('CMS_eff_e lnN ')
-        # for i in range(nBins+4): # All except ZX
+        file.write('-\n') 
+
+        file.write('CMS_trigger_m_'+year+' lnN ')
         for i in range(nBins+4): # All except ZX
-            file.write(eff_e[year+'_'+channel]+' ')
-        file.write('-\n') # ZX
+            file.write(trig_mu[year+'_'+channel]+' ')
+        file.write('-\n')
+
+    # Electrons efficiencies are decorrelated between RECO/ID, statistical and systematic components (syst are correlated between years)
+    if channel == '4e' or channel == '2e2mu':
+        # --- ID statistical (uncorrelated per year) ---
+        file.write('CMS_eff_e_id_stat_'+year+' lnN ')
+        for i in range(nBins+4):
+            file.write(eff_e_id_stat[year+'_'+channel]+' ')
+        file.write('-\n')
+
+        # --- RECO statistical (uncorrelated per year) ---
+        file.write('CMS_eff_e_reco_stat_'+year+' lnN ')
+        for i in range(nBins+4):
+            file.write(eff_e_reco_stat[year+'_'+channel]+' ')
+        file.write('-\n')
+
+        # --- ID systematic (correlated across years) ---
+        file.write('CMS_eff_e_id_syst lnN ')
+        for i in range(nBins+4):
+            file.write(eff_e_id_syst[year+'_'+channel]+' ')
+        file.write('-\n')
+
+        # --- RECO systematic (correlated across years) ---
+        file.write('CMS_eff_e_reco_syst lnN ')
+        for i in range(nBins+4):
+            file.write(eff_e_reco_syst[year+'_'+channel]+' ')
+        file.write('-\n')
+
+        #TRIGGER
+        file.write('CMS_trigger_e_'+year+' lnN ')
+        for i in range(nBins+4): # All except ZX
+            file.write(trig_e[year+'_'+channel]+' ')
+        file.write('-\n')
 
     # ZX
     file.write('CMS_hzz'+channel+'_Zjets_'+year+' lnN ')
@@ -391,7 +531,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
         file.write('- ')
     file.write(ZX[year+'_'+channel]+'\n')
 
-    # Param
+    # Gaussian-constrained nuisance parameter , SMEARING systematic uncertainties
     if(channelNumber != 2):
         file.write('CMS_zz4l_mean_m_sig param 0.0 1.0\n')
         file.write('CMS_zz4l_sigma_m_sig param 0.0 0.03 [-1,1]\n') 
@@ -401,12 +541,12 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
 
     file.write('CMS_zz4l_n_sig_'+str(channelNumber)+'_'+year+' param 0.0 0.05\n')
 
-    # Theoretical
+    # Theoretical at 13.6 TeV taken from https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHWG136TeVxsec_extrap
     if not zzfloating:
         file.write('QCD_scale_ggVV lnN ')
         for i in range(nBins+3): # Signal + out + fake + qqzz
             file.write('- ')
-        file.write('1.039/0.961 -\n')
+        file.write('1.039/0.961 -\n') #ggF (N3LO QCD + NLO EW), TH Gaussian % (+-3.9%)
         file.write('QCD_scale_VV lnN ')
         for i in range(nBins+2): # Signal + out + fake
             file.write('- ')
@@ -414,7 +554,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
         file.write('pdf_gg lnN ')
         for i in range(nBins+3): # Signal + out + fake + qqzz
             file.write('- ')
-        file.write('1.032/0.968 -\n')
+        file.write('1.032/0.968 -\n') #ggF (N3LO QCD + NLO EW), PDF+as% (+-3.2%)
         file.write('pdf_qqbar lnN ')
         for i in range(nBins+2): # Signal + out + fake
             file.write('- ')
@@ -464,6 +604,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
 
     print(os.getcwd())
 
+#This createDatacard_ggH function is obsolete!! It's not used anymore
 def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physicalModel, year, nData, jes, lowerBound, upperBound, yearSetting):
     # Name of the bin (aFINALSTATE_ recobinX)
     if(channel == '4mu'): channelNumber = 1
@@ -563,11 +704,11 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     eff_mu['2018_2e2mu'] = '0.986/1.006'
     eff_mu['2018_4mu'] = '0.981/1.008'
 
-    # Latest updated values for Run3
-    eff_mu['2022_2e2mu'] = '0.983/1.012' #ok
-    eff_mu['2022_4mu'] = '0.977/1.015' #ok
-    eff_mu['2022EE_2e2mu'] = '0.986/1.008' #ok
-    eff_mu['2022EE_4mu'] = '0.981/1.009'#ok
+    #TODO: Update 2023 eff_mu values. The values for 2023 preBPix/postBPix are copy-pasted from 2022 at the moment
+    eff_mu['2023preBPix_2e2mu'] = '0.986/1.008' #spencer
+    eff_mu['2023preBPix_4mu'] = '0.981/1.01' #spencer
+    eff_mu['2023postBPix_2e2mu'] = '0.986/1.008' # spencer
+    eff_mu['2023postBPix_4mu'] = '0.981/1.01' # spencer
 
     eff_mu['2023preBPix_2e2mu'] = '0.987/1.005' # ok
     eff_mu['2023preBPix_4mu'] = '0.982/1.006' # ok
@@ -585,10 +726,11 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     eff_e['2018_2e2mu'] = '0.95/1.052'
     eff_e['2018_4e'] = '0.905/1.077'
 
-    eff_e['2022_4e'] = '0.884/1.103' #perfect agreement w/ our measurement
-    eff_e['2022_2e2mu'] = '0.928/1.069' #perfect agreement w/ our measurement
-    eff_e['2022EE_4e'] =  '0.897/1.088' #perfect agreement w/ our measurement
-    eff_e['2022EE_2e2mu'] = '0.938/1.059' #perfect agreement w/ our measurement
+    #TODO: Update 2023 eff_e values. The values for 2023 preBPix/postBPix are copy-pasted from 2022 at the moment
+    eff_e['2023preBPix_2e2mu'] = '0.927/1.069' # spencer
+    eff_e['2023preBPix_4e'] = '0.884/1.103' # spencer
+    eff_e['2023postBPix_2e2mu'] = '0.927/1.069' # spencer
+    eff_e['2023postBPix_4e'] = '0.884/1.103' # spencer
 
     eff_e['2023preBPix_2e2mu'] = '0.882/1.116' # ok
     eff_e['2023preBPix_4e'] = '0.814/1.177' # ok
@@ -597,7 +739,6 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
 
     eff_e['2024_2e2mu'] = '0.933/1.064'# ok
     eff_e['2024_4e'] = '0.887/1.098'# ok
-
 
     
     # ZX
@@ -616,6 +757,7 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     ZX['2018_4e'] = '0.650486/1.35893'
     ZX['2018_4mu'] = '0.69554/1.30465'
 
+    #TODO: 2024 is evaluated using 2023 DY, should be recomputed
     ZX['2023preBPix_2e2mu'] = '0.724/1.263' # spencer
     ZX['2023preBPix_4e'] = '0.575/1.398' # spencer
     ZX['2023preBPix_4mu'] = '0.677/1.321' # spencer

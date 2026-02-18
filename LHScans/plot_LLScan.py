@@ -298,6 +298,8 @@ if v4_flag and doubleDiff: nBins = len(obs_bins)*2
 if 'kL' in obsName: nBins = 1
 
 for i in range(nBins):
+
+    print("BIN: ", i)
     _bin = i
     _obs_bin = _poi+str(i)
 
@@ -707,6 +709,7 @@ for i in range(nBins):
         else:
             fname = inputPath + "higgsCombine_"+obsName+"_"+poi_fn+".MultiDimFit.mH125.38.root"
             print('STAT+SYST')
+            print(fname)
             obs_scan = BuildScan('scan', poi, [fname], 2, yvals, 7.)
             # print obs_scan
             obs_nom = obs_scan['val']
@@ -732,7 +735,6 @@ for i in range(nBins):
             fname = inputPath + "higgsCombine_"+obsName+"_"+poi_fn+"_NoSys.MultiDimFit.mH125.38.root"
             print('STAT-ONLY')
             obs_scan_stat = BuildScan('scan', poi, [fname], 2, yvals, 7.)
-            print('---------------------------------', obs_scan_stat)
             obs_nom_stat = obs_scan_stat['val']
             obs_2sig_stat = obs_scan_stat['val_2sig']
 
@@ -817,8 +819,8 @@ for i in range(nBins):
         elif 'mass4l' in obsName:
             if _bin == 0: obs_fit = 'Obs. #sigma_{incl} = %.2f^{#plus %.2f}_{#minus %.2f} (stat)^{#plus %.2f}_{#minus %.2f} (syst)' % (obs_nom[0], obs_nom_stat[1], abs(obs_nom_stat[2]), obs_up_sys, obs_do_sys)
             if _bin == 1: obs_fit = 'Obs. #sigma_{2e2mu} = %.2f^{#plus %.2f}_{#minus %.2f} (stat)^{#plus %.2f}_{#minus %.2f} (syst)' % (obs_nom[0], obs_nom_stat[1], abs(obs_nom_stat[2]), obs_up_sys, obs_do_sys)
-            if _bin == 2: obs_fit = 'Obs. #sigma_{4e} = %.2f^{#plus %.2f}_{#minus %.2f} (stat)^{#plus %.2f}_{#minus %.2f} (syst)' % (obs_nom[0], obs_nom_stat[1], abs(obs_nom_stat[2]), obs_up_sys, obs_do_sys)
-            if _bin == 3: obs_fit = 'Obs. #sigma_{4mu} = %.2f^{#plus %.2f}_{#minus %.2f} (stat)^{#plus %.2f}_{#minus %.2f} (syst)' % (obs_nom[0], obs_nom_stat[1], abs(obs_nom_stat[2]), obs_up_sys, obs_do_sys)
+            if _bin == 2: obs_fit = 'Obs. #sigma_{4mu} = %.2f^{#plus %.2f}_{#minus %.2f} (stat)^{#plus %.2f}_{#minus %.2f} (syst)' % (obs_nom[0], obs_nom_stat[1], abs(obs_nom_stat[2]), obs_up_sys, obs_do_sys)
+            if _bin == 3: obs_fit = 'Obs. #sigma_{4e} = %.2f^{#plus %.2f}_{#minus %.2f} (stat)^{#plus %.2f}_{#minus %.2f} (syst)' % (obs_nom[0], obs_nom_stat[1], abs(obs_nom_stat[2]), obs_up_sys, obs_do_sys)
             if _bin == 4: obs_fit = 'Obs. ZZ_{norm} = %.2f^{#plus %.2f}_{#minus %.2f} (stat)^{#plus %.2f}_{#minus %.2f} (syst)' % (obs_nom[0], obs_nom_stat[1], abs(obs_nom_stat[2]), obs_up_sys, obs_do_sys)
             if _bin == 5: obs_fit = 'Obs. ZZ_{norm}^{4e} = %.2f^{#plus %.2f}_{#minus %.2f} (stat)^{#plus %.2f}_{#minus %.2f} (syst)' % (obs_nom[0], obs_nom_stat[1], abs(obs_nom_stat[2]), obs_up_sys, obs_do_sys)
             if _bin == 6: obs_fit = 'Obs. ZZ_{norm}^{4mu} = %.2f^{#plus %.2f}_{#minus %.2f} (stat)^{#plus %.2f}_{#minus %.2f} (syst)' % (obs_nom[0], obs_nom_stat[1], abs(obs_nom_stat[2]), obs_up_sys, obs_do_sys)

@@ -163,7 +163,10 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
         _obsName[obsName] = obsName
 
     # Parameters of doubleCB signal
-    m = ROOT.RooRealVar("CMS_zz4l_mass", "CMS_zz4l_mass", lowerBound, upperBound)
+
+    #m = ROOT.RooRealVar("CMS_zz4l_mass", "CMS_zz4l_mass", lowerBound, upperBound)
+    m = ROOT.RooRealVar("ZZMass", "ZZMass", lowerBound, upperBound)
+    
     #MH = ROOT.RooRealVar("MH","MH",125.7,109.55,1000.05)
     MH = ROOT.RooRealVar("MH","MH", 125.38, lowerBound, upperBound)
 
@@ -752,7 +755,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
 
         xheff = 0.0
         sumxsec = 0.0
-        for prodMode in ['VBFH', 'WH']:#, 'ttH']: #ZH
+        for prodMode in ['VBFH', 'ZH', 'WH', 'ttH']:
             _prodMode = prodMode
             if prodMode == 'VBFH':
                 _prodMode = 'VBF'
@@ -1114,26 +1117,50 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
 
     print(obsName,obsBin_low,obsBin_high)
     print(channel)
-    chan = ROOT.RooRealVar("chan", "chan", 0, 3)
+    #chan = ROOT.RooRealVar("chan", "chan", 0, 3)
     # if (obsName == "nJets"): obsName = "njets_reco_pt30_eta4p7"
+    Z1Flav = ROOT.RooRealVar("Z1Flav", "Z1Flav", -1000, 1000)
+    Z2Flav = ROOT.RooRealVar("Z2Flav", "Z2Flav", -1000, 1000)
+    flavCut_4mu   = "(abs(Z1Flav)==169 && abs(Z2Flav)==169)"
+    flavCut_4e    = "(abs(Z1Flav)==121 && abs(Z2Flav)==121)"
+    flavCut_2e2mu = "((abs(Z1Flav)==121 && abs(Z2Flav)==169) || (abs(Z1Flav)==169 && abs(Z2Flav)==121))"
     if (channel=='4mu'):
-        if (obsName.startswith("mass4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && chan == 1)")
-        elif (obsName.startswith("rapidity4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>105.0 && CMS_zz4l_mass<160.0 && abs("+obsName_help+")>="+str(obsBin_low)+" && abs("+obsName_help+")<"+str(obsBin_high)+" && chan == 1)")
-        elif not doubleDiff and not obsName.startswith("mass4l"): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && chan == 1)")
-        elif doubleDiff: data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,observable_2nd,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && "+obsName_2nd_help+">="+str(obsBin_2nd_low)+" && "+obsName_2nd_help+"<"+str(obsBin_2nd_high)+" && chan == 1)")
+        if (obsName.startswith("mass4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,Z1Flav,Z2Flav),f"(ZZMass>{lowerBound} && ZZMass<{upperBound} && {flavCut_4mu})")
+        elif (obsName.startswith("rapidity4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,Z1Flav,Z2Flav),f"(ZZMass>105.0 && ZZMass<160.0 && abs({obsName_help})>={obsBin_low} && abs({obsName_help})<{obsBin_high} && {flavCut_4mu})")
+        elif not doubleDiff and not obsName.startswith("mass4l"): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,Z1Flav,Z2Flav),f"(ZZMass>{lowerBound} && ZZMass<{upperBound} && {obsName_help}>={obsBin_low} && {obsName_help}<{obsBin_high} && {flavCut_4mu})")
+        elif doubleDiff: data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,observable_2nd,Z1Flav,Z2Flav),f"(ZZMass>{lowerBound} && ZZMass<{upperBound} && {obsName_help}>={obsBin_low} && {obsName_help}<{obsBin_high} && {obsName_2nd_help}>={obsBin_2nd_low} && {obsName_2nd_help}<{obsBin_2nd_high} && {flavCut_4mu})")
         print(data_obs.numEntries())
     if (channel=='4e'):
-        if (obsName.startswith("mass4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && chan == 2)")
-        elif (obsName.startswith("rapidity4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>105.0 && CMS_zz4l_mass<160.0 && abs("+obsName_help+")>="+str(obsBin_low)+" && abs("+obsName_help+")<"+str(obsBin_high)+" && chan == 2)")
-        elif not doubleDiff and not obsName.startswith("mass4l"): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && chan == 2)")
-        elif doubleDiff: data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,observable_2nd,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && "+obsName_2nd_help+">="+str(obsBin_2nd_low)+" && "+obsName_2nd_help+"<"+str(obsBin_2nd_high)+" && chan == 2)")
+        if (obsName.startswith("mass4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,Z1Flav,Z2Flav),f"(ZZMass>{lowerBound} && ZZMass<{upperBound} && {flavCut_4e})")
+        elif (obsName.startswith("rapidity4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,Z1Flav,Z2Flav),f"(ZZMass>105.0 && ZZMass<160.0 && abs({obsName_help})>={obsBin_low} && abs({obsName_help})<{obsBin_high} && {flavCut_4e})")
+        elif not doubleDiff and not obsName.startswith("mass4l"): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,Z1Flav,Z2Flav),f"(ZZMass>{lowerBound} && ZZMass<{upperBound} && {obsName_help}>={obsBin_low} && {obsName_help}<{obsBin_high} && {flavCut_4e})")
+        elif doubleDiff: data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,observable_2nd,Z1Flav,Z2Flav),f"(ZZMass>{lowerBound} && ZZMass<{upperBound} && {obsName_help}>={obsBin_low} && {obsName_help}<{obsBin_high} && {obsName_2nd_help}>={obsBin_2nd_low} && {obsName_2nd_help}<{obsBin_2nd_high} && {flavCut_4e})")
         print(data_obs.numEntries())
     if (channel=='2e2mu'):
-        if (obsName.startswith("mass4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && chan == 3)")
-        elif (obsName.startswith("rapidity4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>105.0 && CMS_zz4l_mass<160.0 && abs("+obsName_help+")>="+str(obsBin_low)+" && abs("+obsName_help+")<"+str(obsBin_high)+" && chan == 3)")
-        elif not doubleDiff and not obsName.startswith("mass4l"): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && chan == 3)")
-        elif doubleDiff: data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,observable_2nd,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && "+obsName_2nd_help+">="+str(obsBin_2nd_low)+" && "+obsName_2nd_help+"<"+str(obsBin_2nd_high)+" && chan == 3)")
+        if (obsName.startswith("mass4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,Z1Flav,Z2Flav),f"(ZZMass>{lowerBound} && ZZMass<{upperBound} && {flavCut_2e2mu})")
+        elif (obsName.startswith("rapidity4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,Z1Flav,Z2Flav),f"(ZZMass>105.0 && ZZMass<160.0 && abs({obsName_help})>={obsBin_low} && abs({obsName_help})<{obsBin_high} && {flavCut_2e2mu})")
+        elif not doubleDiff and not obsName.startswith("mass4l"): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,Z1Flav,Z2Flav),f"(ZZMass>{lowerBound} && ZZMass<{upperBound} && {obsName_help}>={obsBin_low} && {obsName_help}<{obsBin_high} && {flavCut_2e2mu})")
+        elif doubleDiff: data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,observable_2nd,Z1Flav,Z2Flav),f"(ZZMass>{lowerBound} && ZZMass<{upperBound} && {obsName_help}>={obsBin_low} && {obsName_help}<{obsBin_high} && {obsName_2nd_help}>={obsBin_2nd_low} && {obsName_2nd_help}<{obsBin_2nd_high} && {flavCut_2e2mu})")
         print(data_obs.numEntries())
+        
+    #if (channel=='4mu'):
+    #    if (obsName.startswith("mass4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && chan == 1)")
+    #    elif (obsName.startswith("rapidity4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>105.0 && CMS_zz4l_mass<160.0 && abs("+obsName_help+")>="+str(obsBin_low)+" && abs("+obsName_help+")<"+str(obsBin_high)+" && chan == 1)")
+    #    elif not doubleDiff and not obsName.startswith("mass4l"): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && chan == 1)")
+    #    elif doubleDiff: data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,observable_2nd,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && "+obsName_2nd_help+">="+str(obsBin_2nd_low)+" && "+obsName_2nd_help+"<"+str(obsBin_2nd_high)+" && chan == 1)")
+    #    print(data_obs.numEntries())
+    #if (channel=='4e'):
+    #    if (obsName.startswith("mass4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && chan == 2)")
+    #    elif (obsName.startswith("rapidity4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>105.0 && CMS_zz4l_mass<160.0 && abs("+obsName_help+")>="+str(obsBin_low)+" && abs("+obsName_help+")<"+str(obsBin_high)+" && chan == 2)")
+    #    elif not doubleDiff and not obsName.startswith("mass4l"): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && chan == 2)")
+    #    elif doubleDiff: data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,observable_2nd,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && "+obsName_2nd_help+">="+str(obsBin_2nd_low)+" && "+obsName_2nd_help+"<"+str(obsBin_2nd_high)+" && chan == 2)")
+    #    print(data_obs.numEntries())
+    #if (channel=='2e2mu'):
+    #    if (obsName.startswith("mass4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && chan == 3)")
+    #    elif (obsName.startswith("rapidity4l")): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>105.0 && CMS_zz4l_mass<160.0 && abs("+obsName_help+")>="+str(obsBin_low)+" && abs("+obsName_help+")<"+str(obsBin_high)+" && chan == 3)")
+    #    elif not doubleDiff and not obsName.startswith("mass4l"): data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && chan == 3)")
+    #    elif doubleDiff: data_obs = ROOT.RooDataSet("data_obs","data_obs",data_obs_tree,ROOT.RooArgSet(m,observable,observable_2nd,chan),"(CMS_zz4l_mass>"+str(lowerBound)+" && CMS_zz4l_mass<"+str(upperBound)+" && "+obsName_help+">="+str(obsBin_low)+" && "+obsName_help+"<"+str(obsBin_high)+" && "+obsName_2nd_help+">="+str(obsBin_2nd_low)+" && "+obsName_2nd_help+"<"+str(obsBin_2nd_high)+" && chan == 3)")
+    #    print(data_obs.numEntries())
     data_obs_file.Close()
 
     # Create workspace
