@@ -117,10 +117,11 @@ def BuildScan(scan, param, files, color, yvals, ycut):
 yvals = [1., 3.84]
 
 obsName = opt.OBSNAME
+print(obsName)
 
 channel = ["Expected","Expected - no syst.","Observed","Observed - no syst."]
 
-inputPath = '../combine_files/'
+inputPath = path['eos_path']+'combine_files/'
 
 if 'kL' in obsName:
     fileList = [ "higgsCombine_BIN_grid.MultiDimFit.mH125.38.123456.root",
@@ -271,11 +272,10 @@ elif(obsName == 'pT4l vs pTj1'):
     doubleDiff = True
     
 # _poi    = 'SigmaBin'
-_obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'NJ'}
+_obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'Nj'}
 if obsName not in _obsName:
     _obsName[obsName] = obsName
-# _poi    = 'r_smH_'+_obsName[obsName]+'_'
-
+    #_poi    = 'r_smH_'+_obsName[obsName]+'_'
 
 sys.path.append(path['eos_path']+'inputs')
 if opt.INTER:
@@ -342,7 +342,14 @@ for i in range(nBins):
         inF = TFile.Open(fname,"READ")
         tree = inF.Get("limit")
 
+        tree.Print()
+
+        print(obsName)
+        print(_obsName[obsName])
+        
+        print('r_smH_'+_obsName[obsName]+'_'+str(_bin))
         if tree.GetBranch('r_smH_'+_obsName[obsName]+'_'+str(_bin)):
+            print("FLAG")
             tree.GetBranch('r_smH_'+_obsName[obsName]+'_'+str(_bin)).SetTitle('r_smH_'+str(_bin)+'/F');
             tree.GetBranch('r_smH_'+_obsName[obsName]+'_'+str(_bin)).SetName('r_smH_'+str(_bin)+'');
 

@@ -36,6 +36,8 @@ def parseOptions():
     parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='|0|30|80|200|10000|',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
     parser.add_option('',   '--year',  dest='YEAR',  type='string',default='2022',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--ZZfloating',action='store_true', dest='ZZ',default=False, help='Let ZZ normalisation to float')
+    parser.add_option('',   '--interpolation', action='store_true', dest='INTER', default=False, help='Calculate acceptances at 124 and 126 GeV')
+
     # Unblind option
     parser.add_option('',   '--unblind', action='store_true', dest='UNBLIND', default=False, help='Use real data')
     # Calculate Systematic Uncertainties
@@ -95,7 +97,7 @@ def PlotCorrelation():
         pars = od()
         modes = od()
 
-        inFile    = ROOT.TFile('../combine_files/robustHesse_'+obsName+'_'+physicalModel+'.root','READ')
+        inFile    = ROOT.TFile(path['eos_path']+'combine_files/robustHesse_'+obsName+'_'+physicalModel+'.root','READ')
         theMatrix = inFile.Get('h_correlation')
         theList   = inFile.Get('floatParsFinal')
  
@@ -133,7 +135,7 @@ def PlotCorrelation():
         fig, ax = plt.subplots(figsize = (20, 10))
         ax.text(0., 1.005, r'$\bf{{CMS}}$', fontsize = 35, transform = ax.transAxes)
 
-        ax.text(0.7, 1.005, r'34.7 fb$^{-1}$ (13.6 TeV)', fontsize = 20, transform = ax.transAxes)
+        ax.text(0.7, 1.005, r'109 fb$^{-1}$ (13.6 TeV)', fontsize = 20, transform = ax.transAxes)
         ax.text(0.63, 0.9, r'H$\rightarrow$ ZZ', fontsize = 25, transform = ax.transAxes)
         ax.text(0.55, 0.85, r'm$_{\mathrm{H}}$ = 125.38 GeV', fontsize = 25, transform = ax.transAxes)
 
@@ -168,11 +170,17 @@ def PlotCorrelation():
         plt.axvline(x=0, color='k',linewidth=2.5)
         plt.axvline(x=theMap.shape[0], color='k',linewidth=2.5)
 
-        if opt.UNBLIND:
-            plt.savefig('/home/llr/cms/bonanomi/fiducial/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/FidJJes/fit/corr_matrix/corr_'+obsName+'_'+physicalModel+'.pdf', bbox_inches='tight')
-            #plt.savefig('/home/llr/cms/tarabini/CMSSW_10_2_13/src/HiggsAnalysis/FiducialXSFWK/plots/'+obsName+'/data/corr_'+obsName+'_'+physicalModel+'.png')
-        else:
-            plt.savefig("corr_"+obsName+"_"+physicalModel+".pdf", bbox_inches="tight")
+        #if opt.UNBLIND:
+        #    plt.savefig('/home/llr/cms/bonanomi/fiducial/CMSSW_10_2_13/src/HiggsAnalysis/CombinedLimit/FidJJes/fit/corr_matrix/corr_'+obsName+'_'+physicalModel+'.pdf', bbox_inches='tight')
+        #    #plt.savefig('/home/llr/cms/tarabini/CMSSW_10_2_13/src/HiggsAnalysis/FiducialXSFWK/plots/'+obsName+'/data/corr_'+obsName+'_'+physicalModel+'.png')
+        #else:
+        #    plt.savefig("corr_"+obsName+"_"+physicalModel+".pdf", bbox_inches="tight")
+        outdir = os.path.join(path['plots_path'], 'CORRELATION', obs_name, year)
+        os.makedirs(outdir, exist_ok=True)
+        plt.savefig(os.path.join(outdir,'corr_%s_%s_%s.png' % (year, obs_name, fState)),bbox_inches='tight')
+        plt.savefig(os.path.join(outdir,'corr_%s_%s_%s.pdf' % (year, obs_name, fState)),bbox_inches='tight')
+        plt.tight_layout()
+        plt.close()
 
 obsName = opt.OBSNAME
 
@@ -188,9 +196,30 @@ else:
 
 # prepare the set of bin boundaries to run over, it is retrieved from inputs file
 # _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins', 'acc'], -1)
-_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins', 'acc'])
+#_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins', 'acc'])
+#observableBins = _temp.observableBins
+#acc = _temp.acc
+
+if opt.INTER:
+    fname = path['eos_path']+'inputs/inputs_sig_extrap_'+obsName+'_'+opt.YEAR+".py"
+else:
+    fname = path['eos_path']+'inputs/inputs_sig_'+obsName+'_'+opt.YEAR+".py"
+
+print(fname)
+
+if os.path.exists(fname):
+    modname = f"inputs_sig_{obsName}_{opt.YEAR}" 
+    spec = importlib.util.spec_from_file_location(modname, fname)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load spec for {fname}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+else:
+    raise FileNotFoundError(fname)
+
 observableBins = _temp.observableBins
 acc = _temp.acc
+
 # print 'Running Fiducial XS computation - '+obsName+' - bin boundaries: ', observableBins, '\n'
 # print 'Theory xsec and BR at MH = '+_th_MH
 # print 'Current directory: python'
@@ -201,7 +230,5 @@ if type(observableBins) is dict: doubleDiff = True # If binning is a dictionary 
 nBins = len(observableBins)
 if not doubleDiff: nBins = nBins-1 #in case of 1D measurement the number of bins is -1 the length of the list of bin boundaries
 
-os.chdir('../combine_files/')
+os.chdir(path['eos_path']+'combine_files/')
 PlotCorrelation()
-
-sys.path.remove('../inputs/')

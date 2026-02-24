@@ -254,7 +254,6 @@ def findFSZX(df):
     df['FinState'] = [FindFinalState(x,y) for x,y in zip(df['Z1Flav'], df['Z2Flav'])]
     return df
 
-# Define combination coefficients
 def comb(year):
     if year == "2022": # 2022 from HIG 24 13, 2023 from SPENCER
         cb_SS = np.array([
@@ -286,10 +285,10 @@ def comb(year):
         ])
     elif year == "2024": 
         cb_SS = np.array([
-            0.782, # 4e
-            0.838, # 4mu
-            0.845, # 2e2mu
-            0.747, # 2mu2e
+            0.787, # 4e
+            0.960, # 4mu
+            0.958, # 2e2mu
+            0.749, # 2mu2e
         ])
     return cb_SS
 
@@ -324,10 +323,10 @@ def ratio(year): # 2022 from HIG 24 13, 2023 from SPENCER
             ])
     elif year == "2024": 
         OS_SS = np.array([
-            1.001,   # 4e
-            1.047,  # 4mu
-            1.068,   # 2e2mu
-            1.025,  # 2mu2e
+            0.997,   # 4e
+            1.051,  # 4mu
+            1.051,   # 2e2mu
+            1.024,  # 2mu2e
             ])
     return OS_SS
 

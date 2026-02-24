@@ -7,6 +7,7 @@ import math
 import time
 from decimal import *
 import json
+from pathlib import Path
 
 sys.path.append('../helperstuff/')
 from binning import binning
@@ -19,6 +20,7 @@ from createXSworkspace import createXSworkspace
 from createDatacard import createDatacard, createDatacard_ggH
 import pdfUnc_matrices
 
+script_dir = Path(__file__).resolve().parent
 
 def parseOptions():
 
@@ -52,6 +54,9 @@ def parseOptions():
     parser.add_option('',   '--m4lUpper',  dest='UPPER_BOUND',  type='int',default=160.0,   help='Upper bound for m4l')
     parser.add_option('',   '--ZZfloating',action='store_true', dest='ZZ',default=False, help='Let ZZ normalisation to float')
     parser.add_option('',   '--eff_unc', action='store_true', dest='EFF_UNC', default=False,   help='theory uncertainites on matrices')
+
+    parser.add_option('',   '--NOK1K2',action='store_true', dest='NOK1K2',default=False, help='remove K1 K2 parameters')
+
 
     # Unblind option
     parser.add_option('',   '--unblind', action='store_true', dest='UNBLIND', default=False, help='Use real data')
@@ -120,6 +125,7 @@ def produceDatacards(obsName, observableBins, ModelName, physicalmodel):
         JES = True
     else:
         JES = False
+    os.chdir(script_dir)
     os.chdir('../datacard/datacard_'+years[0])
     for year in years:
         os.chdir('../datacard_'+year)
@@ -127,15 +133,15 @@ def produceDatacards(obsName, observableBins, ModelName, physicalmodel):
         for fState in fStates:
             if (not obsName.startswith("mass4l")):
                 for obsBin in range(nBins):
-                    ndata = createXSworkspace(obsName,fState, nBins, obsBin, observableBins, True, ModelName, physicalmodel, year, JES, opt.INTER, doubleDiff, opt.LOWER_BOUND, opt.UPPER_BOUND, opt.OBSNAME) #creates a statistical workspace for the observable and bin.
+                    ndata = createXSworkspace(obsName,fState, nBins, obsBin, observableBins, True, ModelName, physicalmodel, year, JES, opt.INTER, opt.NOK1K2, doubleDiff, opt.LOWER_BOUND, opt.UPPER_BOUND, opt.OBSNAME) #creates a statistical workspace for the observable and bin.
                     createDatacard(obsName, fState, nBins, obsBin, observableBins, physicalmodel, year, ndata, JES, opt.LOWER_BOUND, opt.UPPER_BOUND, opt.YEAR) #creates a datacard with the relevant signal and background info.
                     #createDatacard_ggH(obsName, fState, nBins, obsBin, observableBins, physicalmodel, year, ndata, JES, opt.LOWER_BOUND, opt.UPPER_BOUND, opt.YEAR)
                     if (opt.EFF_UNC): pdfUnc_matrices.run_pdf_unc_matrices(f"{path['eos_path']}inputs/inputs_sig_{obsName}_{year}.py", obsName, year, physicalmodel)
                     os.chdir('../datacard/datacard_'+year)
             else:
-                ndata = createXSworkspace(obsName,fState, nBins, 0, observableBins, True, ModelName, physicalmodel, year, JES, opt.INTER, doubleDiff, opt.LOWER_BOUND, opt.UPPER_BOUND, opt.OBSNAME)
+                ndata = createXSworkspace(obsName,fState, nBins, 0, observableBins, True, ModelName, physicalmodel, year, JES, opt.INTER, opt.NOK1K2, doubleDiff, opt.LOWER_BOUND, opt.UPPER_BOUND, opt.OBSNAME)
                 createDatacard(obsName, fState, nBins, 0, observableBins, physicalmodel, year, ndata, JES, opt.LOWER_BOUND, opt.UPPER_BOUND, opt.YEAR)
-                if (opt.EFF_UNC): pdfUnc_matrices.run_pdf_unc_matrices(f"{path['eos_path']}inputs/inputs_sig_{obsName}_{year}.py", obsName, year, physicalmodel)
+                if (opt.EFF_UNC): pdfUnc_matrices.run_pdf_unc_matrices(f"{path['eos_path']}inputs/inputs_sig_{obsName}_{year}_ORIG.py", obsName, year, physicalmodel)
                 os.chdir('../datacard/datacard_'+year)
                 #Handles mass4l observables separately (because they are inclusive and only have one bin)
 
@@ -179,40 +185,40 @@ def runv3(years, observableBins, obsName, fitName, physicalModel, fStates=['4e',
     if opt.YEAR == 'Run3':
        # Base nuisances
         base_nuis = [
-        'CMS_trigger_e_2022',
-        'CMS_trigger_e_2022EE',
-        'CMS_trigger_e_2023preBPix',
-        'CMS_trigger_e_2023postBPix',
-        'CMS_trigger_e_2024',
-        'CMS_trigger_m_2022',
-        'CMS_trigger_m_2022EE',
-        'CMS_trigger_m_2023preBPix',
-        'CMS_trigger_m_2023postBPix',
-        'CMS_trigger_m_2024',
-        'CMS_eff_m','CMS_eff_e_reco_syst', 'CMS_eff_e_id_syst',
-        'CMS_eff_e_reco_stat_2022','CMS_eff_e_id_stat_2022',
-        'CMS_eff_e_reco_stat_2022EE','CMS_eff_e_id_stat_2022EE',
-        'CMS_eff_e_reco_stat_2023preBPix','CMS_eff_e_id_stat_2023preBPix',
-        'CMS_eff_e_reco_stat_2023postBPix','CMS_eff_e_id_stat_2023postBPix',
-        'CMS_eff_e_reco_stat_2024','CMS_eff_e_id_stat_2024',
-        'CMS_hzz2e2mu_Zjets_2022', 'CMS_hzz4e_Zjets_2022', 'CMS_hzz4mu_Zjets_2022',
-        'CMS_hzz2e2mu_Zjets_2022EE', 'CMS_hzz4e_Zjets_2022EE', 'CMS_hzz4mu_Zjets_2022EE',
-        'CMS_hzz2e2mu_Zjets_2023preBPix', 'CMS_hzz4e_Zjets_2023preBPix', 'CMS_hzz4mu_Zjets_2023preBPix',
-        'CMS_hzz2e2mu_Zjets_2023postBPix', 'CMS_hzz4e_Zjets_2023postBPix', 'CMS_hzz4mu_Zjets_2023postBPix',
-        'CMS_hzz2e2mu_Zjets_2024', 'CMS_hzz4e_Zjets_2024', 'CMS_hzz4mu_Zjets_2024',
-        'CMS_zz4l_sigma_e_sig', 'CMS_zz4l_sigma_m_sig',
-        'CMS_zz4l_n_sig_3_2022', 'CMS_zz4l_n_sig_2_2022', 'CMS_zz4l_n_sig_1_2022',
-        'CMS_zz4l_n_sig_3_2022EE', 'CMS_zz4l_n_sig_2_2022EE', 'CMS_zz4l_n_sig_1_2022EE',
-        'CMS_zz4l_n_sig_3_2023preBPix', 'CMS_zz4l_n_sig_2_2023preBPix', 'CMS_zz4l_n_sig_1_2023preBPix',
-        'CMS_zz4l_n_sig_3_2023postBPix', 'CMS_zz4l_n_sig_2_2023postBPix', 'CMS_zz4l_n_sig_1_2023postBPix',
-        'CMS_zz4l_n_sig_3_2024', 'CMS_zz4l_n_sig_2_2024', 'CMS_zz4l_n_sig_1_2024',
-        'CMS_zz4l_mean_e_sig', 'CMS_zz4l_mean_m_sig',
+        'CMS_eff_e_trigger_2022',
+        'CMS_eff_e_trigger_2022EE',
+        'CMS_eff_e_trigger_2023',
+        'CMS_eff_e_trigger_2023BPix',
+        'CMS_eff_e_trigger_2024',
+        'CMS_eff_m_trigger_2022',
+        'CMS_eff_m_trigger_2022EE',
+        'CMS_eff_m_trigger_2023',
+        'CMS_eff_m_trigger_2023BPix',
+        'CMS_eff_m_trigger_2024',
+        'CMS_eff_m','CMS_eff_e_reco_13p6TeV', 'CMS_eff_e_id',
+        'CMS_eff_e_reco_2022','CMS_eff_e_id_2022',
+        'CMS_eff_e_reco_2022EE','CMS_eff_e_id_2022EE',
+        'CMS_eff_e_reco_2023','CMS_eff_e_id_2023',
+        'CMS_eff_e_reco_2023BPix','CMS_eff_e_id_2023BPix',
+        'CMS_eff_e_reco_2024','CMS_eff_e_id_2024',
+        'CMS_HIG25015_hzz2e2mu_Zjets_2022', 'CMS_HIG25015_hzz4e_Zjets_2022', 'CMS_HIG25015_hzz4mu_Zjets_2022',
+        'CMS_HIG25015_hzz2e2mu_Zjets_2022EE', 'CMS_HIG25015_hzz4e_Zjets_2022EE', 'CMS_HIG25015_hzz4mu_Zjets_2022EE',
+        'CMS_HIG25015_hzz2e2mu_Zjets_2023preBPix', 'CMS_HIG25015_hzz4e_Zjets_2023preBPix', 'CMS_HIG25015_hzz4mu_Zjets_2023preBPix',
+        'CMS_HIG25015_hzz2e2mu_Zjets_2023postBPix', 'CMS_HIG25015_hzz4e_Zjets_2023postBPix', 'CMS_HIG25015_hzz4mu_Zjets_2023postBPix',
+        'CMS_HIG25015_hzz2e2mu_Zjets_2024', 'CMS_HIG25015_hzz4e_Zjets_2024', 'CMS_HIG25015_hzz4mu_Zjets_2024',
+        'CMS_HIG25015_zz4l_sigma_e_sig', 'CMS_HIG25015_zz4l_sigma_m_sig',
+        'CMS_HIG25015_zz4l_n_sig_3_2022', 'CMS_HIG25015_zz4l_n_sig_2_2022', 'CMS_HIG25015_zz4l_n_sig_1_2022',
+        'CMS_HIG25015_zz4l_n_sig_3_2022EE', 'CMS_HIG25015_zz4l_n_sig_2_2022EE', 'CMS_HIG25015_zz4l_n_sig_1_2022EE',
+        'CMS_HIG25015_zz4l_n_sig_3_2023preBPix', 'CMS_HIG25015_zz4l_n_sig_2_2023preBPix', 'CMS_HIG25015_zz4l_n_sig_1_2023preBPix',
+        'CMS_HIG25015_zz4l_n_sig_3_2023postBPix', 'CMS_HIG25015_zz4l_n_sig_2_2023postBPix', 'CMS_HIG25015_zz4l_n_sig_1_2023postBPix',
+        'CMS_HIG25015_zz4l_n_sig_3_2024', 'CMS_HIG25015_zz4l_n_sig_2_2024', 'CMS_HIG25015_zz4l_n_sig_1_2024',
+        'CMS_HIG25015_zz4l_mean_e_sig', 'CMS_HIG25015_zz4l_mean_m_sig',
         'CMS_HIG25015_pdf_effMatrix', 'CMS_HIG25015_QCDscale_effMatrix', 'CMS_HIG25015_alphaS_effMatrix',
-        'lumi_13p6TeV_correlated_2022_2023_2024'
+        'lumi_13p6TeV_222324'
         ]
 
         # Run-3 correlated lumi nuisances
-        lumi_nuis = ['lumi_13p6TeV_correlated_2023_2024', 'lumi_13p6TeV_2024']
+        lumi_nuis = ['lumi_13p6TeV_2324', 'lumi_13p6TeV_2024']
 
         if JES:
             years = ['2022','2022EE','2023preBPix','2023postBPix','2024']
@@ -245,7 +251,7 @@ def runv3(years, observableBins, obsName, fitName, physicalModel, fStates=['4e',
                 ' '.join(lumi_nuis)
             )
         else:
-            other_nuis = ['QCD_scale_VV', 'QCD_scale_ggVV', 'CMS_HIG25015_kfactor_ggzz', 'pdf_gg', 'pdf_qqbar']
+            other_nuis = ['QCDscale_VV', 'QCDscale_ggVV', 'CMS_HIG25015_kfactor_ggzz', 'pdf_gg', 'pdf_qqbar']
             cmd_addNuis = 'echo "nuis group = {} {}'.format(
                 ' '.join(base_nuis + other_nuis),
                 ' '.join(lumi_nuis)
@@ -253,15 +259,15 @@ def runv3(years, observableBins, obsName, fitName, physicalModel, fStates=['4e',
    
     elif opt.YEAR == '2022_2023':
         if 'zzfloating' in obsName:
-            cmd_addNuis = 'echo "nuis group = CMS_trigger_e_2022 CMS_trigger_e_2022EE CMS_trigger_m_2022 CMS_trigger_m_2022EE CMS_trigger_e_2023preBPix CMS_trigger_e_2023postBPix CMS_trigger_m_2023preBPix CMS_trigger_m_2023postBPix CMS_eff_e_reco_syst CMS_eff_e_id_syst CMS_eff_e_reco_stat_2022 CMS_eff_e_id_stat_2022 CMS_eff_e_reco_stat_2022EE CMS_eff_e_id_stat_2022EE CMS_eff_e_reco_stat_2023preBPix CMS_eff_e_id_stat_2023preBPix CMS_eff_e_reco_stat_2023postBPix CMS_eff_e_id_stat_2023postBPix CMS_eff_m CMS_hzz2e2mu_Zjets_2022 CMS_hzz4e_Zjets_2022 CMS_hzz4mu_Zjets_2022 CMS_hzz2e2mu_Zjets_2022EE CMS_hzz4e_Zjets_2022EE CMS_hzz4mu_Zjets_2022EE CMS_hzz2e2mu_Zjets_2023preBPix CMS_hzz4e_Zjets_2023preBPix CMS_hzz4mu_Zjets_2023preBPix CMS_hzz2e2mu_Zjets_2023postBPix CMS_hzz4e_Zjets_2023postBPix CMS_hzz4mu_Zjets_2023postBPix lumi_13p6TeV_2022 lumi_13p6TeV_2023 CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2022 CMS_zz4l_n_sig_2_2022 CMS_zz4l_n_sig_1_2022 CMS_zz4l_n_sig_3_2022EE CMS_zz4l_n_sig_2_2022EE CMS_zz4l_n_sig_1_2022EE CMS_zz4l_n_sig_3_2023preBPix CMS_zz4l_n_sig_2_2023preBPix CMS_zz4l_n_sig_1_2023preBPix CMS_zz4l_n_sig_3_2023postBPix CMS_zz4l_n_sig_2_2023postBPix CMS_zz4l_n_sig_1_2023postBPix  CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+            cmd_addNuis = 'echo "nuis group = CMS_eff_e_trigger_2022 CMS_eff_e_trigger_2022EE CMS_eff_m_trigger_2022 CMS_eff_m_trigger_2022EE CMS_eff_e_trigger_2023 CMS_eff_e_trigger_2023BPix CMS_eff_m_trigger_2023 CMS_eff_m_trigger_2023BPix CMS_eff_e_reco_13p6TeV CMS_eff_e_id CMS_eff_e_reco_2022 CMS_eff_e_id_2022 CMS_eff_e_reco_2022EE CMS_eff_e_id_2022EE CMS_eff_e_reco_2023 CMS_eff_e_id_2023 CMS_eff_e_reco_2023BPix CMS_eff_e_id_2023BPix CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_2022 CMS_HIG25015_hzz4e_Zjets_2022 CMS_HIG25015_hzz4mu_Zjets_2022 CMS_HIG25015_hzz2e2mu_Zjets_2022EE CMS_HIG25015_hzz4e_Zjets_2022EE CMS_HIG25015_hzz4mu_Zjets_2022EE CMS_HIG25015_hzz2e2mu_Zjets_2023preBPix CMS_HIG25015_hzz4e_Zjets_2023preBPix CMS_HIG25015_hzz4mu_Zjets_2023preBPix CMS_HIG25015_hzz2e2mu_Zjets_2023postBPix CMS_HIG25015_hzz4e_Zjets_2023postBPix CMS_HIG25015_hzz4mu_Zjets_2023postBPix lumi_13p6TeV_2022 lumi_13p6TeV_2023 CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_2022 CMS_HIG25015_zz4l_n_sig_2_2022 CMS_HIG25015_zz4l_n_sig_1_2022 CMS_HIG25015_zz4l_n_sig_3_2022EE CMS_HIG25015_zz4l_n_sig_2_2022EE CMS_HIG25015_zz4l_n_sig_1_2022EE CMS_HIG25015_zz4l_n_sig_3_2023preBPix CMS_HIG25015_zz4l_n_sig_2_2023preBPix CMS_HIG25015_zz4l_n_sig_1_2023preBPix CMS_HIG25015_zz4l_n_sig_3_2023postBPix CMS_HIG25015_zz4l_n_sig_2_2023postBPix CMS_HIG25015_zz4l_n_sig_1_2023postBPix  CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
             if (opt.EFF_UNC): cmd_addNuis = cmd_addNuis + ' CMS_HIG25015_pdf_effMatrix CMS_HIG25015_QCDscale_effMatrix CMS_HIG25015_alphaS_effMatrix '
         else:
-            cmd_addNuis = 'echo "nuis group = CMS_trigger_e_2022 CMS_trigger_e_2022EE CMS_trigger_m_2022 CMS_trigger_m_2022EE CMS_trigger_e_2023preBPix CMS_trigger_e_2023postBPix CMS_trigger_m_2023preBPix CMS_trigger_m_2023postBPix CMS_eff_e_reco_syst CMS_eff_e_id_syst CMS_eff_e_reco_stat_2022 CMS_eff_e_id_stat_2022 CMS_eff_e_reco_stat_2022EE CMS_eff_e_id_stat_2022EE CMS_eff_e_reco_stat_2023preBPix CMS_eff_e_id_stat_2023preBPix CMS_eff_e_reco_stat_2023postBPix CMS_eff_e_id_stat_2023postBPix CMS_eff_m CMS_hzz2e2mu_Zjets_2022 CMS_hzz4e_Zjets_2022 CMS_hzz4mu_Zjets_2022 CMS_hzz2e2mu_Zjets_2022EE CMS_hzz4e_Zjets_2022EE CMS_hzz4mu_Zjets_2022EE CMS_hzz2e2mu_Zjets_2023preBPix CMS_hzz4e_Zjets_2023preBPix CMS_hzz4mu_Zjets_2023preBPix CMS_hzz2e2mu_Zjets_2023postBPix CMS_hzz4e_Zjets_2023postBPix CMS_hzz4mu_Zjets_2023postBPix QCD_scale_VV QCD_scale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13p6TeV_2022 lumi_13p6TeV_2023 pdf_gg pdf_qqbar CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2022 CMS_zz4l_n_sig_2_2022 CMS_zz4l_n_sig_1_2022 CMS_zz4l_n_sig_3_2022EE CMS_zz4l_n_sig_2_2022EE CMS_zz4l_n_sig_1_2022EE CMS_zz4l_n_sig_3_2023preBPix CMS_zz4l_n_sig_2_2023preBPix CMS_zz4l_n_sig_1_2023preBPix CMS_zz4l_n_sig_3_2023postBPix CMS_zz4l_n_sig_2_2023postBPix CMS_zz4l_n_sig_1_2023postBPix CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+            cmd_addNuis = 'echo "nuis group = CMS_eff_e_trigger_2022 CMS_eff_e_trigger_2022EE CMS_eff_m_trigger_2022 CMS_eff_m_trigger_2022EE CMS_eff_e_trigger_2023 CMS_eff_e_trigger_2023BPix CMS_eff_m_trigger_2023 CMS_eff_m_trigger_2023BPix CMS_eff_e_reco_13p6TeV CMS_eff_e_id CMS_eff_e_reco_2022 CMS_eff_e_id_2022 CMS_eff_e_reco_2022EE CMS_eff_e_id_2022EE CMS_eff_e_reco_2023 CMS_eff_e_id_2023 CMS_eff_e_reco_2023BPix CMS_eff_e_id_2023BPix CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_2022 CMS_HIG25015_hzz4e_Zjets_2022 CMS_HIG25015_hzz4mu_Zjets_2022 CMS_HIG25015_hzz2e2mu_Zjets_2022EE CMS_HIG25015_hzz4e_Zjets_2022EE CMS_HIG25015_hzz4mu_Zjets_2022EE CMS_HIG25015_hzz2e2mu_Zjets_2023preBPix CMS_HIG25015_hzz4e_Zjets_2023preBPix CMS_HIG25015_hzz4mu_Zjets_2023preBPix CMS_HIG25015_hzz2e2mu_Zjets_2023postBPix CMS_HIG25015_hzz4e_Zjets_2023postBPix CMS_HIG25015_hzz4mu_Zjets_2023postBPix QCDscale_VV QCDscale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13p6TeV_2022 lumi_13p6TeV_2023 pdf_gg pdf_qqbar CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_2022 CMS_HIG25015_zz4l_n_sig_2_2022 CMS_HIG25015_zz4l_n_sig_1_2022 CMS_HIG25015_zz4l_n_sig_3_2022EE CMS_HIG25015_zz4l_n_sig_2_2022EE CMS_HIG25015_zz4l_n_sig_1_2022EE CMS_HIG25015_zz4l_n_sig_3_2023preBPix CMS_HIG25015_zz4l_n_sig_2_2023preBPix CMS_HIG25015_zz4l_n_sig_1_2023preBPix CMS_HIG25015_zz4l_n_sig_3_2023postBPix CMS_HIG25015_zz4l_n_sig_2_2023postBPix CMS_HIG25015_zz4l_n_sig_1_2023postBPix CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
             if (opt.EFF_UNC): cmd_addNuis = cmd_addNuis + ' CMS_HIG25015_pdf_effMatrix CMS_HIG25015_QCDscale_effMatrix CMS_HIG25015_alphaS_effMatrix '
 
     elif opt.YEAR == '2022full':
         if 'zzfloating' in obsName:
-            cmd_addNuis = 'echo "nuis group = CMS_trigger_e_2022 CMS_trigger_e_2022EE CMS_trigger_m_2022 CMS_trigger_m_2022EE CMS_trigger_e_2023preBPix CMS_trigger_e_2023postBPix CMS_trigger_m_2023preBPix CMS_trigger_m_2023postBPix CMS_eff_e_reco_syst CMS_eff_e_id_syst CMS_eff_e_reco_stat_2022 CMS_eff_e_id_stat_2022 CMS_eff_e_reco_stat_2022EE CMS_eff_e_id_stat_2022EE CMS_eff_m CMS_hzz2e2mu_Zjets_2022 CMS_hzz4e_Zjets_2022 CMS_hzz4mu_Zjets_2022 CMS_hzz2e2mu_Zjets_2022EE CMS_hzz4e_Zjets_2022EE CMS_hzz4mu_Zjets_2022EE lumi_13p6TeV_2022 CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2022 CMS_zz4l_n_sig_2_2022 CMS_zz4l_n_sig_1_2022 CMS_zz4l_n_sig_3_2022EE CMS_zz4l_n_sig_2_2022EE CMS_zz4l_n_sig_1_2022EE CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+            cmd_addNuis = 'echo "nuis group = CMS_eff_e_trigger_2022 CMS_eff_e_trigger_2022EE CMS_eff_m_trigger_2022 CMS_eff_m_trigger_2022EE CMS_eff_e_trigger_2023 CMS_eff_e_trigger_2023BPix CMS_eff_m_trigger_2023 CMS_eff_m_trigger_2023BPix CMS_eff_e_reco_13p6TeV CMS_eff_e_id CMS_eff_e_reco_2022 CMS_eff_e_id_2022 CMS_eff_e_reco_2022EE CMS_eff_e_id_2022EE CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_2022 CMS_HIG25015_hzz4e_Zjets_2022 CMS_HIG25015_hzz4mu_Zjets_2022 CMS_HIG25015_hzz2e2mu_Zjets_2022EE CMS_HIG25015_hzz4e_Zjets_2022EE CMS_HIG25015_hzz4mu_Zjets_2022EE lumi_13p6TeV_2022 CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_2022 CMS_HIG25015_zz4l_n_sig_2_2022 CMS_HIG25015_zz4l_n_sig_1_2022 CMS_HIG25015_zz4l_n_sig_3_2022EE CMS_HIG25015_zz4l_n_sig_2_2022EE CMS_HIG25015_zz4l_n_sig_1_2022EE CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
             if (opt.EFF_UNC): cmd_addNuis = cmd_addNuis + ' CMS_HIG25015_pdf_effMatrix CMS_HIG25015_QCDscale_effMatrix CMS_HIG25015_alphaS_effMatrix '
             if JES:
                 years = ['2022','2022EE']
@@ -279,7 +285,7 @@ def runv3(years, observableBins, obsName, fitName, physicalModel, fStates=['4e',
 
                 cmd_addNuis += ' ' + ' '.join(parts)
         else:
-            cmd_addNuis = 'echo "nuis group = CMS_trigger_e_2022 CMS_trigger_e_2022EE CMS_trigger_m_2022 CMS_trigger_m_2022EE CMS_eff_e_reco_syst CMS_eff_e_id_syst CMS_eff_e_reco_stat_2022 CMS_eff_e_id_stat_2022 CMS_eff_e_reco_stat_2022EE CMS_eff_e_id_stat_2022EE CMS_eff_m CMS_hzz2e2mu_Zjets_2022 CMS_hzz4e_Zjets_2022 CMS_hzz4mu_Zjets_2022 CMS_hzz2e2mu_Zjets_2022EE CMS_hzz4e_Zjets_2022EE CMS_hzz4mu_Zjets_2022EE QCD_scale_VV QCD_scale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13p6TeV_2022 pdf_gg pdf_qqbar CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2022 CMS_zz4l_n_sig_2_2022 CMS_zz4l_n_sig_1_2022 CMS_zz4l_n_sig_3_2022EE CMS_zz4l_n_sig_2_2022EE CMS_zz4l_n_sig_1_2022EE CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+            cmd_addNuis = 'echo "nuis group = CMS_eff_e_trigger_2022 CMS_eff_e_trigger_2022EE CMS_eff_m_trigger_2022 CMS_eff_m_trigger_2022EE CMS_eff_e_reco_13p6TeV CMS_eff_e_id CMS_eff_e_reco_2022 CMS_eff_e_id_2022 CMS_eff_e_reco_2022EE CMS_eff_e_id_2022EE CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_2022 CMS_HIG25015_hzz4e_Zjets_2022 CMS_HIG25015_hzz4mu_Zjets_2022 CMS_HIG25015_hzz2e2mu_Zjets_2022EE CMS_HIG25015_hzz4e_Zjets_2022EE CMS_HIG25015_hzz4mu_Zjets_2022EE QCDscale_VV QCDscale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13p6TeV_2022 pdf_gg pdf_qqbar CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_2022 CMS_HIG25015_zz4l_n_sig_2_2022 CMS_HIG25015_zz4l_n_sig_1_2022 CMS_HIG25015_zz4l_n_sig_3_2022EE CMS_HIG25015_zz4l_n_sig_2_2022EE CMS_HIG25015_zz4l_n_sig_1_2022EE CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
             if (opt.EFF_UNC): cmd_addNuis = cmd_addNuis + ' CMS_HIG25015_pdf_effMatrix CMS_HIG25015_QCDscale_effMatrix CMS_HIG25015_alphaS_effMatrix '
             if JES:
                 years = ['2022','2022EE']
@@ -299,15 +305,15 @@ def runv3(years, observableBins, obsName, fitName, physicalModel, fStates=['4e',
 
     elif opt.YEAR == '2023full':
         if 'zzfloating' in obsName:
-            cmd_addNuis = 'echo "nuis group = CMS_trigger_e_2023preBPix CMS_trigger_e_2023postBPix CMS_trigger_m_2023preBPix CMS_trigger_m_2023postBPix CMS_eff_e_reco_syst CMS_eff_e_id_syst CMS_eff_e_reco_stat_2023preBPix CMS_eff_e_id_stat_2023preBPix CMS_eff_e_reco_stat_2023postBPix CMS_eff_e_id_stat_2023postBPix CMS_eff_m CMS_hzz2e2mu_Zjets_2023preBPix CMS_hzz4e_Zjets_2023preBPix CMS_hzz4mu_Zjets_2023preBPix CMS_hzz2e2mu_Zjets_2023postBPix CMS_hzz4e_Zjets_2023postBPix CMS_hzz4mu_Zjets_2023postBPix lumi_13p6TeV_2023 CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2023preBPix CMS_zz4l_n_sig_2_2023preBPix CMS_zz4l_n_sig_1_2023preBPix CMS_zz4l_n_sig_3_2023postBPix CMS_zz4l_n_sig_2_2023postBPix CMS_zz4l_n_sig_1_2023postBPix CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+            cmd_addNuis = 'echo "nuis group = CMS_eff_e_trigger_2023 CMS_eff_e_trigger_2023BPix CMS_eff_m_trigger_2023 CMS_eff_m_trigger_2023BPix CMS_eff_e_reco_13p6TeV CMS_eff_e_id CMS_eff_e_reco_2023 CMS_eff_e_id_2023 CMS_eff_e_reco_2023BPix CMS_eff_e_id_2023BPix CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_2023preBPix CMS_HIG25015_hzz4e_Zjets_2023preBPix CMS_HIG25015_hzz4mu_Zjets_2023preBPix CMS_HIG25015_hzz2e2mu_Zjets_2023postBPix CMS_HIG25015_hzz4e_Zjets_2023postBPix CMS_HIG25015_hzz4mu_Zjets_2023postBPix lumi_13p6TeV_2023 CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_2023preBPix CMS_HIG25015_zz4l_n_sig_2_2023preBPix CMS_HIG25015_zz4l_n_sig_1_2023preBPix CMS_HIG25015_zz4l_n_sig_3_2023postBPix CMS_HIG25015_zz4l_n_sig_2_2023postBPix CMS_HIG25015_zz4l_n_sig_1_2023postBPix CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
         else:
-            cmd_addNuis = 'echo "nuis group = CMS_trigger_e_2023preBPix CMS_trigger_e_2023postBPix CMS_trigger_m_2023preBPix CMS_trigger_m_2023postBPix CMS_eff_e_reco_syst CMS_eff_e_id_syst CMS_eff_e_reco_stat_2023preBPix CMS_eff_e_id_stat_2023preBPix CMS_eff_e_reco_stat_2023postBPix CMS_eff_e_id_stat_2023postBPix CMS_eff_m CMS_hzz2e2mu_Zjets_2023preBPix CMS_hzz4e_Zjets_2023preBPix CMS_hzz4mu_Zjets_2023preBPix CMS_hzz2e2mu_Zjets_2023postBPix CMS_hzz4e_Zjets_2023postBPix CMS_hzz4mu_Zjets_2023postBPix QCD_scale_VV QCD_scale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13p6TeV_2023 pdf_gg pdf_qqbar CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2023preBPix CMS_zz4l_n_sig_2_2023preBPix CMS_zz4l_n_sig_1_2023preBPix CMS_zz4l_n_sig_3_2023postBPix CMS_zz4l_n_sig_2_2023postBPix CMS_zz4l_n_sig_1_2023postBPix CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+            cmd_addNuis = 'echo "nuis group = CMS_eff_e_trigger_2023 CMS_eff_e_trigger_2023BPix CMS_eff_m_trigger_2023 CMS_eff_m_trigger_2023BPix CMS_eff_e_reco_13p6TeV CMS_eff_e_id CMS_eff_e_reco_2023 CMS_eff_e_id_2023 CMS_eff_e_reco_2023BPix CMS_eff_e_id_2023BPix CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_2023preBPix CMS_HIG25015_hzz4e_Zjets_2023preBPix CMS_HIG25015_hzz4mu_Zjets_2023preBPix CMS_HIG25015_hzz2e2mu_Zjets_2023postBPix CMS_HIG25015_hzz4e_Zjets_2023postBPix CMS_HIG25015_hzz4mu_Zjets_2023postBPix QCDscale_VV QCDscale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13p6TeV_2023 pdf_gg pdf_qqbar CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_2023preBPix CMS_HIG25015_zz4l_n_sig_2_2023preBPix CMS_HIG25015_zz4l_n_sig_1_2023preBPix CMS_HIG25015_zz4l_n_sig_3_2023postBPix CMS_HIG25015_zz4l_n_sig_2_2023postBPix CMS_HIG25015_zz4l_n_sig_1_2023postBPix CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
     
     elif opt.YEAR == 'Full':
         if obsName == 'mass4l_zzfloating': # Remove bkg theo nuisances in case of zz floating
-            cmd_addNuis = 'echo "nuis group = CMS_eff_e CMS_eff_m CMS_hzz2e2mu_Zjets_2016 CMS_hzz2e2mu_Zjets_2017 CMS_hzz2e2mu_Zjets_2018 CMS_hzz4e_Zjets_2016 CMS_hzz4e_Zjets_2017 CMS_hzz4e_Zjets_2018 CMS_hzz4mu_Zjets_2016 CMS_hzz4mu_Zjets_2017 CMS_hzz4mu_Zjets_2018 lumi_13TeV_2016 lumi_13TeV_2017 lumi_13TeV_2018 lumi_13TeV_correlated lumi_13TeV_1718 CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2016 CMS_zz4l_n_sig_3_2017 CMS_zz4l_n_sig_3_2018 CMS_zz4l_n_sig_2_2016 CMS_zz4l_n_sig_2_2017 CMS_zz4l_n_sig_2_2018 CMS_zz4l_n_sig_1_2016 CMS_zz4l_n_sig_1_2017 CMS_zz4l_n_sig_1_2018 CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+            cmd_addNuis = 'echo "nuis group = CMS_eff_e CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_2016 CMS_HIG25015_hzz2e2mu_Zjets_2017 CMS_HIG25015_hzz2e2mu_Zjets_2018 CMS_HIG25015_hzz4e_Zjets_2016 CMS_HIG25015_hzz4e_Zjets_2017 CMS_HIG25015_hzz4e_Zjets_2018 CMS_HIG25015_hzz4mu_Zjets_2016 CMS_HIG25015_hzz4mu_Zjets_2017 CMS_HIG25015_hzz4mu_Zjets_2018 lumi_13TeV_2016 lumi_13TeV_2017 lumi_13TeV_2018 lumi_13TeV_correlated lumi_13TeV_1718 CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_2016 CMS_HIG25015_zz4l_n_sig_3_2017 CMS_HIG25015_zz4l_n_sig_3_2018 CMS_HIG25015_zz4l_n_sig_2_2016 CMS_HIG25015_zz4l_n_sig_2_2017 CMS_HIG25015_zz4l_n_sig_2_2018 CMS_HIG25015_zz4l_n_sig_1_2016 CMS_HIG25015_zz4l_n_sig_1_2017 CMS_HIG25015_zz4l_n_sig_1_2018 CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
         else:
-            cmd_addNuis = 'echo "nuis group = CMS_eff_e CMS_eff_m CMS_hzz2e2mu_Zjets_2016 CMS_hzz2e2mu_Zjets_2017 CMS_hzz2e2mu_Zjets_2018 CMS_hzz4e_Zjets_2016 CMS_hzz4e_Zjets_2017 CMS_hzz4e_Zjets_2018 CMS_hzz4mu_Zjets_2016 CMS_hzz4mu_Zjets_2017 CMS_hzz4mu_Zjets_2018 QCD_scale_VV QCD_scale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13TeV_2016 lumi_13TeV_2017 lumi_13TeV_2018 lumi_13TeV_correlated lumi_13TeV_1718 pdf_gg pdf_qqbar CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2016 CMS_zz4l_n_sig_3_2017 CMS_zz4l_n_sig_3_2018 CMS_zz4l_n_sig_2_2016 CMS_zz4l_n_sig_2_2017 CMS_zz4l_n_sig_2_2018 CMS_zz4l_n_sig_1_2016 CMS_zz4l_n_sig_1_2017 CMS_zz4l_n_sig_1_2018 CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+            cmd_addNuis = 'echo "nuis group = CMS_eff_e CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_2016 CMS_HIG25015_hzz2e2mu_Zjets_2017 CMS_HIG25015_hzz2e2mu_Zjets_2018 CMS_HIG25015_hzz4e_Zjets_2016 CMS_HIG25015_hzz4e_Zjets_2017 CMS_HIG25015_hzz4e_Zjets_2018 CMS_HIG25015_hzz4mu_Zjets_2016 CMS_HIG25015_hzz4mu_Zjets_2017 CMS_HIG25015_hzz4mu_Zjets_2018 QCDscale_VV QCDscale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13TeV_2016 lumi_13TeV_2017 lumi_13TeV_2018 lumi_13TeV_correlated lumi_13TeV_1718 pdf_gg pdf_qqbar CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_2016 CMS_HIG25015_zz4l_n_sig_3_2017 CMS_HIG25015_zz4l_n_sig_3_2018 CMS_HIG25015_zz4l_n_sig_2_2016 CMS_HIG25015_zz4l_n_sig_2_2017 CMS_HIG25015_zz4l_n_sig_2_2018 CMS_HIG25015_zz4l_n_sig_1_2016 CMS_HIG25015_zz4l_n_sig_1_2017 CMS_HIG25015_zz4l_n_sig_1_2018 CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
         if JES:
             if obsName == 'TBjmax': #For TBjmax some JES unc are all zero
                 cmd_addNuis += ' CMS_scale_j_Abs CMS_scale_j_Abs_2016 CMS_scale_j_BBEC1 CMS_scale_j_BBEC1_2016 CMS_scale_j_EC2 CMS_scale_j_EC2_2016 CMS_scale_j_FlavQCD CMS_scale_j_HF CMS_scale_j_RelBal CMS_scale_j_RelSample_2016 CMS_scale_j_Abs_2017 CMS_scale_j_BBEC1_2017 CMS_scale_j_EC2_2017 CMS_scale_j_HF_2017 CMS_scale_j_RelSample_2017 CMS_scale_j_Abs_2018 CMS_scale_j_BBEC1_2018 CMS_scale_j_EC2_2018 CMS_scale_j_RelSample_2018'
@@ -315,9 +321,9 @@ def runv3(years, observableBins, obsName, fitName, physicalModel, fStates=['4e',
                 cmd_addNuis += ' CMS_scale_j_Abs CMS_scale_j_Abs_2016 CMS_scale_j_BBEC1 CMS_scale_j_BBEC1_2016 CMS_scale_j_EC2 CMS_scale_j_EC2_2016 CMS_scale_j_FlavQCD CMS_scale_j_HF CMS_scale_j_HF_2016 CMS_scale_j_RelBal CMS_scale_j_RelSample_2016 CMS_scale_j_Abs_2017 CMS_scale_j_BBEC1_2017 CMS_scale_j_EC2_2017 CMS_scale_j_HF_2017 CMS_scale_j_RelSample_2017 CMS_scale_j_Abs_2018 CMS_scale_j_BBEC1_2018 CMS_scale_j_EC2_2018 CMS_scale_j_HF_2018 CMS_scale_j_RelSample_2018'
     else:
         if obsName == 'mass4l_zzfloating':
-            cmd_addNuis = 'echo "nuis group = CMS_trigger_e CMS_trigger_m CMS_eff_e_reco_syst CMS_eff_e_id_syst CMS_eff_e_reco_stat_'+str(opt.YEAR)+' CMS_eff_e_id_stat_'+str(opt.YEAR)+' CMS_eff_m CMS_hzz2e2mu_Zjets_'+str(opt.YEAR)+' CMS_hzz4e_Zjets_'+str(opt.YEAR)+' CMS_hzz4mu_Zjets_'+str(opt.YEAR)+' lumi_13p6TeV_'+str(opt.YEAR)+' CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_'+str(opt.YEAR)+' CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+            cmd_addNuis = 'echo "nuis group = CMS_trigger_e CMS_trigger_m CMS_eff_e_reco_13p6TeV CMS_eff_e_id CMS_eff_e_reco_'+str(opt.YEAR)+' CMS_eff_e_id_'+str(opt.YEAR)+' CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_'+str(opt.YEAR)+' CMS_HIG25015_hzz4e_Zjets_'+str(opt.YEAR)+' CMS_HIG25015_hzz4mu_Zjets_'+str(opt.YEAR)+' lumi_13p6TeV_'+str(opt.YEAR)+' CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_'+str(opt.YEAR)+' CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
         else:
-            cmd_addNuis = 'echo "nuis group = CMS_trigger_e CMS_trigger_m CMS_eff_e_reco_syst CMS_eff_e_id_syst CMS_eff_e_reco_stat_'+str(opt.YEAR)+' CMS_eff_e_id_stat_'+str(opt.YEAR)+' CMS_eff_m CMS_hzz2e2mu_Zjets_'+str(opt.YEAR)+' CMS_hzz4e_Zjets_'+str(opt.YEAR)+' CMS_hzz4mu_Zjets_'+str(opt.YEAR)+' QCD_scale_VV QCD_scale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13p6TeV_'+str(opt.YEAR)+' pdf_gg pdf_qqbar CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_'+str(opt.YEAR)+' CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+            cmd_addNuis = 'echo "nuis group = CMS_trigger_e CMS_trigger_m CMS_eff_e_reco_13p6TeV CMS_eff_e_id CMS_eff_e_reco_'+str(opt.YEAR)+' CMS_eff_e_id_'+str(opt.YEAR)+' CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_'+str(opt.YEAR)+' CMS_HIG25015_hzz4e_Zjets_'+str(opt.YEAR)+' CMS_HIG25015_hzz4mu_Zjets_'+str(opt.YEAR)+' QCDscale_VV QCDscale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13p6TeV_'+str(opt.YEAR)+' pdf_gg pdf_qqbar CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_'+str(opt.YEAR)+' CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
         if JES:
             jesNames = ['Absolute','Absolute_year','BBEC1','BBEC1_year','EC2','EC2_year','FlavorQCD','HF','HF_year','RelativeBal','RelativeSample_year']
 
@@ -362,12 +368,12 @@ def runv3(years, observableBins, obsName, fitName, physicalModel, fStates=['4e',
     cmds.append(cmd_t2w)
     processCmd(cmd_t2w)
 
-    cmd = 'cp hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.root ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'_'+str(opt.YEAR)+'.root'
+    cmd = 'cp hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.root ' + path['eos_path']+'combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'_'+str(opt.YEAR)+'.root'
     print(cmd, '\n')
     processCmd(cmd,1)
     cmds.append(cmd)
 
-    os.chdir('../combine_files/')
+    os.chdir(path['eos_path']+'combine_files/')
     
     # cmd_fit = 'combine -n _%s_Fit -M MultiDimFit %s ' %(fitName, card_name.replace('txt', 'root'))
     # cmd_fit += '-m 125.38 --freezeParameters MH --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 -t -1 --setParameters '
@@ -384,7 +390,8 @@ def runv3(years, observableBins, obsName, fitName, physicalModel, fStates=['4e',
         POI = 'r_smH_%s_%d' %(fitName, i)
         POI_n = 'r_smH_%d' %i
         cmd_fit = 'combine -n _%s_%s -M MultiDimFit %s ' %(obsName, POI_n, 'SM_125_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'_'+str(opt.YEAR)+'.root')
-        cmd_fit += '-m 125.38 --freezeParameters MH,_paramFit_Test_K1Bin0,_paramFit_Test_K2Bin0 --saveWorkspace --algo=grid --floatOtherPOIs=1 --points='+str(nPoints)+' --cminDefaultMinimizerStrategy 0 '
+        if (opt.NOK1K2): cmd_fit += '-m 125.38 --freezeParameters MH,K1Bin0,K2Bin0 --saveWorkspace --algo=grid --floatOtherPOIs=1 --points='+str(nPoints)+' --cminDefaultMinimizerStrategy 0 '
+        else: cmd_fit += '-m 125.38 --freezeParameters MH --saveWorkspace --algo=grid --floatOtherPOIs=1 --points='+str(nPoints)+' --cminDefaultMinimizerStrategy 0 '
         if not opt.UNBLIND: cmd_fit += '-t -1 --saveToys --setParameters %s=1 ' %(POI)
         cmd_fit_tmp = cmd_fit + '-P %s --setParameterRanges %s=0.0,%i --redefineSignalPOI %s' %(POI, POI, upScanRange, POI)
 
@@ -448,7 +455,8 @@ def runv3(years, observableBins, obsName, fitName, physicalModel, fStates=['4e',
         POI_n = 'r_smH_%d' %i
         cmd_fit = 'combine -n _%s_%s_NoSys -M MultiDimFit %s' %(obsName, POI_n, 'higgsCombine_'+obsName+'_'+POI_n+'.MultiDimFit.mH125.38')
         if not opt.UNBLIND: cmd_fit = cmd_fit + '.123456'
-        cmd_fit += '.root -w w --snapshotName "MultiDimFit" -m 125.38 --freezeParameters MH,_paramFit_Test_K1Bin0,_paramFit_Test_K2Bin0 --saveWorkspace --algo=grid --floatOtherPOIs=1 --points='+str(nPoints)+' --freezeNuisanceGroups nuis --cminDefaultMinimizerStrategy 0 '
+        if (opt.NOK1K2): cmd_fit += '.root -w w --snapshotName "MultiDimFit" -m 125.38 --freezeParameters MH,K1Bin0,K2Bin0 --saveWorkspace --algo=grid --floatOtherPOIs=1 --points='+str(nPoints)+' --freezeNuisanceGroups nuis --cminDefaultMinimizerStrategy 0 '
+        else: cmd_fit += '.root -w w --snapshotName "MultiDimFit" -m 125.38 --freezeParameters MH --saveWorkspace --algo=grid --floatOtherPOIs=1 --points='+str(nPoints)+' --freezeNuisanceGroups nuis --cminDefaultMinimizerStrategy 0 '
         if not opt.UNBLIND: cmd_fit += '-t -1 --saveToys --setParameters %s=1 ' %(POI)
         cmd_fit_tmp = cmd_fit + '-P %s --setParameterRanges %s=0.0,%i --redefineSignalPOI %s' %(POI, POI, upScanRange, POI)
 
@@ -507,7 +515,7 @@ def runFiducialXS():
     print('Theory xsec and BR at MH = '+_th_MH)
     print('Current directory: python')
 
-    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'NJ'}
+    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'Nj'}
     if obsName not in _obsName:
         _obsName[obsName] = obsName
 
@@ -545,22 +553,16 @@ def runFiducialXS():
     elif(opt.YEAR == '2022_2023'):
         years_bis.append('2022_2023')
     for year in years_bis:
-        if opt.INTER: 
-            fname = path['eos_path']+'inputs/inputs_sig_extrap_'+obsName+'_'+year+'_ORIG.py'
-        else:
-            fname = path['eos_path']+'inputs/inputs_sig_'+obsName+'_'+year+'_ORIG.py'
-        if not os.path.exists(fname):
-            #cmd = 'python addConstrainedModel.py -l -q -b --obsName="'+obsName+'" --year="'+year+'"'
-            cmd = 'python3 addConstrainedModel.py -l -q -b --obsName="'+obsName+'" --year="'+year+'"' # spencer
-            if doubleDiff: cmd += ' --doubleDiff'
-            if opt.INTER: cmd += ' --interpolation'
-            print(cmd)
-            output = processCmd(cmd)
-            cmds.append(cmd)
-            print(output)
-            print('addConstrainedModel DONE')
-        elif os.path.exists(fname):
-            print('addConstrainedModel '+year+' already done')
+
+        cmd = 'python3 addConstrainedModel.py -l -q -b --obsName="'+obsName+'" --year="'+year+'"'
+        if doubleDiff: cmd += ' --doubleDiff'
+        if opt.INTER: cmd += ' --interpolation'
+        print(cmd)
+        output = processCmd(cmd)
+        cmds.append(cmd)
+        print(output)
+        print('addConstrainedModel DONE')
+
     if 'Full' in years: years.remove('Full')
     if 'Run3' in years: years.remove('Run3')
     if '2022full' in years: years.remove('2022full')
@@ -645,40 +647,40 @@ def runFiducialXS():
 
             # Base nuisances
             base_nuis = [
-            'CMS_trigger_e_2022',
-            'CMS_trigger_e_2022EE',
-            'CMS_trigger_e_2023preBPix',
-            'CMS_trigger_e_2023postBPix',
-            'CMS_trigger_e_2024',
-            'CMS_trigger_m_2022',
-            'CMS_trigger_m_2022EE',
-            'CMS_trigger_m_2023preBPix',
-            'CMS_trigger_m_2023postBPix',
-            'CMS_trigger_m_2024',
-            'CMS_eff_m','CMS_eff_e_reco_syst', 'CMS_eff_e_id_syst',
-            'CMS_eff_e_reco_stat_2022','CMS_eff_e_id_stat_2022',
-            'CMS_eff_e_reco_stat_2022EE','CMS_eff_e_id_stat_2022EE',
-            'CMS_eff_e_reco_stat_2023preBPix','CMS_eff_e_id_stat_2023preBPix',
-            'CMS_eff_e_reco_stat_2023postBPix','CMS_eff_e_id_stat_2023postBPix',
-            'CMS_eff_e_reco_stat_2024','CMS_eff_e_id_stat_2024',
-            'CMS_hzz2e2mu_Zjets_2022', 'CMS_hzz4e_Zjets_2022', 'CMS_hzz4mu_Zjets_2022',
-            'CMS_hzz2e2mu_Zjets_2022EE', 'CMS_hzz4e_Zjets_2022EE', 'CMS_hzz4mu_Zjets_2022EE',
-            'CMS_hzz2e2mu_Zjets_2023preBPix', 'CMS_hzz4e_Zjets_2023preBPix', 'CMS_hzz4mu_Zjets_2023preBPix',
-            'CMS_hzz2e2mu_Zjets_2023postBPix', 'CMS_hzz4e_Zjets_2023postBPix', 'CMS_hzz4mu_Zjets_2023postBPix',
-            'CMS_hzz2e2mu_Zjets_2024', 'CMS_hzz4e_Zjets_2024', 'CMS_hzz4mu_Zjets_2024',
-            'CMS_zz4l_sigma_e_sig', 'CMS_zz4l_sigma_m_sig',
-            'CMS_zz4l_n_sig_3_2022', 'CMS_zz4l_n_sig_2_2022', 'CMS_zz4l_n_sig_1_2022',
-            'CMS_zz4l_n_sig_3_2022EE', 'CMS_zz4l_n_sig_2_2022EE', 'CMS_zz4l_n_sig_1_2022EE',
-            'CMS_zz4l_n_sig_3_2023preBPix', 'CMS_zz4l_n_sig_2_2023preBPix', 'CMS_zz4l_n_sig_1_2023preBPix',
-            'CMS_zz4l_n_sig_3_2023postBPix', 'CMS_zz4l_n_sig_2_2023postBPix', 'CMS_zz4l_n_sig_1_2023postBPix',
-            'CMS_zz4l_n_sig_3_2024', 'CMS_zz4l_n_sig_2_2024', 'CMS_zz4l_n_sig_1_2024',
-            'CMS_zz4l_mean_e_sig', 'CMS_zz4l_mean_m_sig',
+            'CMS_eff_e_trigger_2022',
+            'CMS_eff_e_trigger_2022EE',
+            'CMS_eff_e_trigger_2023',
+            'CMS_eff_e_trigger_2023BPix',
+            'CMS_eff_e_trigger_2024',
+            'CMS_eff_m_trigger_2022',
+            'CMS_eff_m_trigger_2022EE',
+            'CMS_eff_m_trigger_2023',
+            'CMS_eff_m_trigger_2023BPix',
+            'CMS_eff_m_trigger_2024',
+            'CMS_eff_m','CMS_eff_e_reco_13p6TeV', 'CMS_eff_e_id',
+            'CMS_eff_e_reco_2022','CMS_eff_e_id_2022',
+            'CMS_eff_e_reco_2022EE','CMS_eff_e_id_2022EE',
+            'CMS_eff_e_reco_2023','CMS_eff_e_id_2023',
+            'CMS_eff_e_reco_2023BPix','CMS_eff_e_id_2023BPix',
+            'CMS_eff_e_reco_2024','CMS_eff_e_id_2024',
+            'CMS_HIG25015_hzz2e2mu_Zjets_2022', 'CMS_HIG25015_hzz4e_Zjets_2022', 'CMS_HIG25015_hzz4mu_Zjets_2022',
+            'CMS_HIG25015_hzz2e2mu_Zjets_2022EE', 'CMS_HIG25015_hzz4e_Zjets_2022EE', 'CMS_HIG25015_hzz4mu_Zjets_2022EE',
+            'CMS_HIG25015_hzz2e2mu_Zjets_2023preBPix', 'CMS_HIG25015_hzz4e_Zjets_2023preBPix', 'CMS_HIG25015_hzz4mu_Zjets_2023preBPix',
+            'CMS_HIG25015_hzz2e2mu_Zjets_2023postBPix', 'CMS_HIG25015_hzz4e_Zjets_2023postBPix', 'CMS_HIG25015_hzz4mu_Zjets_2023postBPix',
+            'CMS_HIG25015_hzz2e2mu_Zjets_2024', 'CMS_HIG25015_hzz4e_Zjets_2024', 'CMS_HIG25015_hzz4mu_Zjets_2024',
+            'CMS_HIG25015_zz4l_sigma_e_sig', 'CMS_HIG25015_zz4l_sigma_m_sig',
+            'CMS_HIG25015_zz4l_n_sig_3_2022', 'CMS_HIG25015_zz4l_n_sig_2_2022', 'CMS_HIG25015_zz4l_n_sig_1_2022',
+            'CMS_HIG25015_zz4l_n_sig_3_2022EE', 'CMS_HIG25015_zz4l_n_sig_2_2022EE', 'CMS_HIG25015_zz4l_n_sig_1_2022EE',
+            'CMS_HIG25015_zz4l_n_sig_3_2023preBPix', 'CMS_HIG25015_zz4l_n_sig_2_2023preBPix', 'CMS_HIG25015_zz4l_n_sig_1_2023preBPix',
+            'CMS_HIG25015_zz4l_n_sig_3_2023postBPix', 'CMS_HIG25015_zz4l_n_sig_2_2023postBPix', 'CMS_HIG25015_zz4l_n_sig_1_2023postBPix',
+            'CMS_HIG25015_zz4l_n_sig_3_2024', 'CMS_HIG25015_zz4l_n_sig_2_2024', 'CMS_HIG25015_zz4l_n_sig_1_2024',
+            'CMS_HIG25015_zz4l_mean_e_sig', 'CMS_HIG25015_zz4l_mean_m_sig',
             'CMS_HIG25015_pdf_effMatrix', 'CMS_HIG25015_QCDscale_effMatrix', 'CMS_HIG25015_alphaS_effMatrix',
-            'lumi_13p6TeV_correlated_2022_2023_2024'
+            'lumi_13p6TeV_222324'
             ]
 
             # Run-3 correlated lumi nuisances
-            lumi_nuis = ['lumi_13p6TeV_correlated_2023_2024', 'lumi_13p6TeV_2024']
+            lumi_nuis = ['lumi_13p6TeV_2324', 'lumi_13p6TeV_2024']
 
             if JES:
                 years = ['2022','2022EE','2023preBPix','2023postBPix','2024']
@@ -718,7 +720,7 @@ def runFiducialXS():
                     ' '.join(lumi_nuis)
                 )
             else:
-                other_nuis = ['QCD_scale_VV', 'QCD_scale_ggVV', 'CMS_HIG25015_kfactor_ggzz', 'pdf_gg', 'pdf_qqbar']
+                other_nuis = ['QCDscale_VV', 'QCDscale_ggVV', 'CMS_HIG25015_kfactor_ggzz', 'pdf_gg', 'pdf_qqbar']
                 cmd = 'echo "nuis group = {} {}'.format(
                     ' '.join(base_nuis + other_nuis),
                     ' '.join(lumi_nuis)
@@ -736,10 +738,10 @@ def runFiducialXS():
             cmds.append(cmd)
             
             if 'zzfloating' in obsName:
-                cmd = 'echo "nuis group = CMS_trigger_e_2022 CMS_trigger_e_2022EE CMS_trigger_m_2022 CMS_trigger_m_2022EE CMS_trigger_e_2023preBPix CMS_trigger_e_2023postBPix CMS_trigger_m_2023preBPix CMS_trigger_m_2023postBPix CMS_eff_e_reco_syst CMS_eff_e_id_syst CMS_eff_e_reco_stat_2022 CMS_eff_e_id_stat_2022 CMS_eff_e_reco_stat_2022EE CMS_eff_e_id_stat_2022EE CMS_eff_e_reco_stat_2023preBPix CMS_eff_e_id_stat_2023preBPix CMS_eff_e_reco_stat_2023postBPix CMS_eff_e_id_stat_2023postBPix CMS_eff_m CMS_hzz2e2mu_Zjets_2022 CMS_hzz4e_Zjets_2022 CMS_hzz4mu_Zjets_2022 CMS_hzz2e2mu_Zjets_2022EE CMS_hzz4e_Zjets_2022EE CMS_hzz4mu_Zjets_2022EE CMS_hzz2e2mu_Zjets_2023preBPix CMS_hzz4e_Zjets_2023preBPix CMS_hzz4mu_Zjets_2023preBPix CMS_hzz2e2mu_Zjets_2023postBPix CMS_hzz4e_Zjets_2023postBPix CMS_hzz4mu_Zjets_2023postBPix lumi_13p6TeV_2022 lumi_13p6TeV_2023 CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2022 CMS_zz4l_n_sig_2_2022 CMS_zz4l_n_sig_1_2022 CMS_zz4l_n_sig_3_2022EE CMS_zz4l_n_sig_2_2022EE CMS_zz4l_n_sig_1_2022EE CMS_zz4l_n_sig_3_2023preBPix CMS_zz4l_n_sig_2_2023preBPix CMS_zz4l_n_sig_1_2023preBPix CMS_zz4l_n_sig_3_2023postBPix CMS_zz4l_n_sig_2_2023postBPix CMS_zz4l_n_sig_1_2023postBPix CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+                cmd = 'echo "nuis group = CMS_eff_e_trigger_2022 CMS_eff_e_trigger_2022EE CMS_eff_m_trigger_2022 CMS_eff_m_trigger_2022EE CMS_eff_e_trigger_2023 CMS_eff_e_trigger_2023BPix CMS_eff_m_trigger_2023 CMS_eff_m_trigger_2023BPix CMS_eff_e_reco_13p6TeV CMS_eff_e_id CMS_eff_e_reco_2022 CMS_eff_e_id_2022 CMS_eff_e_reco_2022EE CMS_eff_e_id_2022EE CMS_eff_e_reco_2023 CMS_eff_e_id_2023 CMS_eff_e_reco_2023BPix CMS_eff_e_id_2023BPix CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_2022 CMS_HIG25015_hzz4e_Zjets_2022 CMS_HIG25015_hzz4mu_Zjets_2022 CMS_HIG25015_hzz2e2mu_Zjets_2022EE CMS_HIG25015_hzz4e_Zjets_2022EE CMS_HIG25015_hzz4mu_Zjets_2022EE CMS_HIG25015_hzz2e2mu_Zjets_2023preBPix CMS_HIG25015_hzz4e_Zjets_2023preBPix CMS_HIG25015_hzz4mu_Zjets_2023preBPix CMS_HIG25015_hzz2e2mu_Zjets_2023postBPix CMS_HIG25015_hzz4e_Zjets_2023postBPix CMS_HIG25015_hzz4mu_Zjets_2023postBPix lumi_13p6TeV_2022 lumi_13p6TeV_2023 CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_2022 CMS_HIG25015_zz4l_n_sig_2_2022 CMS_HIG25015_zz4l_n_sig_1_2022 CMS_HIG25015_zz4l_n_sig_3_2022EE CMS_HIG25015_zz4l_n_sig_2_2022EE CMS_HIG25015_zz4l_n_sig_1_2022EE CMS_HIG25015_zz4l_n_sig_3_2023preBPix CMS_HIG25015_zz4l_n_sig_2_2023preBPix CMS_HIG25015_zz4l_n_sig_1_2023preBPix CMS_HIG25015_zz4l_n_sig_3_2023postBPix CMS_HIG25015_zz4l_n_sig_2_2023postBPix CMS_HIG25015_zz4l_n_sig_1_2023postBPix CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
                 if (opt.EFF_UNC): cmd_addNuis = cmd + ' CMS_HIG25015_pdf_effMatrix CMS_HIG25015_QCDscale_effMatrix CMS_HIG25015_alphaS_effMatrix '
             else:
-                cmd = 'echo "nuis group = CMS_trigger_e_2022 CMS_trigger_e_2022EE CMS_trigger_m_2022 CMS_trigger_m_2022EE CMS_trigger_e_2023preBPix CMS_trigger_e_2023postBPix CMS_trigger_m_2023preBPix CMS_trigger_m_2023postBPix CMS_eff_e_reco_syst CMS_eff_e_id_syst CMS_eff_e_reco_stat_2022 CMS_eff_e_id_stat_2022 CMS_eff_e_reco_stat_2022EE CMS_eff_e_id_stat_2022EE CMS_eff_e_reco_stat_2023preBPix CMS_eff_e_id_stat_2023preBPix CMS_eff_e_reco_stat_2023postBPix CMS_eff_e_id_stat_2023postBPix CMS_eff_m CMS_hzz2e2mu_Zjets_2022 CMS_hzz4e_Zjets_2022 CMS_hzz4mu_Zjets_2022 CMS_hzz2e2mu_Zjets_2022EE CMS_hzz4e_Zjets_2022EE CMS_hzz4mu_Zjets_2022EE CMS_hzz2e2mu_Zjets_2023preBPix CMS_hzz4e_Zjets_2023preBPix CMS_hzz4mu_Zjets_2023preBPix CMS_hzz2e2mu_Zjets_2023postBPix CMS_hzz4e_Zjets_2023postBPix CMS_hzz4mu_Zjets_2023postBPix QCD_scale_VV QCD_scale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13p6TeV_2022 lumi_13p6TeV_2023 pdf_gg pdf_qqbar CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2022 CMS_zz4l_n_sig_2_2022 CMS_zz4l_n_sig_1_2022 CMS_zz4l_n_sig_3_2022EE CMS_zz4l_n_sig_2_2022EE CMS_zz4l_n_sig_1_2022EE CMS_zz4l_n_sig_3_2023preBPix CMS_zz4l_n_sig_2_2023preBPix CMS_zz4l_n_sig_1_2023preBPix CMS_zz4l_n_sig_3_2023postBPix CMS_zz4l_n_sig_2_2023postBPix CMS_zz4l_n_sig_1_2023postBPix CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+                cmd = 'echo "nuis group = CMS_eff_e_trigger_2022 CMS_eff_e_trigger_2022EE CMS_eff_m_trigger_2022 CMS_eff_m_trigger_2022EE CMS_eff_e_trigger_2023 CMS_eff_e_trigger_2023BPix CMS_eff_m_trigger_2023 CMS_eff_m_trigger_2023BPix CMS_eff_e_reco_13p6TeV CMS_eff_e_id CMS_eff_e_reco_2022 CMS_eff_e_id_2022 CMS_eff_e_reco_2022EE CMS_eff_e_id_2022EE CMS_eff_e_reco_2023 CMS_eff_e_id_2023 CMS_eff_e_reco_2023BPix CMS_eff_e_id_2023BPix CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_2022 CMS_HIG25015_hzz4e_Zjets_2022 CMS_HIG25015_hzz4mu_Zjets_2022 CMS_HIG25015_hzz2e2mu_Zjets_2022EE CMS_HIG25015_hzz4e_Zjets_2022EE CMS_HIG25015_hzz4mu_Zjets_2022EE CMS_HIG25015_hzz2e2mu_Zjets_2023preBPix CMS_HIG25015_hzz4e_Zjets_2023preBPix CMS_HIG25015_hzz4mu_Zjets_2023preBPix CMS_HIG25015_hzz2e2mu_Zjets_2023postBPix CMS_HIG25015_hzz4e_Zjets_2023postBPix CMS_HIG25015_hzz4mu_Zjets_2023postBPix QCDscale_VV QCDscale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13p6TeV_2022 lumi_13p6TeV_2023 pdf_gg pdf_qqbar CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_2022 CMS_HIG25015_zz4l_n_sig_2_2022 CMS_HIG25015_zz4l_n_sig_1_2022 CMS_HIG25015_zz4l_n_sig_3_2022EE CMS_HIG25015_zz4l_n_sig_2_2022EE CMS_HIG25015_zz4l_n_sig_1_2022EE CMS_HIG25015_zz4l_n_sig_3_2023preBPix CMS_HIG25015_zz4l_n_sig_2_2023preBPix CMS_HIG25015_zz4l_n_sig_1_2023preBPix CMS_HIG25015_zz4l_n_sig_3_2023postBPix CMS_HIG25015_zz4l_n_sig_2_2023postBPix CMS_HIG25015_zz4l_n_sig_1_2023postBPix CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
                 if (opt.EFF_UNC): cmd_addNuis = cmd + ' CMS_HIG25015_pdf_effMatrix CMS_HIG25015_QCDscale_effMatrix CMS_HIG25015_alphaS_effMatrix '
 
             cmd += '" >> hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.txt'
@@ -754,7 +756,7 @@ def runFiducialXS():
             cmds.append(cmd)
             
             if 'zzfloating' in obsName:
-                cmd = 'echo "nuis group = CMS_trigger_e_2022 CMS_trigger_e_2022EE CMS_trigger_m_2022 CMS_trigger_m_2022EE CMS_eff_e_reco_syst CMS_eff_e_id_syst CMS_eff_e_reco_stat_2022 CMS_eff_e_id_stat_2022 CMS_eff_e_reco_stat_2022EE CMS_eff_e_id_stat_2022EE CMS_eff_m CMS_hzz2e2mu_Zjets_2022 CMS_hzz4e_Zjets_2022 CMS_hzz4mu_Zjets_2022 CMS_hzz2e2mu_Zjets_2022EE CMS_hzz4e_Zjets_2022EE CMS_hzz4mu_Zjets_2022EE lumi_13p6TeV_2022 CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2022 CMS_zz4l_n_sig_2_2022 CMS_zz4l_n_sig_1_2022 CMS_zz4l_n_sig_3_2022EE CMS_zz4l_n_sig_2_2022EE CMS_zz4l_n_sig_1_2022EE CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+                cmd = 'echo "nuis group = CMS_eff_e_trigger_2022 CMS_eff_e_trigger_2022EE CMS_eff_m_trigger_2022 CMS_eff_m_trigger_2022EE CMS_eff_e_reco_13p6TeV CMS_eff_e_id CMS_eff_e_reco_2022 CMS_eff_e_id_2022 CMS_eff_e_reco_2022EE CMS_eff_e_id_2022EE CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_2022 CMS_HIG25015_hzz4e_Zjets_2022 CMS_HIG25015_hzz4mu_Zjets_2022 CMS_HIG25015_hzz2e2mu_Zjets_2022EE CMS_HIG25015_hzz4e_Zjets_2022EE CMS_HIG25015_hzz4mu_Zjets_2022EE lumi_13p6TeV_2022 CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_2022 CMS_HIG25015_zz4l_n_sig_2_2022 CMS_HIG25015_zz4l_n_sig_1_2022 CMS_HIG25015_zz4l_n_sig_3_2022EE CMS_HIG25015_zz4l_n_sig_2_2022EE CMS_HIG25015_zz4l_n_sig_1_2022EE CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
                 if (opt.EFF_UNC): cmd_addNuis = cmd_addNuis + ' CMS_HIG25015_pdf_effMatrix CMS_HIG25015_QCDscale_effMatrix CMS_HIG25015_alphaS_effMatrix '
                 if JES:
                     jesNames = ['Absolute','Absolute_year','BBEC1','BBEC1_year','EC2','EC2_year','FlavorQCD','HF','HF_year','RelativeBal','RelativeSample_year']
@@ -768,7 +770,7 @@ def runFiducialXS():
 
                     cmd_addNuis += ' ' + ' '.join(parts)
             else:
-                cmd = 'echo "nuis group = CMS_trigger_e_2022 CMS_trigger_e_2022EE CMS_trigger_m_2022 CMS_trigger_m_2022EE CMS_eff_e_reco_syst CMS_eff_e_id_syst CMS_eff_e_reco_stat_2022 CMS_eff_e_id_stat_2022 CMS_eff_e_reco_stat_2022EE CMS_eff_e_id_stat_2022EE  CMS_eff_m CMS_hzz2e2mu_Zjets_2022 CMS_hzz4e_Zjets_2022 CMS_hzz4mu_Zjets_2022 CMS_hzz2e2mu_Zjets_2022EE CMS_hzz4e_Zjets_2022EE CMS_hzz4mu_Zjets_2022EE QCD_scale_VV QCD_scale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13p6TeV_2022 pdf_gg pdf_qqbar CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2022 CMS_zz4l_n_sig_2_2022 CMS_zz4l_n_sig_1_2022 CMS_zz4l_n_sig_3_2022EE CMS_zz4l_n_sig_2_2022EE CMS_zz4l_n_sig_1_2022EE CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+                cmd = 'echo "nuis group = CMS_eff_e_trigger_2022 CMS_eff_e_trigger_2022EE CMS_eff_m_trigger_2022 CMS_eff_m_trigger_2022EE CMS_eff_e_reco_13p6TeV CMS_eff_e_id CMS_eff_e_reco_2022 CMS_eff_e_id_2022 CMS_eff_e_reco_2022EE CMS_eff_e_id_2022EE  CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_2022 CMS_HIG25015_hzz4e_Zjets_2022 CMS_HIG25015_hzz4mu_Zjets_2022 CMS_HIG25015_hzz2e2mu_Zjets_2022EE CMS_HIG25015_hzz4e_Zjets_2022EE CMS_HIG25015_hzz4mu_Zjets_2022EE QCDscale_VV QCDscale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13p6TeV_2022 pdf_gg pdf_qqbar CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_2022 CMS_HIG25015_zz4l_n_sig_2_2022 CMS_HIG25015_zz4l_n_sig_1_2022 CMS_HIG25015_zz4l_n_sig_3_2022EE CMS_HIG25015_zz4l_n_sig_2_2022EE CMS_HIG25015_zz4l_n_sig_1_2022EE CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
                 if (opt.EFF_UNC): cmd = cmd + ' CMS_HIG25015_pdf_effMatrix CMS_HIG25015_QCDscale_effMatrix CMS_HIG25015_alphaS_effMatrix '
                 if JES:
                     jesNames = ['Absolute','Absolute_year','BBEC1','BBEC1_year','EC2','EC2_year','FlavorQCD','HF','HF_year','RelativeBal','RelativeSample_year']
@@ -794,10 +796,10 @@ def runFiducialXS():
             cmds.append(cmd)
             
             if 'zzfloating' in obsName:
-                cmd = 'echo "nuis group = CMS_trigger_e_2023preBPix CMS_trigger_e_2023postBPix CMS_trigger_m_2023preBPix CMS_trigger_m_2023postBPix CMS_eff_e_reco_syst CMS_eff_e_id_syst CMS_eff_e_reco_stat_2023preBPix CMS_eff_e_id_stat_2023preBPix CMS_eff_e_reco_stat_2023postBPix CMS_eff_e_id_stat_2023postBPix CMS_eff_m CMS_hzz2e2mu_Zjets_2023preBPix CMS_hzz4e_Zjets_2023preBPix CMS_hzz4mu_Zjets_2023preBPix CMS_hzz2e2mu_Zjets_2023postBPix CMS_hzz4e_Zjets_2023postBPix CMS_hzz4mu_Zjets_2023postBPix lumi_13p6TeV_2023 CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2023preBPix CMS_zz4l_n_sig_2_2023preBPix CMS_zz4l_n_sig_1_2023preBPix CMS_zz4l_n_sig_3_2023postBPix CMS_zz4l_n_sig_2_2023postBPix CMS_zz4l_n_sig_1_2023postBPix CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+                cmd = 'echo "nuis group = CMS_eff_e_trigger_2023 CMS_eff_e_trigger_2023BPix CMS_eff_m_trigger_2023 CMS_eff_m_trigger_2023BPix CMS_eff_e_reco_13p6TeV CMS_eff_e_id CMS_eff_e_reco_2023 CMS_eff_e_id_2023 CMS_eff_e_reco_2023BPix CMS_eff_e_id_2023BPix CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_2023preBPix CMS_HIG25015_hzz4e_Zjets_2023preBPix CMS_HIG25015_hzz4mu_Zjets_2023preBPix CMS_HIG25015_hzz2e2mu_Zjets_2023postBPix CMS_HIG25015_hzz4e_Zjets_2023postBPix CMS_HIG25015_hzz4mu_Zjets_2023postBPix lumi_13p6TeV_2023 CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_2023preBPix CMS_HIG25015_zz4l_n_sig_2_2023preBPix CMS_HIG25015_zz4l_n_sig_1_2023preBPix CMS_HIG25015_zz4l_n_sig_3_2023postBPix CMS_HIG25015_zz4l_n_sig_2_2023postBPix CMS_HIG25015_zz4l_n_sig_1_2023postBPix CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
                 if (opt.EFF_UNC): cmd_addNuis = cmd + ' CMS_HIG25015_pdf_effMatrix CMS_HIG25015_QCDscale_effMatrix CMS_HIG25015_alphaS_effMatrix '
             else:
-                cmd = 'echo "nuis group = CMS_trigger_e_2023preBPix CMS_trigger_e_2023postBPix CMS_trigger_m_2023preBPix CMS_trigger_m_2023postBPix CMS_eff_e_reco_syst CMS_eff_e_id_syst CMS_eff_e_reco_stat_2023preBPix CMS_eff_e_id_stat_2023preBPix CMS_eff_e_reco_stat_2023postBPix CMS_eff_e_id_stat_2023postBPix CMS_eff_m CMS_hzz2e2mu_Zjets_2023preBPix CMS_hzz4e_Zjets_2023preBPix CMS_hzz4mu_Zjets_2023preBPix CMS_hzz2e2mu_Zjets_2023postBPix CMS_hzz4e_Zjets_2023postBPix CMS_hzz4mu_Zjets_2023postBPix QCD_scale_VV QCD_scale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13p6TeV_2023 pdf_gg pdf_qqbar CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2023preBPix CMS_zz4l_n_sig_2_2023preBPix CMS_zz4l_n_sig_1_2023preBPix CMS_zz4l_n_sig_3_2023postBPix CMS_zz4l_n_sig_2_2023postBPix CMS_zz4l_n_sig_1_2023postBPix CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+                cmd = 'echo "nuis group = CMS_eff_e_trigger_2023 CMS_eff_e_trigger_2023BPix CMS_eff_m_trigger_2023 CMS_eff_m_trigger_2023BPix CMS_eff_e_reco_13p6TeV CMS_eff_e_id CMS_eff_e_reco_2023 CMS_eff_e_id_2023 CMS_eff_e_reco_2023BPix CMS_eff_e_id_2023BPix CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_2023preBPix CMS_HIG25015_hzz4e_Zjets_2023preBPix CMS_HIG25015_hzz4mu_Zjets_2023preBPix CMS_HIG25015_hzz2e2mu_Zjets_2023postBPix CMS_HIG25015_hzz4e_Zjets_2023postBPix CMS_HIG25015_hzz4mu_Zjets_2023postBPix QCDscale_VV QCDscale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13p6TeV_2023 pdf_gg pdf_qqbar CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_2023preBPix CMS_HIG25015_zz4l_n_sig_2_2023preBPix CMS_HIG25015_zz4l_n_sig_1_2023preBPix CMS_HIG25015_zz4l_n_sig_3_2023postBPix CMS_HIG25015_zz4l_n_sig_2_2023postBPix CMS_HIG25015_zz4l_n_sig_1_2023postBPix CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
                 if (opt.EFF_UNC): cmd_addNuis = cmd + ' CMS_HIG25015_pdf_effMatrix CMS_HIG25015_QCDscale_effMatrix CMS_HIG25015_alphaS_effMatrix '
 
             cmd += '" >> hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.txt'
@@ -811,13 +813,13 @@ def runFiducialXS():
             processCmd(cmd,1)
             cmds.append(cmd)
             if obsName == 'mass4l_zzfloating': # Remove bkg theo nuisances in case of zz floating
-                cmd = 'echo "nuis group = CMS_eff_e CMS_eff_m CMS_hzz2e2mu_Zjets_2016 CMS_hzz2e2mu_Zjets_2017 CMS_hzz2e2mu_Zjets_2018 CMS_hzz4e_Zjets_2016 CMS_hzz4e_Zjets_2017 CMS_hzz4e_Zjets_2018 CMS_hzz4mu_Zjets_2016 CMS_hzz4mu_Zjets_2017 CMS_hzz4mu_Zjets_2018 lumi_13TeV_2016 lumi_13TeV_2017 lumi_13TeV_2018 lumi_13TeV_correlated lumi_13TeV_1718 CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2016 CMS_zz4l_n_sig_3_2017 CMS_zz4l_n_sig_3_2018 CMS_zz4l_n_sig_2_2016 CMS_zz4l_n_sig_2_2017 CMS_zz4l_n_sig_2_2018 CMS_zz4l_n_sig_1_2016 CMS_zz4l_n_sig_1_2017 CMS_zz4l_n_sig_1_2018 CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+                cmd = 'echo "nuis group = CMS_eff_e CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_2016 CMS_HIG25015_hzz2e2mu_Zjets_2017 CMS_HIG25015_hzz2e2mu_Zjets_2018 CMS_HIG25015_hzz4e_Zjets_2016 CMS_HIG25015_hzz4e_Zjets_2017 CMS_HIG25015_hzz4e_Zjets_2018 CMS_HIG25015_hzz4mu_Zjets_2016 CMS_HIG25015_hzz4mu_Zjets_2017 CMS_HIG25015_hzz4mu_Zjets_2018 lumi_13TeV_2016 lumi_13TeV_2017 lumi_13TeV_2018 lumi_13TeV_correlated lumi_13TeV_1718 CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_2016 CMS_HIG25015_zz4l_n_sig_3_2017 CMS_HIG25015_zz4l_n_sig_3_2018 CMS_HIG25015_zz4l_n_sig_2_2016 CMS_HIG25015_zz4l_n_sig_2_2017 CMS_HIG25015_zz4l_n_sig_2_2018 CMS_HIG25015_zz4l_n_sig_1_2016 CMS_HIG25015_zz4l_n_sig_1_2017 CMS_HIG25015_zz4l_n_sig_1_2018 CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
                 if (opt.EFF_UNC): cmd_addNuis = cmd + ' CMS_HIG25015_pdf_effMatrix CMS_HIG25015_QCDscale_effMatrix CMS_HIG25015_alphaS_effMatrix '
             else:
-                cmd = 'echo "nuis group = CMS_eff_e CMS_eff_m CMS_hzz2e2mu_Zjets_2016 CMS_hzz2e2mu_Zjets_2017 CMS_hzz2e2mu_Zjets_2018 CMS_hzz4e_Zjets_2016 CMS_hzz4e_Zjets_2017 CMS_hzz4e_Zjets_2018 CMS_hzz4mu_Zjets_2016 CMS_hzz4mu_Zjets_2017 CMS_hzz4mu_Zjets_2018 QCD_scale_VV QCD_scale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13TeV_2016 lumi_13TeV_2017 lumi_13TeV_2018 lumi_13TeV_correlated lumi_13TeV_1718 pdf_gg pdf_qqbar CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_2016 CMS_zz4l_n_sig_3_2017 CMS_zz4l_n_sig_3_2018 CMS_zz4l_n_sig_2_2016 CMS_zz4l_n_sig_2_2017 CMS_zz4l_n_sig_2_2018 CMS_zz4l_n_sig_1_2016 CMS_zz4l_n_sig_1_2017 CMS_zz4l_n_sig_1_2018 CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+                cmd = 'echo "nuis group = CMS_eff_e CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_2016 CMS_HIG25015_hzz2e2mu_Zjets_2017 CMS_HIG25015_hzz2e2mu_Zjets_2018 CMS_HIG25015_hzz4e_Zjets_2016 CMS_HIG25015_hzz4e_Zjets_2017 CMS_HIG25015_hzz4e_Zjets_2018 CMS_HIG25015_hzz4mu_Zjets_2016 CMS_HIG25015_hzz4mu_Zjets_2017 CMS_HIG25015_hzz4mu_Zjets_2018 QCDscale_VV QCDscale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13TeV_2016 lumi_13TeV_2017 lumi_13TeV_2018 lumi_13TeV_correlated lumi_13TeV_1718 pdf_gg pdf_qqbar CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_2016 CMS_HIG25015_zz4l_n_sig_3_2017 CMS_HIG25015_zz4l_n_sig_3_2018 CMS_HIG25015_zz4l_n_sig_2_2016 CMS_HIG25015_zz4l_n_sig_2_2017 CMS_HIG25015_zz4l_n_sig_2_2018 CMS_HIG25015_zz4l_n_sig_1_2016 CMS_HIG25015_zz4l_n_sig_1_2017 CMS_HIG25015_zz4l_n_sig_1_2018 CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
                 if (opt.EFF_UNC): cmd_addNuis = cmd + ' CMS_HIG25015_pdf_effMatrix CMS_HIG25015_QCDscale_effMatrix CMS_HIG25015_alphaS_effMatrix '
             if JES:
-                cmd += ' CMS_scale_j_Abs CMS_scale_j_Abs_2016 CMS_scale_j_BBEC1 CMS_scale_j_BBEC1_2016 CMS_scale_j_EC2 CMS_scale_j_EC2_2016 CMS_scale_j_FlavQCD CMS_scale_j_HF CMS_scale_j_HF_2016 CMS_scale_j_RelBal CMS_scale_j_RelSample_2016 CMS_scale_j_Abs CMS_scale_j_Abs_2017 CMS_scale_j_BBEC1 CMS_scale_j_BBEC1_2017 CMS_scale_j_EC2 CMS_scale_j_EC2_2017 CMS_scale_j_FlavQCD CMS_scale_j_HF CMS_scale_j_HF_2017 CMS_scale_j_RelBal CMS_scale_j_RelSample_2017 CMS_scale_j_Abs CMS_scale_j_Abs_2018 CMS_scale_j_BBEC1 CMS_scale_j_BBEC1_2018 CMS_scale_j_EC2 CMS_scale_j_EC2_2018 CMS_scale_j_FlavQCD CMS_scale_j_HF CMS_scale_j_HF_2018 CMS_scale_j_RelBal CMS_scale_j_RelSample_2018 CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+                cmd += ' CMS_scale_j_Abs CMS_scale_j_Abs_2016 CMS_scale_j_BBEC1 CMS_scale_j_BBEC1_2016 CMS_scale_j_EC2 CMS_scale_j_EC2_2016 CMS_scale_j_FlavQCD CMS_scale_j_HF CMS_scale_j_HF_2016 CMS_scale_j_RelBal CMS_scale_j_RelSample_2016 CMS_scale_j_Abs CMS_scale_j_Abs_2017 CMS_scale_j_BBEC1 CMS_scale_j_BBEC1_2017 CMS_scale_j_EC2 CMS_scale_j_EC2_2017 CMS_scale_j_FlavQCD CMS_scale_j_HF CMS_scale_j_HF_2017 CMS_scale_j_RelBal CMS_scale_j_RelSample_2017 CMS_scale_j_Abs CMS_scale_j_Abs_2018 CMS_scale_j_BBEC1 CMS_scale_j_BBEC1_2018 CMS_scale_j_EC2 CMS_scale_j_EC2_2018 CMS_scale_j_FlavQCD CMS_scale_j_HF CMS_scale_j_HF_2018 CMS_scale_j_RelBal CMS_scale_j_RelSample_2018 CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
             cmd += '" >> hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.txt'
             print(cmd, '\n')
             processCmd(cmd,1)
@@ -833,10 +835,10 @@ def runFiducialXS():
             processCmd(cmd,1)
             cmds.append(cmd)
             if obsName == 'mass4l_zzfloating':
-                cmd = 'echo "nuis group = CMS_trigger_e_'+str(opt.YEAR)+'  CMS_trigger_m_'+str(opt.YEAR)+' CMS_eff_e_reco_syst CMS_eff_e_id_syst CMS_eff_e_reco_stat_'+str(opt.YEAR)+' CMS_eff_e_id_stat_'+str(opt.YEAR)+' CMS_eff_m CMS_hzz2e2mu_Zjets_'+str(opt.YEAR)+' CMS_hzz4e_Zjets_'+str(opt.YEAR)+' CMS_hzz4mu_Zjets_'+str(opt.YEAR)+' lumi_13p6TeV_'+str(opt.YEAR)+' CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_'+str(opt.YEAR)+' CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+                cmd = 'echo "nuis group = CMS_eff_e_trigger_'+str(opt.YEAR)+'  CMS_eff_m_trigger_'+str(opt.YEAR)+' CMS_eff_e_reco_13p6TeV CMS_eff_e_id CMS_eff_e_reco_'+str(opt.YEAR)+' CMS_eff_e_id_'+str(opt.YEAR)+' CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_'+str(opt.YEAR)+' CMS_HIG25015_hzz4e_Zjets_'+str(opt.YEAR)+' CMS_HIG25015_hzz4mu_Zjets_'+str(opt.YEAR)+' lumi_13p6TeV_'+str(opt.YEAR)+' CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_'+str(opt.YEAR)+' CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
                 if (opt.EFF_UNC): cmd_addNuis = cmd + ' CMS_HIG25015_pdf_effMatrix CMS_HIG25015_QCDscale_effMatrix CMS_HIG25015_alphaS_effMatrix '
             else:
-                cmd = 'echo "nuis group = CMS_trigger_e_'+str(opt.YEAR)+'  CMS_trigger_m_'+str(opt.YEAR)+' CMS_eff_e_reco_syst CMS_eff_e_id_syst CMS_eff_e_reco_stat_'+str(opt.YEAR)+' CMS_eff_e_id_stat_'+str(opt.YEAR)+' CMS_eff_m CMS_hzz2e2mu_Zjets_'+str(opt.YEAR)+' CMS_hzz4e_Zjets_'+str(opt.YEAR)+' CMS_hzz4mu_Zjets_'+str(opt.YEAR)+' QCD_scale_VV QCD_scale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13p6TeV_'+str(opt.YEAR)+' pdf_gg pdf_qqbar CMS_zz4l_sigma_e_sig CMS_zz4l_sigma_m_sig CMS_zz4l_n_sig_3_'+str(opt.YEAR)+' CMS_zz4l_mean_e_sig CMS_zz4l_mean_m_sig'
+                cmd = 'echo "nuis group = CMS_eff_e_trigger_'+str(opt.YEAR)+'  CMS_eff_m_trigger_'+str(opt.YEAR)+' CMS_eff_e_reco_13p6TeV CMS_eff_e_id CMS_eff_e_reco_'+str(opt.YEAR)+' CMS_eff_e_id_'+str(opt.YEAR)+' CMS_eff_m CMS_HIG25015_hzz2e2mu_Zjets_'+str(opt.YEAR)+' CMS_HIG25015_hzz4e_Zjets_'+str(opt.YEAR)+' CMS_HIG25015_hzz4mu_Zjets_'+str(opt.YEAR)+' QCDscale_VV QCDscale_ggVV CMS_HIG25015_kfactor_ggzz lumi_13p6TeV_'+str(opt.YEAR)+' pdf_gg pdf_qqbar CMS_HIG25015_zz4l_sigma_e_sig CMS_HIG25015_zz4l_sigma_m_sig CMS_HIG25015_zz4l_n_sig_3_'+str(opt.YEAR)+' CMS_HIG25015_zz4l_mean_e_sig CMS_HIG25015_zz4l_mean_m_sig'
                 if (opt.EFF_UNC): cmd_addNuis = cmd + ' CMS_HIG25015_pdf_effMatrix CMS_HIG25015_QCDscale_effMatrix CMS_HIG25015_alphaS_effMatrix '
             if JES:
                 jesNames = ['Absolute','Absolute_year','BBEC1','BBEC1_year','EC2','EC2_year','FlavorQCD','HF','HF_year','RelativeBal','RelativeSample_year']
@@ -864,17 +866,20 @@ def runFiducialXS():
 
         # text-to-workspace (No text-to-ws for kLambda)
         if (physicalModel=="v3"):
-            cmd = 'text2workspace.py hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.txt -P HiggsAnalysis.CombinedLimit.HZZ4L_Fiducial:differentialFiducialV3 --PO higgsMassRange=115,135 --PO nBin='+str(nBins)+' -o hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.root'
+            if (opt.NOK1K2): cmd = 'text2workspace.py hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.txt -P HiggsAnalysis.CombinedLimit.HZZ4L_Fiducial_NOK1K2:differentialFiducialV3 --PO higgsMassRange=115,135 --PO nBin='+str(nBins)+' -o hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.root'
+            else: cmd = 'text2workspace.py hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.txt -P HiggsAnalysis.CombinedLimit.HZZ4L_Fiducial:differentialFiducialV3 --PO higgsMassRange=115,135 --PO nBin='+str(nBins)+' -o hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.root'
             print(cmd, '\n')
             processCmd(cmd)
             cmds.append(cmd)
         elif (physicalModel=="v4"):
-            cmd = 'text2workspace.py hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.txt -P HiggsAnalysis.CombinedLimit.HZZ4L_Fiducial_v2:differentialFiducialV4 --PO higgsMassRange=115,135 --PO nBin='+str(nBins)+' -o hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.root'
+            if (opt.NOK1K2): cmd = 'text2workspace.py hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.txt -P HiggsAnalysis.CombinedLimit.HZZ4L_Fiducial_v2_NOK1K2:differentialFiducialV4 --PO higgsMassRange=115,135 --PO nBin='+str(nBins)+' -o hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.root'
+            else: cmd = 'text2workspace.py hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.txt -P HiggsAnalysis.CombinedLimit.HZZ4L_Fiducial_v2:differentialFiducialV4 --PO higgsMassRange=115,135 --PO nBin='+str(nBins)+' -o hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.root'
             print(cmd, '\n')
             processCmd(cmd)
             cmds.append(cmd)
-        elif (physicalModel=="v2"):
-            cmd = 'text2workspace.py hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.txt -P HiggsAnalysis.CombinedLimit.HZZ4L_Fiducial_v2:differentialFiducialV2 --PO higgsMassRange=115,135 --PO nBin='+str(nBins)+' -o hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.root'
+        elif (physicalModel=="v2"): 
+            if (opt.NOK1K2): cmd = 'text2workspace.py hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.txt -P HiggsAnalysis.CombinedLimit.HZZ4L_Fiducial_v2_NOK1K2:differentialFiducialV2 --PO higgsMassRange=115,135 --PO nBin='+str(nBins)+' -o hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.root' # possibly redundant
+            else: cmd = 'text2workspace.py hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.txt -P HiggsAnalysis.CombinedLimit.HZZ4L_Fiducial_v2:differentialFiducialV2 --PO higgsMassRange=115,135 --PO nBin='+str(nBins)+' -o hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.root'
             print(cmd, '\n')
             processCmd(cmd)
             cmds.append(cmd)
@@ -886,13 +891,13 @@ def runFiducialXS():
 
 
         # The workspace got from text2workspace changes name from hzz4l_ to SM_125 and it is transferred to the combine_files directory
-        cmd = 'cp hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.root ../combine_files/'+DataModelName+'_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'_'+str(opt.YEAR)+'.root'
+        cmd = 'cp hzz4l_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'.root ' + path['eos_path']+'combine_files/'+DataModelName+'_all_13TeV_xs_'+obsName+'_bin_'+physicalModel+'_'+str(opt.YEAR)+'.root'
         print(cmd, '\n')
         processCmd(cmd,1)
         cmds.append(cmd)
     
         # From datacard directory to combine_files, to store fit results
-        os.chdir('../combine_files/')
+        os.chdir(path['eos_path']+'combine_files/')
         print('Current directory: combine_files')
         # nBins = len(observableBins)
         if physicalModel == 'v2': # In this case implemented for mass4l only
@@ -1045,10 +1050,10 @@ def runFiducialXS():
                 fidxs2e2mu_sm = tmp_xs_sm['2e2mu_genbin'+str(obsBin)]
                 frac4e_sm = fidxs4e_sm/(fidxs4e_sm+fidxs4mu_sm+fidxs2e2mu_sm)
                 frac4mu_sm = fidxs4mu_sm/(fidxs4e_sm+fidxs4mu_sm+fidxs2e2mu_sm)
-                #K1 = frac4e/frac4e_sm
-                #K2 = frac4mu/frac4mu_sm * (1.0-frac4e_sm)/(1.0-frac4e)
+                K1 = frac4e/frac4e_sm
+                K2 = frac4mu/frac4mu_sm * (1.0-frac4e_sm)/(1.0-frac4e)
 
-                #cmd_BR += 'K1Bin'+str(obsBin)+'='+str(K1)+',K2Bin'+str(obsBin)+'='+str(K2)+','
+                if not (opt.NOK1K2): cmd_BR += 'K1Bin'+str(obsBin)+'='+str(K1)+',K2Bin'+str(obsBin)+'='+str(K2)+','
 
             print(cmd_BR)
 
@@ -1067,8 +1072,9 @@ def runFiducialXS():
                 else: max_range = '2.5'
                 ## The inclusive xsec for 2j phase space is about 2.49 fb, hence enlarge fit range
                 if ('jj' in obsName) and (obsBin == 0): max_range = '5.0'
-                if ('njet' in obsName) and ('pTj' in obsName) and (obsBin == 0): max_range = '5.0'
-                cmd = 'combine -n _'+obsName+'_SigmaBin'+str(obsBin)+' -M MultiDimFit SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)+'.root -m 125.38 --freezeParameters MH,_paramFit_Test_K1Bin0,_paramFit_Test_K2Bin0 -P SigmaBin'+str(obsBin)+' --floatOtherPOIs=1 --saveWorkspace --setParameterRanges SigmaBin'+str(obsBin)+'=0.0,'+max_range+' --redefineSignalPOI SigmaBin'+str(obsBin)+' --algo=grid --points=200 --cminDefaultMinimizerStrategy 0'
+                if ('Nj' in obsName) and ('pTj' in obsName) and (obsBin == 0): max_range = '5.0'
+                if (opt.NOK1K2): cmd = 'combine -n _'+obsName+'_SigmaBin'+str(obsBin)+' -M MultiDimFit SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)+'.root -m 125.38 --freezeParameters MH,K1Bin0,K2Bin0 -P SigmaBin'+str(obsBin)+' --floatOtherPOIs=1 --saveWorkspace --setParameterRanges SigmaBin'+str(obsBin)+'=0.0,'+max_range+' --redefineSignalPOI SigmaBin'+str(obsBin)+' --algo=grid --points=200 --cminDefaultMinimizerStrategy 0'
+                else: cmd = 'combine -n _'+obsName+'_SigmaBin'+str(obsBin)+' -M MultiDimFit SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)+'.root -m 125.38 --freezeParameters MH -P SigmaBin'+str(obsBin)+' --floatOtherPOIs=1 --saveWorkspace --setParameterRanges SigmaBin'+str(obsBin)+'=0.0,'+max_range+' --redefineSignalPOI SigmaBin'+str(obsBin)+' --algo=grid --points=200 --cminDefaultMinimizerStrategy 0'
                 if(not opt.UNBLIND):
                     cmd = cmd + ' -t -1 --saveToys --setParameters SigmaBin'+str(obsBin)+'='+str(round(_obsxsec,4))
                     if opt.FIXFRAC:
@@ -1096,8 +1102,12 @@ def runFiducialXS():
                 cmd = cmd + ' -M MultiDimFit higgsCombine_'+obsName+'_SigmaBin'+str(obsBin)+'.MultiDimFit.mH125.38'
                 if(not opt.UNBLIND): cmd = cmd + '.123456'
                 cmd = cmd + '.root -w w --snapshotName "MultiDimFit" -m 125.38 -P SigmaBin'+str(obsBin)+' --floatOtherPOIs=1 --saveWorkspace --setParameterRanges SigmaBin0=0.0,'+max_range+' --redefineSignalPOI SigmaBin'+str(obsBin)+' --algo=grid --points=200 --cminDefaultMinimizerStrategy 0 --freezeNuisanceGroups nuis'
-                if ((opt.YEAR == 'Full') or (opt.YEAR == 'Run3')): cmd = cmd + ' --freezeParameters MH,_paramFit_Test_K1Bin0,_paramFit_Test_K2Bin0'
-                else: cmd = cmd + ' --freezeParameters MH,_paramFit_Test_K1Bin0,_paramFit_Test_K2Bin0'
+                if ((opt.YEAR == 'Full') or (opt.YEAR == 'Run3')): 
+                    if (opt.NOK1K2): cmd = cmd + ' --freezeParameters MH,K1Bin0,K2Bin0'
+                    else: cmd = cmd + ' --freezeParameters MH'
+                else: 
+                    if (opt.NOK1K2): cmd = cmd + ' --freezeParameters MH,K1Bin0,K2Bin0'
+                    else: cmd = cmd + ' --freezeParameters MH'
                 if(not opt.UNBLIND):
                     cmd = cmd + ' -t -1 --saveToys --setParameters SigmaBin'+str(obsBin)+'='+str(round(_obsxsec,4))
                     if(opt.FIXFRAC):
@@ -1162,7 +1172,7 @@ else:
     obsName = opt.OBSNAME
     doubleDiff = False
 if (('pTj1' in obsName) | ('pTHj' in obsName) | ('mHj' in obsName) | ('pTj2' in obsName) | ('mjj' in obsName) | ('absdetajj' in obsName) | ('dphijj' in obsName) | ('pTHjj' in obsName)  | ('TCjmax' in obsName) | ('TBjmax' in obsName) | ('Nj' in obsName)):
-    JES = True # JES = True #SPENCER FIX THIS 25 03 2025
+    JES = True
 else:
     JES = False
 runFiducialXS()

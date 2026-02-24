@@ -11,7 +11,8 @@ path = {
     'eos_path': '/eos/user/s/sellissp/HZZ/',
     'eos_path_FR': '/eos/cms/store/group/phys_higgs/cmshzz4l/cjlst/HIG-25-015/RunIII_byZ1Z2/Moriond26_JES/',
     #'eos_path_FR': '/eos/user/s/sellissp/HZZ/SAMPLES/',
-    'plots_path': '/eos/home-s/sellissp/www/HZZFidXSRUNIII/final_feb26/',
+    'plots_path': '/eos/home-s/sellissp/www/HZZFidXSRUNIII/HIG25015/1stStepUnblinding/noK/',
+    #'plots_path': '/eos/home-s/sellissp/www/HZZFidXSRUNIII/HIG25015/1stStepUnblinding/withK/',
 }
 
 #/eos/user/m/mmanoni/HZZ_prod_300425_angles/Data

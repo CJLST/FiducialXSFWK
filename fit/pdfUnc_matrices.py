@@ -376,9 +376,6 @@ def append_uncertainties(input_file, obsName, year, physicalModel, percent_diffs
     if variable == "rapidity4l":
         variable = "YH"
 
-    if variable == "Nj":
-        variable = "NJ"
-
     out_dir = Path(f"../datacard/datacard_{year}")
 
     for fs, values in percent_diffs_all.items():

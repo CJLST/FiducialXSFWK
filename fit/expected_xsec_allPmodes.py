@@ -260,7 +260,7 @@ def exp_xsec():
             f.write('fidXS_alpha_up = '+str(clean)+'\n')
             f.write('fidXS_alpha_dn = '+str(clean)+'\n')
     
-    if obsName == 'mass4l' or obsName == 'massZ1' or obsName == 'massZ2' or obsName == 'costhetaZ1' or obsName == 'costhetaZ2' or obsName == 'costhetastar' or obsName == 'phi' or obsName == 'phi1':
+    if obsName in special_obs:
 
         # --- existing 4l-summed outputs (UNCHANGED behavior) ---
         write_fid_file('../inputs/fidXS_'+suffix+obsFull+'_ggH_'+opt.YEAR+'.py', observableBins, list(xs_ggh.values()))
@@ -294,4 +294,5 @@ def exp_xsec():
         write_fid_file('../inputs/fidXS_'+obsFull+'_xH_'+opt.YEAR+'.py',         observableBins, list(xs_xh.values()))
 
     
+special_obs = [] # ['mass4l', 'massZ1', 'massZ2', 'costhetaZ1', 'costhetaZ2', 'costhetastar', 'phi', 'phi1']
 exp_xsec()

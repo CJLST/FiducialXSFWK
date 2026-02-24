@@ -947,8 +947,8 @@ if MC:
     if 'ZZTo' in inFileName: df_SR = df_SR.Define('KFactor_QCD_qqZZ_M_weight', "KFactor_QCD_qqZZ_M_Weight")
     if 'ggTo' in inFileName: df_SR = df_SR.Define('KFactor_QCD_ggZZ_Nominal_weight', "KFactor_QCD_ggZZ_Nominal_Weight")
 
-    for jes in jesNames:
-        df_SR = add_jes(df_SR, jes, year)
+    #for jes in jesNames:
+    #    df_SR = add_jes(df_SR, jes, year)
 
     if "H12" in inFileName:
 

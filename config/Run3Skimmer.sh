@@ -41,8 +41,8 @@ if [ "$data_type" == "MC" ]; then
     sample_list="$full_path/sampleList.txt"
 
     echo "Generating sample list for MC (excluding *Chunk*)..."
-    find "$full_path" -mindepth 1 -maxdepth 1 -type d ! -name '*Chunk*' -exec basename {} \; | sort > "$sample_list"
-    #find "$full_path" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort > "$sample_list"
+    #find "$full_path" -mindepth 1 -maxdepth 1 -type d ! -name '*Chunk*' -exec basename {} \; | sort > "$sample_list"
+    find "$full_path" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort > "$sample_list"
     echo "Sample list has $(wc -l < "$sample_list") entries."
     echo "Starting Run3Skimmer processing for MC..."
 

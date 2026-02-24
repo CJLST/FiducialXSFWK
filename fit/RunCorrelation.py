@@ -12,7 +12,11 @@ import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import importlib.util
+import itertools
 
+sys.path.append('../helperstuff/')
+from paths import path
 
 sys.path.append('../inputs/')
 from higgs_xsbr_13TeV import *
@@ -36,6 +40,9 @@ def parseOptions():
     parser.add_option('',   '--obsBins',  dest='OBSBINS',  type='string',default='|0|30|80|200|10000|',   help='Bin boundaries for the diff. measurement separated by "|", e.g. as "|0|50|100|", use the defalut if empty string')
     parser.add_option('',   '--year',  dest='YEAR',  type='string',default='2022',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--ZZfloating',action='store_true', dest='ZZ',default=False, help='Let ZZ normalisation to float')
+    parser.add_option('',   '--interpolation', action='store_true', dest='INTER', default=False, help='Calculate acceptances at 124 and 126 GeV')
+    parser.add_option('',   '--NOK1K2',action='store_true', dest='NOK1K2',default=False, help='remove K1 K2 parameters')
+
     # Unblind option
     parser.add_option('',   '--unblind', action='store_true', dest='UNBLIND', default=False, help='Use real data')
     # Calculate Systematic Uncertainties
@@ -71,12 +78,13 @@ def RunCombineCorrelation():
     higgs4l_br = _temp.higgs4l_br
 
 
-    os.chdir('../combine_files/')
+    os.chdir(path['eos_path']+'combine_files/')
     # print 'Current directory: combine_files'
 
     for physicalModel in PhysicalModels:
         if physicalModel == 'v2': # In this case implemented for mass4l only (Mass-dependent fit using separate final states)
-            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v2_'+str(opt.YEAR)'.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --setParameterRanges r4eBin0=0.0,2.5:r4muBin0=0.0,2.5:r2e2muBin0=0.0,2.5 --redefineSignalPOI r4eBin0,r4muBin0,r2e2muBin0 --algo=singles --cminDefaultMinimizerStrategy 0 --saveInactivePOI=1 --robustHesse 1 --robustHesseSave 1'
+            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v2_'+str(opt.YEAR)+'.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --setParameterRanges r4eBin0=0.0,2.5:r4muBin0=0.0,2.5:r2e2muBin0=0.0,2.5 --redefineSignalPOI r4eBin0,r4muBin0,r2e2muBin0 --algo=singles --cminDefaultMinimizerStrategy 0 --saveInactivePOI=1 --robustHesse 1 --robustHesseSave 1'
+
             if not opt.UNBLIND:
                 cmd += ' -t -1 --setParameters '
                 for channel in ['4e', '4mu', '2e2mu']:
@@ -94,7 +102,7 @@ def RunCombineCorrelation():
 
         if physicalModel == 'v4': #More granular 2e2mu and 4l bin-by-bin decomposition
             # ----- 2e2mu -----
-            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v4_'+str(opt.YEAR)'.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 --saveInactivePOI=1 --robustHesse 1 --robustHesseSave 1 --setParameterRanges '
+            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ' +path['eos_path']+'combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v4_'+str(opt.YEAR)+'.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 --saveInactivePOI=1 --robustHesse 1 --robustHesseSave 1 --setParameterRanges '
 
             for obsBin in range(nBins):
                 cmd += 'r2e2muBin'+str(obsBin)+'=0.0,2.5:r4lBin'+str(obsBin)+'=0.0,2.5:'
@@ -144,7 +152,7 @@ def RunCombineCorrelation():
                 _obsName[obsName] = obsName
             fitName = _obsName[obsName]
 
-            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)'.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 --robustHesse 1 --robustHesseSave 1 --setParameterRanges '
+            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ' +path['eos_path']+'combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)+'.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 --robustHesse 1 --robustHesseSave 1 --setParameterRanges '
             for obsBin in range(nBins):
                 cmd += 'r_smH_'+fitName+'_'+str(obsBin)+'=0.0,5.0:'
             cmd = cmd[:-1]
@@ -196,10 +204,31 @@ else:
 
 # prepare the set of bin boundaries to run over, it is retrieved from inputs file
 # _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins', 'acc'], -1)
-_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins'])
-observableBins = _temp.observableBins
-_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['acc'])
-acc = _temp.acc
+#_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins'])
+#observableBins = _temp.observableBins
+#_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['acc'])
+#acc = _temp.acc
+
+if opt.INTER:
+    fname = path['eos_path']+'inputs/inputs_sig_extrap_'+obsName+'_'+opt.YEAR+".py"
+else:
+    fname = path['eos_path']+'inputs/inputs_sig_'+obsName+'_'+opt.YEAR+".py"
+
+print(fname)
+
+if os.path.exists(fname):
+    modname = f"inputs_sig_{obsName}_{opt.YEAR}" 
+    spec = importlib.util.spec_from_file_location(modname, fname)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load spec for {fname}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+else:
+    raise FileNotFoundError(fname)
+
+observableBins = module.observableBins
+acc = module.acc
+
 # print 'Running Fiducial XS computation - '+obsName+' - bin boundaries: ', observableBins, '\n'
 # print 'Theory xsec and BR at MH = '+_th_MH
 # print 'Current directory: python'
@@ -208,5 +237,3 @@ nBins = len(observableBins)
 if not doubleDiff: nBins = nBins-1 #in case of 1D measurement the number of bins is -1 the length of the list of bin boundaries
 
 RunCombineCorrelation()
-
-sys.path.remove('../inputs/')

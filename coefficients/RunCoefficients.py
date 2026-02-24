@@ -675,7 +675,8 @@ def getCoeff(channel, m4l_low, m4l_high, obs_reco, obs_gen, obs_bins, recobin, g
             acceptance[processBin] = acc_num/acc_den
             accnum[processBin] = acc_num
             accden[processBin] = acc_den
-            err_acceptance[processBin] = sqrt((acceptance[processBin]*(1-acceptance[processBin]))/acc_den)
+            #err_acceptance[processBin] = sqrt((acceptance[processBin]*(1-acceptance[processBin]))/acc_den)
+            err_acceptance[processBin] = math.sqrt(val) if (acc_den!=0 and (val:=(acceptance[processBin]*(1-acceptance[processBin]))/acc_den) >= 0 and math.isfinite(val)) else 0.0
         else:
             acceptance[processBin] = -1.0
             err_acceptance[processBin] = -1.0

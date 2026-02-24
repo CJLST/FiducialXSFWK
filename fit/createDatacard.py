@@ -53,7 +53,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
             _recobin = 'GT'+str(int(observableBins[obsBin]))
 
     if physicalModel == 'v3':
-        _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'NJ'}
+        _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'Nj'}
         if obsName not in _obsName:
             _obsName[obsName] = obsName
         binName = 'hzz_' + _obsName[obsName] + '_' + _recobin + '_cat' + channel
@@ -117,10 +117,10 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
         '2024':'1.0020',
         }
         # Additional reduced nuisances for Run-3:
-        # lumi_13p6TeV_correlated_2023_2024 applies to 2023 & 2024
+        # lumi_13p6TeV_2324 applies to 2023 & 2024
         # lumi_13p6TeV_2024 applies to 2024 only
         lumi_extra = {
-        'lumi_13p6TeV_correlated_2023_2024': {'2023preBPix': '1.0127', '2023postBPix': '1.0127', '2024': '1.0068'},
+        'lumi_13p6TeV_2324': {'2023preBPix': '1.0127', '2023postBPix': '1.0127', '2024': '1.0068'},
         'lumi_13p6TeV_2024': {'2024': '1.0144'}
         }
     else:
@@ -324,9 +324,9 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     ZX['2023postBPix_4e'] = '0.467/1.470' # spencer
     ZX['2023postBPix_4mu'] = '0.667/1.329' # spencer 
 
-    ZX['2024_2e2mu'] = '0.761/1.237' # spencer w/ 2023post DY
-    ZX['2024_4e'] = '0.654/1.339' # spencer w/ 2023post DY
-    ZX['2024_4mu'] = '0.697/1.303' # spencer w/ 2023post DY
+    ZX['2024_2e2mu'] = '0.766/1.232' # spencer
+    ZX['2024_4e'] = '0.654/1.339' # spencer
+    ZX['2024_4mu'] = '0.696/1.303' # spencer
     
     
     # -------------------------------------------------------------------------------------------------
@@ -438,18 +438,18 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     elif yearSetting == 'Run3':
 
         # correlated Run-3 lumi nuisances
-        # lumi_13p6TeV_correlated_2022_2023_2024 (2022,2023,2024)
-        file.write('lumi_13p6TeV_correlated_2022_2023_2024 lnN ')
+        # lumi_13p6TeV_222324 (2022,2023,2024)
+        file.write('lumi_13p6TeV_222324 lnN ')
         for i in range(2*nBins+4): 
             # All except ZX
             file.write(lumi[year]+' ')
         file.write('-\n')
 
-        # lumi_13p6TeV_correlated_2023_2024 if applicable
-        if year in lumi_extra['lumi_13p6TeV_correlated_2023_2024']:
-            file.write('lumi_13p6TeV_correlated_2023_2024 lnN ')
+        # lumi_13p6TeV_2324 if applicable
+        if year in lumi_extra['lumi_13p6TeV_2324']:
+            file.write('lumi_13p6TeV_2324 lnN ')
             for i in range(2*nBins+4):
-                file.write(lumi_extra['lumi_13p6TeV_correlated_2023_2024'][year]+' ')
+                file.write(lumi_extra['lumi_13p6TeV_2324'][year]+' ')
             file.write('-\n')
 
         # lumi_13p6TeV_2024 if applicable
@@ -487,45 +487,63 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
             file.write(eff_mu[year+'_'+channel]+' ')
         file.write('-\n') 
 
-        file.write('CMS_trigger_m_'+year+' lnN ')
+        if year == "2023preBPix":
+            file.write('CMS_eff_m_trigger_2023 lnN ')
+        elif year == "2023postBPix":
+            file.write('CMS_eff_m_trigger_2023BPix lnN ')
+        else:
+            file.write('CMS_eff_m_trigger_'+year+' lnN ')
+
         for i in range(nBins+4): # All except ZX
             file.write(trig_mu[year+'_'+channel]+' ')
         file.write('-\n')
 
     # Electrons efficiencies are decorrelated between RECO/ID, statistical and systematic components (syst are correlated between years)
     if channel == '4e' or channel == '2e2mu':
-        # --- ID statistical (uncorrelated per year) ---
-        file.write('CMS_eff_e_id_stat_'+year+' lnN ')
+        
+        if year == "2023preBPix":
+            file.write('CMS_eff_e_id_2023 lnN ')
+        elif year == "2023postBPix":
+            file.write('CMS_eff_e_id_2023BPix lnN ')
+        else:
+            file.write('CMS_eff_e_id_'+year+' lnN ')
         for i in range(nBins+4):
             file.write(eff_e_id_stat[year+'_'+channel]+' ')
         file.write('-\n')
-
-        # --- RECO statistical (uncorrelated per year) ---
-        file.write('CMS_eff_e_reco_stat_'+year+' lnN ')
+        
+        if year == "2023preBPix":
+            file.write('CMS_eff_e_reco_2023 lnN ')
+        elif year == "2023postBPix":
+            file.write('CMS_eff_e_reco_2023BPix lnN ')
+        else:
+            file.write('CMS_eff_e_reco_'+year+' lnN ')
         for i in range(nBins+4):
             file.write(eff_e_reco_stat[year+'_'+channel]+' ')
         file.write('-\n')
 
-        # --- ID systematic (correlated across years) ---
-        file.write('CMS_eff_e_id_syst lnN ')
+        file.write('CMS_eff_e_id lnN ')
         for i in range(nBins+4):
             file.write(eff_e_id_syst[year+'_'+channel]+' ')
         file.write('-\n')
 
         # --- RECO systematic (correlated across years) ---
-        file.write('CMS_eff_e_reco_syst lnN ')
+        file.write('CMS_eff_e_reco_13p6TeV lnN ')
         for i in range(nBins+4):
             file.write(eff_e_reco_syst[year+'_'+channel]+' ')
         file.write('-\n')
 
-        #TRIGGER
-        file.write('CMS_trigger_e_'+year+' lnN ')
+        if year == "2023preBPix":
+            file.write('CMS_eff_e_trigger_2023 lnN ')
+        elif year == "2023postBPix":
+            file.write('CMS_eff_e_trigger_2023BPix lnN ')
+        else:
+            file.write('CMS_eff_e_trigger_'+year+' lnN ')
         for i in range(nBins+4): # All except ZX
             file.write(trig_e[year+'_'+channel]+' ')
         file.write('-\n')
 
     # ZX
-    file.write('CMS_hzz'+channel+'_Zjets_'+year+' lnN ')
+    file.write('CMS_HIG25015_hzz'+channel+'_Zjets_'+year+' lnN ')
     # for i in range(nBins+4): # All except ZX
     for i in range(nBins+4): # All except ZX
         file.write('- ')
@@ -533,21 +551,21 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
 
     # Gaussian-constrained nuisance parameter , SMEARING systematic uncertainties
     if(channelNumber != 2):
-        file.write('CMS_zz4l_mean_m_sig param 0.0 1.0\n')
-        file.write('CMS_zz4l_sigma_m_sig param 0.0 0.03 [-1,1]\n') 
+        file.write('CMS_HIG25015_zz4l_mean_m_sig param 0.0 1.0\n')
+        file.write('CMS_HIG25015_zz4l_sigma_m_sig param 0.0 0.03 [-1,1]\n') 
     if(channelNumber != 1):
-        file.write('CMS_zz4l_mean_e_sig param 0.0 1.0\n')
-        file.write('CMS_zz4l_sigma_e_sig param 0.0 0.1 [-1,1]\n')
+        file.write('CMS_HIG25015_zz4l_mean_e_sig param 0.0 1.0\n')
+        file.write('CMS_HIG25015_zz4l_sigma_e_sig param 0.0 0.1 [-1,1]\n')
 
-    file.write('CMS_zz4l_n_sig_'+str(channelNumber)+'_'+year+' param 0.0 0.05\n')
+    file.write('CMS_HIG25015_zz4l_n_sig_'+str(channelNumber)+'_'+year+' param 0.0 0.05\n')
 
     # Theoretical at 13.6 TeV taken from https://twiki.cern.ch/twiki/bin/view/LHCPhysics/LHCHWG136TeVxsec_extrap
     if not zzfloating:
-        file.write('QCD_scale_ggVV lnN ')
+        file.write('QCDscale_ggVV lnN ')
         for i in range(nBins+3): # Signal + out + fake + qqzz
             file.write('- ')
         file.write('1.039/0.961 -\n') #ggF (N3LO QCD + NLO EW), TH Gaussian % (+-3.9%)
-        file.write('QCD_scale_VV lnN ')
+        file.write('QCDscale_VV lnN ')
         for i in range(nBins+2): # Signal + out + fake
             file.write('- ')
         file.write('1.0325/0.958 - -\n')
@@ -617,7 +635,7 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     if int(observableBins[obsBin+1]) > 1000:
         _recobin = 'GT'+str(int(observableBins[obsBin]))
 
-    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'NJ'}
+    _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'Nj'}
     binName = 'hzz_' + _obsName[obsName] + '_' + _recobin + '_cat' + channel
     # Root of the name of the process (signal from genBin)
     # processName = 'smH'+channel+'Bin'
@@ -675,9 +693,9 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
         '2024':'1.0020',
         }
         # Additional reduced nuisances for Run-3:
-        # lumi_13p6TeV_correlated_2023_2024 applies to 2023 & 2024 / lumi_13p6TeV_2024 applies to 2024 only
+        # lumi_13p6TeV_2324 applies to 2023 & 2024 / lumi_13p6TeV_2024 applies to 2024 only
         lumi_extra = {
-        'lumi_13p6TeV_correlated_2023_2024': {'2023preBPix': '1.0127', '2023postBPix': '1.0127', '2024': '1.0068'},
+        'lumi_13p6TeV_2324': {'2023preBPix': '1.0127', '2023postBPix': '1.0127', '2024': '1.0068'},
         'lumi_13p6TeV_2024': {'2024': '1.0144'}
         }
     else:
@@ -765,9 +783,9 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     ZX['2023postBPix_4e'] = '0.575/1.398' # spencer
     ZX['2023postBPix_4mu'] = '0.677/1.321' # spencer
 
-    ZX['2024_2e2mu'] = '0.761/1.237' # spencer w/ 2023post DY
-    ZX['2024_4e'] = '0.654/1.339' # spencer w/ 2023post DY
-    ZX['2024_4mu'] = '0.697/1.303' # spencer w/ 2023post DY
+    ZX['2024_2e2mu'] = '0.766/1.232' # spencer 
+    ZX['2024_4e'] = '0.654/1.339' # spencer 
+    ZX['2024_4mu'] = '0.696/1.303' # spencer
     
     # -------------------------------------------------------------------------------------------------
 
@@ -874,18 +892,18 @@ def createDatacard_ggH(obsName, channel, nBins, obsBin, observableBins, physical
     elif yearSetting == 'Run3':
 
         # correlated Run-3 lumi nuisances
-        # lumi_13p6TeV_correlated_2022_2023_2024 (2022,2023,2024)
-        file.write('lumi_13p6TeV_correlated_2022_2023_2024 lnN ')
+        # lumi_13p6TeV_222324 (2022,2023,2024)
+        file.write('lumi_13p6TeV_222324 lnN ')
         for i in range(2*nBins+4): 
             # All except ZX
             file.write(lumi[year]+' ')
         file.write('-\n')
 
-        # lumi_13p6TeV_correlated_2023_2024 if applicable
-        if year in lumi_extra['lumi_13p6TeV_correlated_2023_2024']:
-            file.write('lumi_13p6TeV_correlated_2023_2024 lnN ')
+        # lumi_13p6TeV_2324 if applicable
+        if year in lumi_extra['lumi_13p6TeV_2324']:
+            file.write('lumi_13p6TeV_2324 lnN ')
             for i in range(2*nBins+4):
-                file.write(lumi_extra['lumi_13p6TeV_correlated_2023_2024'][year]+' ')
+                file.write(lumi_extra['lumi_13p6TeV_2324'][year]+' ')
             file.write('-\n')
 
         # lumi_13p6TeV_2024 if applicable
