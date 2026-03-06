@@ -63,10 +63,7 @@ def exp_xsec():
     #_temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
     _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], 0) # spencer
     
-    if(opt.YEAR=='Run3'):
-        higgs_xs = _temp.higgs_xs_136TeV
-    else:
-        higgs_xs = _temp.higgs_xs
+    higgs_xs = _temp.higgs_xs_136TeV
     higgs4l_br = _temp.higgs4l_br
 
 
@@ -294,5 +291,5 @@ def exp_xsec():
         write_fid_file('../inputs/fidXS_'+obsFull+'_xH_'+opt.YEAR+'.py',         observableBins, list(xs_xh.values()))
 
     
-special_obs = [] # ['mass4l', 'massZ1', 'massZ2', 'costhetaZ1', 'costhetaZ2', 'costhetastar', 'phi', 'phi1']
+special_obs = ['mass4l', 'mass4l_zzfloating'] # ['mass4l', 'massZ1', 'massZ2', 'costhetaZ1', 'costhetaZ2', 'costhetastar', 'phi', 'phi1']
 exp_xsec()

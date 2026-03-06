@@ -33,7 +33,7 @@ def parseOptions():
     parser.add_option('',   '--physicsModel',dest='PHYSICSMODEL',type='string',default='v3',help='In case of mass4l specify explicitly v2, physicsModel to calculate impacts plots for r2e2mu,r4e,r4mu')
     parser.add_option('',   '--year',  dest='YEAR',  type='string',default='Full',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--interpolation', action='store_true', dest='INTER', default=False, help='Calculate acceptances at 124 and 126 GeV')
-    parser.add_option('',   '--NOK1K2',action='store_true', dest='NOK1K2',default=False, help='remove K1 K2 parameters')
+    #parser.add_option('',   '--NOK1K2',action='store_true', dest='NOK1K2',default=False, help='remove K1 K2 parameters')
 
     # Unblind option
     parser.add_option('',   '--unblind', action='store_true', dest='UNBLIND', default=False, help='Use real data')
@@ -97,10 +97,7 @@ def impactPlots():
 
     #_temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
     _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], 0) # spencer
-    if(opt.YEAR=="Run3"):
-        higgs_xs = _temp.higgs_xs_136TeV
-    else:
-        higgs_xs = _temp.higgs_xs
+    higgs_xs = _temp.higgs_xs_136TeV
     higgs4l_br = _temp.higgs4l_br
 
     sys.path.append(path['eos_path']+'inputs/')
@@ -171,7 +168,7 @@ def impactPlots():
             K1 = frac4e/frac4e_sm
             K2 = frac4mu/frac4mu_sm * (1.0-frac4e_sm)/(1.0-frac4e)
 
-            if not opt.NOK1K2: cmd_BR += 'K1Bin'+str(obsBin)+'='+str(K1)+',K2Bin'+str(obsBin)+'='+str(K2)+',' # SPENCER 10 2025
+            #if not opt.NOK1K2: cmd_BR += 'K1Bin'+str(obsBin)+'='+str(K1)+',K2Bin'+str(obsBin)+'='+str(K2)+',' # SPENCER 10 2025
         print(cmd_BR)
 
         cmd_sigma = ''
@@ -233,7 +230,7 @@ def impactPlots():
 
     ### First step (Files from asimov and data have the same name)
     cmd = 'combineTool.py -M Impacts -d ' + path['eos_path']+'combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_'+opt.PHYSICSMODEL+'_'+str(opt.YEAR)+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --doInitialFit --robustFit 1'
-    if opt.NOK1K2: cmd += ' --freezeParameters K1Bin0,K2Bin0'
+    #if opt.NOK1K2: cmd += ' --freezeParameters K1Bin0,K2Bin0'
     cmd += ' --redefineSignalPOIs '
     for obsBin in range(nBins):
         if opt.PHYSICSMODEL=='v3':
@@ -272,7 +269,7 @@ def impactPlots():
 
     ### Second step (Files from asimov and data have the same name)
     cmd = 'combineTool.py -M Impacts -d ' + path['eos_path']+'combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_'+opt.PHYSICSMODEL+'_'+str(opt.YEAR)+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --doFits --robustFit 1 --parallel 10'
-    if opt.NOK1K2: cmd += ' --freezeParameters K1Bin0,K2Bin0'
+    #if opt.NOK1K2: cmd += ' --freezeParameters K1Bin0,K2Bin0'
     cmd += ' --redefineSignalPOIs '
     for obsBin in range(nBins):
         if opt.PHYSICSMODEL=='v3':
@@ -312,7 +309,7 @@ def impactPlots():
         #cmd = 'combineTool.py -M Impacts -d ../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)+'.root -m 125.38 --setParameters MH=125.38,'+cmd_BR[:-1]+','+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
         cmd = 'combineTool.py -M Impacts -d ' + path['eos_path']+'combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)+'.root -m 125.38 --setParameters MH=125.38'+','+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
         #cmd += ' -o impacts_v3_'+obsName+'_'
-        if opt.NOK1K2: cmd += ' --freezeParameters K1Bin0,K2Bin0'
+        #if opt.NOK1K2: cmd += ' --freezeParameters K1Bin0,K2Bin0'
 
         if (not opt.UNBLIND):
             cmd += ' -t -1 -o impacts_'+opt.YEAR+'_v3_'+obsName+'_' # spencer
@@ -385,7 +382,7 @@ def impactPlots():
             # for obsBin in ['2e2muBin'+str(nBin),'4lBin'+str(nBin)]:
             cmd = 'combineTool.py -M Impacts -d ' + path['eos_path']+'combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v4_'+str(opt.YEAR)+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --setParameters MH=125.38,'+cmd_XSEC+' --redefineSignalPOIs '+cmd_sigma
             #cmd += ' -o impacts_v4_'
-            if opt.NOK1K2: cmd += ' --freezeParameters K1Bin0,K2Bin0'
+            #if opt.NOK1K2: cmd += ' --freezeParameters K1Bin0,K2Bin0'
 
             if (not opt.UNBLIND):
                 cmd += ' -t -1 o impacts_v4_'
@@ -441,5 +438,7 @@ with open('commands_impacts_'+obsName+'_'+opt.PHYSICSMODEL+'.py', 'w') as f:
 outdir = f"{path['plots_path']}IMPACTS/{obsName}/{opt.YEAR}/"
 os.makedirs(outdir, exist_ok=True)
 os.system(f"cp impacts*_{opt.YEAR}_*{obsName}*.pdf {outdir}")
+if opt.PHYSICSMODEL=='v2':
+    os.system(f"cp impacts_v2_{obsName}*.pdf {outdir}")
 
 print("Impacts plots done.")

@@ -5,11 +5,12 @@ source setup.sh
 cmsenv
 cd FiducialXSFWK/fit
 
-obsName="${1//_/' vs '}"
+$obsName="${1//_/' vs '}"
+#obsName="$1"
 year="$2"
 
-python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year"
-python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --nnlops
+python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --interpolation
+python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --nnlops --interpolation
 
 cd ../coefficients
 

@@ -17,7 +17,7 @@ from tabulate import tabulate
 print('Welcome in RunJES!')
 
 jesNames = ['Absolute', 'Absolute_year', 'BBEC1', 'BBEC1_year', 'EC2', 'EC2_year', 'FlavorQCD', 'HF', 'HF_year', 'RelativeBal', 'RelativeSample_year']
-jesVars = ["pTj1", "pTj2", "Nj", "mjj", "absdetajj", "dphijj", "mHj", "pTHj", "pTHjj", "mHj", "TBjmax", "TCjmax"]
+jesVars = ["pTj1", "pTj2", "Nj", "mjj", "absdetajj", "dphijj", "mHj", "pTHj", "pTHjj", "mHj", "TBjmax", "TCjmax", "TBjMax", "TCjMax"]
 
 def parseOptions():
 

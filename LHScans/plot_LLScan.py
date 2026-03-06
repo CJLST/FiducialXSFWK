@@ -176,14 +176,16 @@ elif year == '2022':
 elif year == '2022EE':
     _lumi = '26.67'
 elif year == '2023preBPix':
-    _lumi = '17.79'
+    _lumi = '18.06'
 elif year == '2023postBPix':
-    _lumi = '9.45'
+    _lumi = '9.69'
+elif year == '2024':
+    _lumi = '108.82'
 
 elif year == '2022full':
     _lumi = '34.7'
 elif year == '2023full':
-    _lumi = '27.3'
+    _lumi = '27.7'
     
 else:
     _lumi = '138'
@@ -342,17 +344,11 @@ for i in range(nBins):
         inF = TFile.Open(fname,"READ")
         tree = inF.Get("limit")
 
-        tree.Print()
-
-        print(obsName)
-        print(_obsName[obsName])
-        
-        print('r_smH_'+_obsName[obsName]+'_'+str(_bin))
         if tree.GetBranch('r_smH_'+_obsName[obsName]+'_'+str(_bin)):
-            print("FLAG")
             tree.GetBranch('r_smH_'+_obsName[obsName]+'_'+str(_bin)).SetTitle('r_smH_'+str(_bin)+'/F');
             tree.GetBranch('r_smH_'+_obsName[obsName]+'_'+str(_bin)).SetName('r_smH_'+str(_bin)+'');
 
+        
         ipoint = 0
         for entry in tree :
             if((2*entry.deltaNLL<5)):

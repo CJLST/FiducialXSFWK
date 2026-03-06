@@ -1,10 +1,14 @@
 import uproot
 import binning
 import latex_names as tex
-import os
+import sys, os
 import optparse
 from itertools import product
 from scipy.stats import chi2
+import importlib.util
+
+sys.path.append('../helperstuff/')
+from paths import path
 
 def parseOptions():
 
@@ -17,6 +21,7 @@ def parseOptions():
     # input options
     parser.add_option('',   '--theoryMass',dest='THEORY_MASS',    type='string',default='125.38',   help='Mass value for theory prediction')
     parser.add_option('',   '--year',  dest='YEAR',  type='string',default='',   help='Year -> 2016 or 2017 or 2018 or Full')
+    parser.add_option('',   '--interpolation', action='store_true', dest='INTER', default=False, help='Calculate acceptances at 124 and 126 GeV')
 
     # store options and arguments as global variables
     global opt, args
@@ -29,18 +34,15 @@ parseOptions()
 
 
 _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'])
-if(opt.YEAR=='Run3'):
-    higgs_xs = _temp.higgs_xs_136TeV
-else:
-    higgs_xs = _temp.higgs_xs
+higgs_xs = _temp.higgs_xs_136TeV
 higgs4l_br = _temp.higgs4l_br
 
-HCOMB_NAMES = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'njets_pt30_eta4p7': 'NJ', 'mass4l': 'mass4l'}
-DECAY_OBS = ['D0m','Dcp','D0hp','Dint','DL1','DL1Zg','costhetaZ1','costhetaZ2','costhetastar','phi','phistar','massZ1','massZ2']
+HCOMB_NAMES = {'mass4l': 'mass4l', 'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'pTj2': 'pTj2', 'Nj': 'Nj', 'mjj': 'mjj', 'absdetajj': 'absdetajj', 'dphijj': 'dphijj', 'mHj': 'mHj', 'pTHj': 'pTHj', 'pTHjj': 'pTHjj', 'TCjmax': 'TCjmax', 'TBjmax': 'TBjmax', 'costhetaZ1': 'costhetaZ1', 'costhetaZ2': 'costhetaZ2', 'costhetastar': 'costhetastar', 'phi': 'phi', 'phi1': 'phi1', 'massZ1': 'massZ1', 'massZ2': 'massZ2', 'rapidity4l_pT4l': 'rapidity4l_pT4l', 'Nj_pT4l': 'Nj_pT4l', 'pT4l_pTHj': 'pT4l_pTHj', 'massZ1_massZ2': 'massZ1_massZ2', 'pTj1_pTj2': 'pTj1_pTj2', 'absdetajj_mjj': 'absdetajj_mjj', 'TCjmax_pT4l': 'TCjmax_pT4l'}
+DECAY_OBS = ['costhetaZ1','costhetaZ2','costhetastar','phi','phi1','massZ1','massZ2']
 CHANNELS = ['4l', '2e2mu']
 
 
-FITS_PATH = '../combine_files'
+FITS_PATH = path['eos_path']+'combine_files/'
 PVAL_PATH = '../pvalues'
 
 def checkDir(folder_path):
@@ -70,7 +72,7 @@ class pvalue():
         #DataSMCompat_{self.obs_name}.MultiDimFit.mH125.38.root'
         # if self.obs_name in HCOMB_NAMES: fname = fname.replace(self.obs_name, HCOMB_NAMES[self.obs_name])
         self.nll = uproot.open(fname)['limit'].arrays()
-        self.nll = self.nll[b'deltaNLL'][1]
+        self.nll = self.nll['deltaNLL'][1]
         
     def set_pvalue(self):
         _cdf = self.chi2pdf.cdf(2*self.nll)
@@ -86,11 +88,11 @@ class Observable():
 
         self.nr_bins = int(len(self.bins))
 
-        self.get_bins_centers()
+        #self.get_bins_centers()
         self.set_acceptance(obs)
         
     def get_bins(self, obs):
-        self.bins = binning.binning_v2(obs)
+        self.bins = binning.binning_v2(obs.replace("_", " vs "))
         
     def nr_bins(self):
         self.n_bins = len(self.bins)
@@ -113,8 +115,17 @@ class Observable():
         self.dsigmas = dsigmas
         
     def set_acceptance(self, obs):
-        acc = __import__('inputs_sig_'+obs+'_'+opt.YEAR, globals(), locals(), ['acc'])
-        self.acceptance = acc.acc
+        if opt.INTER:
+            fname = path['eos_path']+'inputs/inputs_sig_extrap_'+obs+'_'+opt.YEAR+".py"
+        else:
+            fname = path['eos_path']+'inputs/inputs_sig_'+obs+'_'+opt.YEAR+".py"
+
+        module_name = os.path.splitext(os.path.basename(fname))[0]
+        spec = importlib.util.spec_from_file_location(module_name, fname)
+        _temp = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_temp)
+
+        self.acceptance = _temp.acc
         
 class XSEC():
     def __init__(self, obs, mh):
@@ -369,10 +380,18 @@ def fill(_file, _obs, _commands):
 
 if __name__ == '__main__':
 
+  #mass4l = ['mass4l']
+  #leps = ['pT4l', 'rapidity4l'] 
+  #angles = ['massZ1', 'massZ2','costhetaZ1', 'costhetaZ2', 'costhetastar', 'phi', 'phi1']
+  #jets = ['pTj1', 'pTj2', 'Nj', 'mjj', 'absdetajj','dphijj', 'mHj', 'pTHj', 'pTHjj', 'TCjmax', 'TBjmax']
+  #doubles = ['rapidity4l_pT4l', 'Nj_pT4l', 'pT4l_pTHj', 'massZ1_massZ2', 'pTj1_pTj2', 'absdetajj_mjj']
+
+  vars = ['TCjmax_pT4l']
+
   dump_file = open('pval_cmds.txt','w')
 
   # for ver, ch, _obs in product(['v3', 'v4'], CHANNELS, binning.BINS):
-  for ver, ch, _obs in product(['v3'], CHANNELS, ['rapidity4l', 'pT4l', 'mass4l']):
+  for ver, ch, _obs in product(['v3'], CHANNELS, vars):
     if ((ver=='v3') & (ch=='2e2mu')): continue
     if ((ver=='v4') & (_obs not in DECAY_OBS)): continue
     # if 'mass4l' in _obs: continue
@@ -402,7 +421,8 @@ if __name__ == '__main__':
   table.write_header()
 
   # for ver, ch, _obs in product(['v3', 'v4'], CHANNELS, binning.BINS):
-  for ver, ch, _obs in product(['v3'], CHANNELS, ['rapidity4l', 'pT4l', 'mass4l']):
+
+  for ver, ch, _obs in product(['v3'], CHANNELS, vars):
     if ((ver=='v3') & (ch=='2e2mu')): continue
     if ((ver=='v4') & (_obs not in DECAY_OBS)): continue
     # if 'mass4l' in _obs: continue
@@ -416,9 +436,10 @@ if __name__ == '__main__':
   table.write_footer()
 
   latex_table.close()
-
+'''
   for ch in ["4e", "4mu", "2e2mu"]:
       _obs = "mass4l"
       combine_file = f"DataSMCompat_mass4l_v2_{ch}"
       pval = round(pvalue(_obs,combine_file).pval,2)
       print(f"{_obs} ({ver}) SM compatibility with p-val ({ch}) = {pval}")
+'''

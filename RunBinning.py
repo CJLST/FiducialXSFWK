@@ -341,7 +341,7 @@ def ratio(year): # 2022 from HIG 24 13, 2023 from SPENCER
     elif year == "2024": 
         OS_SS = np.array([
             0.997,   # 4e
-            1.051,  # 4mu
+            1.028,  # 4mu
             1.051,   # 2e2mu
             1.024,  # 2mu2e
             ])

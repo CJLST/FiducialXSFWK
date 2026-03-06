@@ -224,7 +224,6 @@ def nonFid(obs_bins, obs_name, label):
 
         file_path = os.path.join(path['eos_path'], "inputs", fname)
         module_name = fname.replace(".py", "")
-
         _temp = load_module_from_path(file_path, module_name)
 
         outinratio = _temp.outinratio

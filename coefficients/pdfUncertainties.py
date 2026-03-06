@@ -239,7 +239,7 @@ def get_th_xsec(process, obs_gen, suffix, year, doubleDiff, channel, obs_gen_2nd
         "GENmassZ1": "massZ1", "GENmassZ2": "massZ2", "GENpTj1": "pTj1",
         "GENpTj2": "pTj2", "GENmjj": "mjj", "GENabsdetajj": "absdetajj",
         "GENdphijj": "dphijj", "GENmHj":  "mHj", "GENpTHj": "pTHj",
-        "GENpTHjj": "pTHjj", "GENNj": "Nj", "GENTBjMax": "TBjmax", "GENTCjMax": "TCjmax"
+        "GENpTHjj": "pTHjj", "GENNj": "Nj", "GENTBjMax": "TBjmax", "GENTCjMax": "TCjmax",
     }
 
     obs_name = obs_name_dict[obs_gen]
@@ -619,7 +619,7 @@ def _write_combined_4e4mu_module(process, obs_name, suffix, out_year, era_to_rea
 
 if __name__ == '__main__':
 
-    SPECIAL_OBS = {'massZ1','massZ2','costhetaZ1','costhetaZ2','costhetastar','phi','phi1'}
+    SPECIAL_OBS = { } #{'massZ1','massZ2','costhetaZ1','costhetaZ2','costhetastar','phi','phi1'}
 
     # spencer
 
@@ -663,7 +663,7 @@ if __name__ == '__main__':
 
     channels = ['4l']
 
-    if opt.OBSNAME == 'mass4l':
+    if opt.OBSNAME == 'mass4l' or opt.OBSNAME == 'mass4l_zzfloating':
         channels = ['2e2mu', '4e', '4mu', '4l']
     elif opt.OBSNAME in SPECIAL_OBS:
         # we must compute 4e and 4mu so we can build 4e4mu later
@@ -940,7 +940,7 @@ if __name__ == '__main__':
                         save_uncertainties(process,  obs_gen, False, opt.YEAR, years, unc, h, channel, False)
 
                 # NEW: after producing merged 4e and 4mu modules, make 4e4mu
-                if (opt.OBSNAME in SPECIAL_OBS) and (opt.OBSNAME != 'mass4l') and (channel == '4mu'):
+                if (opt.OBSNAME in SPECIAL_OBS) and (opt.OBSNAME != 'mass4l' and opt.OBSNAME != 'mass4l_zzfloating') and (channel == '4mu'):
 
                     # process name + suffix must match what save_uncertainties() wrote
                     if process.startswith("NNLOPS_"):
@@ -974,7 +974,7 @@ if __name__ == '__main__':
             for year in years:
 
                 # ---- run the needed channels ----
-                if opt.OBSNAME == 'mass4l':
+                if opt.OBSNAME == 'mass4l' or opt.OBSNAME == 'mass4l_zzfloating':
                     run_channels = ['2e2mu','4e','4mu','4l']  # unchanged
                 elif opt.OBSNAME in SPECIAL_OBS:
                     run_channels = ['2e2mu','4e','4mu','4l']  # needed to build 4e4mu
@@ -991,7 +991,7 @@ if __name__ == '__main__':
                         save_uncertainties(proc_nom, obs_gen, use_NNLOPS_flag, opt.YEAR, year, unc, h, channel, False)
 
                 # ---- NEW: build combined 4e4mu only for special obs (NOT mass4l) ----
-                if (opt.OBSNAME in SPECIAL_OBS) and (opt.OBSNAME != 'mass4l'):
+                if (opt.OBSNAME in SPECIAL_OBS) and (opt.OBSNAME != 'mass4l' and opt.OBSNAME != 'mass4l_zzfloating'):
                     suffix = "NNLOPS_" if (proc_nom == "ggH125" and use_NNLOPS_flag) else ""
                     _write_combined_4e4mu_module(
                         process=proc_nom,

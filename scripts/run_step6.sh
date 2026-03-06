@@ -5,12 +5,13 @@ source setup.sh
 cmsenv
 
 obsName="${1//_/' vs '}"
+#obsName="$1"
 year="$2"
 
 cd FiducialXSFWK/fit
 
-python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year"
-python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --nnlops
+python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --interpolation
+python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --nnlops --interpolation
 
 cd ../coefficients
 
@@ -20,6 +21,6 @@ cd ..
 
 obsName="$1"
 
-python3 py_to_json.py $obsName $year
+python3 py_to_json.py $obsName $year 
 
-python3 differential_plotting.py --variables "$obsName" --config-json jsons/${obsName}_results_${year}.json --year "$year"
+python3 differential_plotting.py --variables "$obsName" --config-json jsons/${obsName}_results_${year}.json --year "$year" --no-preliminary

@@ -9,3 +9,4 @@ obsName="${1//_/' vs '}"
 year="$2"
 
 python3 impacts.py --obsName "$obsName" --year "$year" --interpolation
+python3 impacts.py --obsName "$obsName" --year "$year" --interpolation --unblind

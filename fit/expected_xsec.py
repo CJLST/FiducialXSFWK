@@ -63,10 +63,7 @@ def exp_xsec():
 
     #_temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
     _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], 0) # spencer
-    if(opt.YEAR=='Run3'):
-        higgs_xs = _temp.higgs_xs_136TeV
-    else:
-        higgs_xs = _temp.higgs_xs
+    higgs_xs = _temp.higgs_xs_136TeV
     higgs4l_br = _temp.higgs4l_br
 
     #if opt.SPLIT:

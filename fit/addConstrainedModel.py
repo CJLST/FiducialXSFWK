@@ -96,11 +96,7 @@ binfrac_wrongfrac = _temp.binfrac_wrongfrac
 # _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs4l_br','higgs_xs'], -1)
 #_temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
 _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], 0) # spencer    
-
-if('2022' in opt.YEAR or '2023' in opt.YEAR):
-    higgs_xs = _temp.higgs_xs_136TeV
-else:
-    higgs_xs = _temp.higgs_xs
+higgs_xs = _temp.higgs_xs_136TeV
 higgs4l_br = _temp.higgs4l_br
 higgs4l_br['125.38_4l'] = higgs4l_br['125.38_2e2mu']+higgs4l_br['125.38_4e']+higgs4l_br['125.38_4mu']
 

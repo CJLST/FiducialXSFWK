@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import importlib.util
 import itertools
+import subprocess
 
 sys.path.append('../helperstuff/')
 from paths import path
@@ -41,7 +42,6 @@ def parseOptions():
     parser.add_option('',   '--year',  dest='YEAR',  type='string',default='2022',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--ZZfloating',action='store_true', dest='ZZ',default=False, help='Let ZZ normalisation to float')
     parser.add_option('',   '--interpolation', action='store_true', dest='INTER', default=False, help='Calculate acceptances at 124 and 126 GeV')
-    parser.add_option('',   '--NOK1K2',action='store_true', dest='NOK1K2',default=False, help='remove K1 K2 parameters')
 
     # Unblind option
     parser.add_option('',   '--unblind', action='store_true', dest='UNBLIND', default=False, help='Use real data')
@@ -56,25 +56,27 @@ def parseOptions():
 parseOptions()
 
 # Define function for processing of os command
-def processCmd(cmd, quiet = 0):
-    output = '\n'
-    p = Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT, bufsize=-1)
-    for line in iter(p.stdout.readline, ''):
-        output=output+str(line)
-        #print(line,)
-    p.stdout.close()
-    if p.wait() != 0:
-        raise RuntimeError("%r failed, exit status: %d" % (cmd, p.returncode))
-    return output
+def processCmd(cmd, quiet=False):
+    print(cmd, "\n")
+    res = subprocess.run(
+        cmd,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,              # <-- decode to str
+        bufsize=1
+    )
+    if res.returncode != 0:
+        raise RuntimeError(f"{cmd!r} failed, exit status: {res.returncode}\n{res.stdout}")
+    if not quiet:
+        print(res.stdout)
+    return res.stdout
 
 def RunCombineCorrelation():
     _th_MH = opt.THEORYMASS
 
     _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'])
-    if(opt.YEAR=="Run3"):
-        higgs_xs = _temp.higgs_xs_136TeV
-    else:
-        higgs_xs = _temp.higgs_xs
+    higgs_xs = _temp.higgs_xs_136TeV
     higgs4l_br = _temp.higgs4l_br
 
 
@@ -102,7 +104,7 @@ def RunCombineCorrelation():
 
         if physicalModel == 'v4': #More granular 2e2mu and 4l bin-by-bin decomposition
             # ----- 2e2mu -----
-            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ' +path['eos_path']+'combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v4_'+str(opt.YEAR)+'.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 --saveInactivePOI=1 --robustHesse 1 --robustHesseSave 1 --setParameterRanges '
+            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ' '../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v4_'+str(opt.YEAR)+'.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 --saveInactivePOI=1 --robustHesse 1 --robustHesseSave 1 --setParameterRanges '
 
             for obsBin in range(nBins):
                 cmd += 'r2e2muBin'+str(obsBin)+'=0.0,2.5:r4lBin'+str(obsBin)+'=0.0,2.5:'
@@ -152,7 +154,7 @@ def RunCombineCorrelation():
                 _obsName[obsName] = obsName
             fitName = _obsName[obsName]
 
-            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ' +path['eos_path']+'combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)+'.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 --robustHesse 1 --robustHesseSave 1 --setParameterRanges '
+            cmd = 'combine -n _'+obsName+'_'+physicalModel+' -M MultiDimFit ' '../combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_v3_'+str(opt.YEAR)+'.root -m 125.38 --freezeParameters MH --floatOtherPOIs=1 --saveWorkspace --algo=singles --cminDefaultMinimizerStrategy 0 --robustHesse 1 --robustHesseSave 1 --setParameterRanges '
             for obsBin in range(nBins):
                 cmd += 'r_smH_'+fitName+'_'+str(obsBin)+'=0.0,5.0:'
             cmd = cmd[:-1]

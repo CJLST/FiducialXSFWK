@@ -44,7 +44,7 @@ def _mass4l_json_paths(config_json_path: str, era: str):
     ]
 
 
-def load_mass4l_final_states(inclusive_mass4l_json_path: str, era: str):
+def load_mass4l_final_states(var: str, inclusive_mass4l_json_path: str, era: str):
     """
     Read 4 JSON files (4l, 2e2mu, 4mu, 4e) and return:
       - a combined config dict where exp_xs/uncs are arrays length 4
@@ -58,9 +58,12 @@ def load_mass4l_final_states(inclusive_mass4l_json_path: str, era: str):
     for p in paths:
         with open(p, "r") as f:
             js = json.load(f)
-        if "mass4l" not in js:
-            raise KeyError(f"'mass4l' key not found in {p}")
-        per_fs.append(js["mass4l"])
+        if "mass4l" not in js and "mass4l_zzfloating" not in js:
+            raise KeyError(f"'mass4l' or 'mass4l_zzfloating' key not found in {p}")
+        if var == "mass4l":
+            per_fs.append(js["mass4l"])
+        if var == "mass4l_zzfloating":
+            per_fs.append(js["mass4l_zzfloating"])
 
     # Build arrays of length 4 from the single-entry lists in each JSON
     def one(x):  # each x is like [3.02]
@@ -142,8 +145,8 @@ for variable in variable_list:
     # build a list of (label, current_config, out_suffix) to plot
     plot_jobs = []
 
-    if variable == "mass4l":
-        current_config, bins_plot, bins_c, bin_w = load_mass4l_final_states(args.config_json, args.YEAR)
+    if variable == "mass4l" or variable == "mass4l_zzfloating":
+        current_config, bins_plot, bins_c, bin_w = load_mass4l_final_states(variable, args.config_json, args.YEAR)
         plot_jobs = [("mass4l", current_config, "")]  # keep your mass4l special treatment
 
     elif variable in SPECIAL_OBS:
@@ -169,7 +172,7 @@ for variable in variable_list:
 
         vars = ['fidXS', 'fidXS_scale_up', 'fidXS_scale_dn', 'fidXS_pdf_up', 'fidXS_pdf_dn', 'fidXS_alpha_up', 'fidXS_alpha_dn', 'Boundaries']
 
-        if variable != "mass4l":
+        if variable != "mass4l" and variable != "mass4l_zzfloating":  
             ggh_xs = __import__(current_config['ggh_xs'], globals(), locals(), vars)
             if doubleDiff:
                 bin_number = len(ggh_xs.Boundaries)
@@ -188,7 +191,7 @@ for variable in variable_list:
             bin_w = np.array([bins_plot[k+1]-bins_plot[k] for k in range(len(bins_plot)-1)])
         # else: mass4l already set bins_plot/bins_c/bin_w (categorical)
             
-        if variable == "mass4l":
+        if variable == "mass4l" or variable == "mass4l_zzfloating":
             per_fs = current_config["_per_fs_configs"]
 
             def import_mode_array(mode_key):
@@ -290,7 +293,7 @@ for variable in variable_list:
             #ggh_no_nnlops_xs = __import__(current_config['ggh_no_nnlops_xs'], globals(), locals(), vars)
             #ggh_no_nnlops_xs_norm = np.array(ggh_no_nnlops_xs.fidXS) / bin_w
             
-            if variable == "pTj1" or variable == "pTj2" or variable == "mjj" or variable == "absdetajj" or variable == "dphijj" or variable == "pTHj" or variable == "pTHjj" or variable == "mHj":
+            if variable == "pTj1" or variable == "pTj2" or variable == "mjj" or variable == "absdetajj" or variable == "dphijj" or variable == "pTHj" or variable == "pTHjj" or variable == "mHj" or variable == "TCjmax" or variable == "TBjmax":
                 ggh_xs_norm[0] = ggh_xs_norm[0] * bin_w[0]
                 vbf_xs_norm[0] = vbf_xs_norm[0] * bin_w[0]
                 vh_xs_norm[0] = vh_xs_norm[0] * bin_w[0]
@@ -341,7 +344,7 @@ for variable in variable_list:
             #unc_th_no_nnlops_up = np.sqrt((np.sqrt(np.sum(np.square(no_nnlops_up), axis=0)) / (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']))**2 + 0.02**2 ) * (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']) / bin_w
             #unc_th_no_nnlops_dn = np.sqrt((np.sqrt(np.sum(np.square(no_nnlops_dn), axis=0)) / (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']))**2 + 0.02**2 ) * (xs['ggh']+xs['vbf']+xs['vh']+xs['tth']) / bin_w
         
-        if variable == "pTj1" or variable == "pTj2" or variable == "mjj" or variable == "absdetajj" or variable == "dphijj" or variable == "pTHj" or variable == "pTHjj" or variable == "mHj":
+        if variable == "pTj1" or variable == "pTj2" or variable == "mjj" or variable == "absdetajj" or variable == "dphijj" or variable == "pTHj" or variable == "pTHjj" or variable == "mHj" or variable == "TCjmax" or variable == "TBjmax":
             unc_th_up[0] = unc_th_up[0] * bin_w[0]
             unc_th_dn[0] = unc_th_dn[0] * bin_w[0]
             unc_th_powheg_up[0] = unc_th_powheg_up[0] * bin_w[0]
@@ -371,7 +374,7 @@ for variable in variable_list:
         sys_down = np.sqrt(np.array(err_down)**2 - np.array(stat_down)**2)
 
 
-        if variable == "pTj1" or variable == "pTj2" or variable == "mjj" or variable == "absdetajj" or variable == "dphijj" or variable == "pTHj" or variable == "pTHjj" or variable == "mHj": # or variable == "TBjmax" or variable == "TCjmax":
+        if variable == "pTj1" or variable == "pTj2" or variable == "mjj" or variable == "absdetajj" or variable == "dphijj" or variable == "pTHj" or variable == "pTHjj" or variable == "mHj" or variable == "TBjmax" or variable == "TCjmax":
             exp_xs[0] = current_config['exp_xs'][0]
             
         
@@ -431,14 +434,15 @@ for variable in variable_list:
         #    plt.gca().add_patch(plt.Rectangle((center + width/3.6, value - err_low), width/8, err_low + err_high, fill=False, lw=0, color='tab:purple', hatch='////'))
 
         # Plot data
-        #plt.errorbar(bins_c, exp_xs , yerr=[err_down,err_up], marker = 'o', linestyle = 'None', color = 'k', linewidth = 2, ms=5, capsize=4, label=r'Data (stat $\oplus$ sys unc.)')
-        plt.errorbar(bins_c, exp_xs , yerr=[err_down,err_up], marker = 'o', linestyle = 'None', color = 'k', linewidth = 2, ms=5, capsize=4, label=r' Toy Data (stat $\oplus$ sys unc.)') 
+        plt.errorbar(bins_c, exp_xs , yerr=[err_down,err_up], marker = 'o', linestyle = 'None', color = 'k', linewidth = 2, ms=5, capsize=4, label=r'Data (stat $\oplus$ sys unc.)')
+        #plt.errorbar(bins_c, exp_xs , yerr=[err_down,err_up], marker = 'o', linestyle = 'None', color = 'k', linewidth = 2, ms=5, capsize=4, label=r' Toy Data (stat $\oplus$ sys unc.)') 
         plt.errorbar(bins_c, exp_xs , yerr=[sys_down,sys_up], marker = 'None', linestyle = 'None', color = 'red', linewidth = 6, ms=5, capsize=4, label='Systematic Uncertainty')
         
         # custom settings
 
         var_map = {
             "mass4l": r"m_{4\ell}",
+            "mass4l_zzfloating": r"m_{4\ell}^{\text{ZZ floating}}",
             "pT4l": r"p^T_{H}",
             "rapidity4l": r"|y_{H}|",
             "massZ1": r"m_{Z1}",
@@ -471,7 +475,7 @@ for variable in variable_list:
 
         var = var_map.get(current_config["variable"], current_config["variable"])  # fallback to variable name if not found
         
-        if variable == "mass4l":
+        if variable == "mass4l" or variable == "mass4l_zzfloating":
             plt.ylabel(r"$\sigma_{\text{fid}}$ (fb)", fontsize=20)
         elif doubleDiff:
             plt.ylabel(r"$d^2\sigma_{\text{fid}} / d" + var + r"\;" + current_config["y_unit"] + "$", fontsize=20)
@@ -563,7 +567,7 @@ for variable in variable_list:
             plt.axvline(x=30, color='black', ls='dashed', lw=1, alpha=1)
         '''
 
-        if variable == "mass4l":
+        if variable == "mass4l" or variable == "mass4l_zzfloating":
             custom_xtick_labels = ['$4\ell$', '$2e2\mu$', '$4\mu$', '$4e$']
             custom_xticks = [0.5, 1.5, 2.5, 3.5]
             plt.ylabel(r'$\sigma_{{fid}}$ (fb)', fontsize=20)
@@ -712,5 +716,6 @@ for variable in variable_list:
         # Save the plot to a file
         #plt.savefig(f"./Plots/{current_config['output_name']}.pdf", bbox_inches='tight', dpi=120)
         plt.savefig(f"{path['plots_path']}PLOTS/{current_config['output_name']}{out_suffix}.pdf", bbox_inches='tight', dpi=120)
+        plt.savefig(f"{path['plots_path']}PLOTS/{current_config['output_name']}{out_suffix}.png", bbox_inches='tight', dpi=120)
             
     

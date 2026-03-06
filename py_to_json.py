@@ -12,6 +12,8 @@ from paths import path
 #SPECIAL_OBS = {"massZ1","massZ2","costhetaZ1","costhetaZ2","costhetastar","phi","phi1"}
 SPECIAL_OBS = {}
 
+UNBLIND = True
+
 def load_results(file_path):
     # Dynamically import the Python file to get the 'resultsXS' dictionary
     spec = importlib.util.spec_from_file_location("results_module", file_path)
@@ -56,16 +58,21 @@ def parse_results(channel, variable_name, year):
         #   2e2mu -> v4 2e2mu
         #   4e+4mu -> v4 4l
         if channel == "4l":
-            input_file = f'LHScans/resultsXS_LHScan_expected_{variable_name}_v3.py'
+            if (UNBLIND): input_file = f'LHScans/resultsXS_LHScan_observed_{variable_name}_v3.py'
+            else: input_file = f'LHScans/resultsXS_LHScan_expected_{variable_name}_v3.py'
         elif channel in ("2e2mu", "4e4mu"):
-            input_file = f'LHScans/resultsXS_LHScan_expected_{variable_name}_v4.py'
+            if (UNBLIND): input_file = f'LHScans/resultsXS_LHScan_observed_{variable_name}_v4.py'
+            else: input_file = f'LHScans/resultsXS_LHScan_expected_{variable_name}_v4.py'
         else:
             raise ValueError(f"Unsupported channel for SPECIAL_OBS: {channel}")
 
-    elif variable_name == "mass4l":
-        input_file = f'LHScans/resultsXS_LHScan_expected_{variable_name}_v3.py' if channel == "4l" else f'LHScans/resultsXS_LHScan_expected_{variable_name}_v2.py'
+    elif variable_name == "mass4l" or variable_name == "mass4l_zzfloating":
+        if (UNBLIND): input_file = f'LHScans/resultsXS_LHScan_observed_{variable_name}_v3.py' if channel == "4l" else f'LHScans/resultsXS_LHScan_observed_{variable_name}_v2.py'
+        else: input_file = f'LHScans/resultsXS_LHScan_expected_{variable_name}_v3.py' if channel == "4l" else f'LHScans/resultsXS_LHScan_expected_{variable_name}_v2.py'
+
     else:
-        input_file = f'LHScans/resultsXS_LHScan_expected_{variable_name}_v3.py' if channel == "4l" else f'LHScans/resultsXS_LHScan_expected_{variable_name}_v2.py'
+        if (UNBLIND): input_file = f'LHScans/resultsXS_LHScan_observed_{variable_name}_v3.py' if channel == "4l" else f'LHScans/resultsXS_LHScan_observed_{variable_name}_v2.py'
+        else: input_file = f'LHScans/resultsXS_LHScan_expected_{variable_name}_v3.py' if channel == "4l" else f'LHScans/resultsXS_LHScan_expected_{variable_name}_v2.py'
 
     if not os.path.exists(input_file):
         print(f"Error: File '{input_file}' not found")
@@ -87,12 +94,12 @@ def parse_results(channel, variable_name, year):
                             if k.startswith(f"SM_125_{variable_name}_{v4ch}_genbin")
                             and "_statOnly" not in k])
 
-    elif variable_name == "mass4l" and channel != "4l":
+    elif (variable_name == "mass4l" or variable_name == "mass4l_zzfloating") and channel != "4l":
         num_bins = 1
     else:
         num_bins = len([k for k in resultsXS if k.startswith(f"SM_125_{variable_name}_genbin") and "_statOnly" not in k])
 
-    if "_" in variable_name:
+    if "_" in variable_name and variable_name != "mass4l_zzfloating":
         bins, doubleDiff = binning(variable_name.split("_")[0] + " vs " + variable_name.split("_")[1])
     else:
         bins, doubleDiff = binning(variable_name)
@@ -100,7 +107,7 @@ def parse_results(channel, variable_name, year):
     exp_xs, err_up, err_down = [], [], []
     stat_up, stat_down = [], []
 
-    if variable_name == "mass4l" and channel != "4l":
+    if (variable_name == "mass4l" or variable_name == "mass4l_zzfloating") and channel != "4l":
         # unchanged mass4l special handling
         key = f"SM_125_{variable_name}_{channel}_genbin0"
         stat_key = f"{key}_statOnly"
@@ -193,8 +200,15 @@ def parse_results(channel, variable_name, year):
             y_lim_top = 6
             x_unit = ""
             y_unit = " (fb)"
+        elif variable_name == "mass4l_zzfloating":
+            do_log = 0
+            x_lim = [0, 4]
+            y_lim_bottom = 0
+            y_lim_top = 6
+            x_unit = ""
+            y_unit = " (fb)"
         elif variable_name == "pT4l":
-            x_lim = [0, 280]
+            x_lim = [0, 200]
             y_lim_bottom = 1e-4
             y_lim_top = 5
         elif variable_name == "rapidity4l":
@@ -264,6 +278,9 @@ def parse_results(channel, variable_name, year):
 
     channel_tag = _theory_suffix(variable_name, channel)
 
+    if (UNBLIND): data = 1
+    else: data = 0
+
     return {
         variable_name: {
             "ggh_xs": f"fidXS_NNLOPS_{variable_name}_ggH{channel_tag}_{year}",
@@ -278,7 +295,7 @@ def parse_results(channel, variable_name, year):
             "stat_up": stat_up,
             "stat_down": stat_down,
             "output_name": variable_name,
-            "is_data": 0,
+            "is_data": data,
             "last_bin_center": last_bin_center,
             "first_bin_center": first_bin_center,
             "plot_log": do_log,
@@ -294,6 +311,7 @@ def parse_results(channel, variable_name, year):
     }
 
 def main():
+
     if len(sys.argv) != 3:
         print("Usage: python py_to_json.py <variable_name> <year>")
         sys.exit(1)
@@ -301,7 +319,7 @@ def main():
     variable_name = sys.argv[1]
     year = sys.argv[2]
 
-    if variable_name == "mass4l":
+    if variable_name == "mass4l" or variable_name == "mass4l_zzfloating":
         channels = ["4l", "4e", "4mu", "2e2mu"]
     elif variable_name in SPECIAL_OBS:
         channels = ["4l", "2e2mu", "4e4mu"]

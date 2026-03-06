@@ -6,6 +6,7 @@ cmsenv
 cd FiducialXSFWK/coefficients
 
 obsName="${1//_/' vs '}"
+#obsName="$1"
 year="$2"
 
 python3 RunCoefficients.py --obsName "$obsName" --year "$year" --split --interpolation --hypothesis "26"

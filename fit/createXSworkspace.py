@@ -95,10 +95,6 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
 
     recobin = "recobin"+str(obsBin)
 
-    print(recobin)
-    JES = False
-    doJES = False
-
     # Load some libraries
     ROOT.gSystem.AddIncludePath("-I$CMSSW_BASE/src/ ")
     ROOT.gSystem.Load("$CMSSW_BASE/lib/$SCRAM_ARCH/libHiggsAnalysisCombinedLimit.so") #Print 0 in case of succesfull loading
@@ -127,10 +123,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     # import h4l xs br
     #_temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], -1)
     _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], 0) # spencer
-    if('2022' in year):
-        higgs_xs = _temp.higgs_xs_136TeV #FIXME
-    else:
-        higgs_xs = _temp.higgs_xs
+    higgs_xs = _temp.higgs_xs_136TeV
     higgs4l_br = _temp.higgs4l_br
 
     #_temp = __import__('inputs_bkg_'+obsName+'_'+year, globals(), locals(), ['fractionsBackground'], -1)
@@ -1001,6 +994,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
         v2_flag = '_v2'
     else:
         v2_flag = ''
+        
     frac_qqzz = fractionsBackground['qqzz_'+channel+'_'+obsName+'_'+recobin+v2_flag]
     frac_qqzz_var  = ROOT.RooRealVar("frac_qqzz_"+recobin+"_"+channel+"_"+year,"frac_qqzz_"+recobin+"_"+channel+"_"+year, frac_qqzz);
 
@@ -1071,7 +1065,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
 
     os.chdir('../../../datacard/datacard_'+year)
 
-    binscale = 3
+    binscale = 5#3
     qqzzTemplateNew = ROOT.TH1F("qqzzTemplateNew","qqzzTemplateNew",binscale*qqzzTemplate.GetNbinsX(),qqzzTemplate.GetBinLowEdge(1),qqzzTemplate.GetBinLowEdge(qqzzTemplate.GetNbinsX()+1))
     for i in range(1,qqzzTemplate.GetNbinsX()+1):
         for j in range(binscale):
@@ -1114,11 +1108,24 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     if (year=="2023postBPix"): data_obs_file = ROOT.TFile(PATH + '/2023_Data/Data_eraD_postBPix_SKIMMED.root')
     if (year=="2024"): data_obs_file = ROOT.TFile(PATH + '/2024_Data/ZZ4lAnalysis_SKIMMED.root')
 
-    #data_obs_tree = data_obs_file.Get("SR")
     data_obs_tree = data_obs_file.Get("ZZTree/candTree")
 
-    print(obsName,obsBin_low,obsBin_high)
-    print(channel)
+    # --- make a temporary tree with Nj_d as a real branch (double) ---
+    df = ROOT.RDataFrame("ZZTree/candTree", data_obs_file)
+    df = df.Define("Nj_d", "double(Nj)")   # <-- replace Nj with your actual branch name
+
+    tmpname = f"tmp_cast_{year}.root"
+    df.Snapshot("candTree", tmpname)
+
+    tmpfile = ROOT.TFile.Open(tmpname)
+    data_obs_tree = tmpfile.Get("candTree")  # <-- use this from now on
+
+    # now tell RooFit to use Nj_d
+    print(obsName)
+    if obsName == "Nj" or obsName == "Nj_pT4l":                 # or your nJets condition
+        obsName_help = "Nj_d"
+        observable = ROOT.RooRealVar("Nj_d", "Nj_d", 0, 20)  # adjust range
+
     #chan = ROOT.RooRealVar("chan", "chan", 0, 3)
     # if (obsName == "nJets"): obsName = "njets_reco_pt30_eta4p7"
     Z1Flav = ROOT.RooRealVar("Z1Flav", "Z1Flav", -1000, 1000)

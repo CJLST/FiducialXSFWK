@@ -12,9 +12,9 @@ import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import importlib.util
 
-
-sys.path.append('../inputs/')
+from paths import path
 from higgs_xsbr_13TeV import *
 
 def parseOptions():
@@ -135,9 +135,10 @@ def PlotCorrelation():
         fig, ax = plt.subplots(figsize = (20, 10))
         ax.text(0., 1.005, r'$\bf{{CMS}}$', fontsize = 35, transform = ax.transAxes)
 
-        ax.text(0.7, 1.005, r'109 fb$^{-1}$ (13.6 TeV)', fontsize = 20, transform = ax.transAxes)
+        ax.text(0.7, 1.005, r'171 fb$^{-1}$ (13.6 TeV)', fontsize = 20, transform = ax.transAxes)
         ax.text(0.63, 0.9, r'H$\rightarrow$ ZZ', fontsize = 25, transform = ax.transAxes)
         ax.text(0.55, 0.85, r'm$_{\mathrm{H}}$ = 125.38 GeV', fontsize = 25, transform = ax.transAxes)
+        ax.text(0.55, 0.8, obsName, fontsize = 25, transform = ax.transAxes)
 
         mask = np.zeros_like(theMap)
         mask[np.triu_indices_from(mask, k = 1)] = True
@@ -175,10 +176,12 @@ def PlotCorrelation():
         #    #plt.savefig('/home/llr/cms/tarabini/CMSSW_10_2_13/src/HiggsAnalysis/FiducialXSFWK/plots/'+obsName+'/data/corr_'+obsName+'_'+physicalModel+'.png')
         #else:
         #    plt.savefig("corr_"+obsName+"_"+physicalModel+".pdf", bbox_inches="tight")
-        outdir = os.path.join(path['plots_path'], 'CORRELATION', obs_name, year)
+        outdir = os.path.join(path['plots_path'], 'CORRELATION', opt.YEAR)
         os.makedirs(outdir, exist_ok=True)
-        plt.savefig(os.path.join(outdir,'corr_%s_%s_%s.png' % (year, obs_name, fState)),bbox_inches='tight')
-        plt.savefig(os.path.join(outdir,'corr_%s_%s_%s.pdf' % (year, obs_name, fState)),bbox_inches='tight')
+        path_png = os.path.join(outdir, f'corr_{opt.YEAR}_{obsName}_{physicalModel}.png')
+        path_pdf = os.path.join(outdir, f'corr_{opt.YEAR}_{obsName}_{physicalModel}.pdf')
+        plt.savefig(path_png, bbox_inches='tight')
+        plt.savefig(path_pdf, bbox_inches='tight')
         plt.tight_layout()
         plt.close()
 
@@ -205,17 +208,10 @@ if opt.INTER:
 else:
     fname = path['eos_path']+'inputs/inputs_sig_'+obsName+'_'+opt.YEAR+".py"
 
-print(fname)
-
-if os.path.exists(fname):
-    modname = f"inputs_sig_{obsName}_{opt.YEAR}" 
-    spec = importlib.util.spec_from_file_location(modname, fname)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Could not load spec for {fname}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-else:
-    raise FileNotFoundError(fname)
+module_name = os.path.splitext(os.path.basename(fname))[0]
+spec = importlib.util.spec_from_file_location(module_name, fname)
+_temp = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(_temp)
 
 observableBins = _temp.observableBins
 acc = _temp.acc

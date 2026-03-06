@@ -391,7 +391,10 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     if zzfloating:
         # rateParam qqZZ floating
         if physicalModel == 'v3':
+            #min_range = 0
+            #file.write('zz_norm_'+str(obsBin)+' rateParam '+binName+' bkg_*zz '+str(expected_yield['ZZ_'+str(obsBin)])+' ['+str(min_range)+','+str(expected_yield['ZZ_'+str(obsBin)]+100)+']\n')
             file.write('zz_norm_'+str(obsBin)+' rateParam '+binName+' bkg_*zz '+str(expected_yield['ZZ_'+str(obsBin)])+' ['+str(expected_yield['ZZ_'+str(obsBin)]-100)+','+str(expected_yield['ZZ_'+str(obsBin)]+100)+']\n')
+
         elif physicalModel == 'v2':
             if channel == '2e2mu':
                 min_range = 0
@@ -436,28 +439,50 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
                 file.write('-\n') # ZX
 
     elif yearSetting == 'Run3':
+        if zzfloating:
+            # correlated Run-3 lumi nuisances
+            # lumi_13p6TeV_222324 (2022,2023,2024)
+            file.write('lumi_13p6TeV_222324 lnN ')
+            for i in range(nBins+2): 
+                # All except ZX
+                file.write(lumi[year]+' ')
+            file.write('- - -\n')
 
-        # correlated Run-3 lumi nuisances
-        # lumi_13p6TeV_222324 (2022,2023,2024)
-        file.write('lumi_13p6TeV_222324 lnN ')
-        for i in range(2*nBins+4): 
-            # All except ZX
-            file.write(lumi[year]+' ')
-        file.write('-\n')
+            # lumi_13p6TeV_2324 if applicable
+            if year in lumi_extra['lumi_13p6TeV_2324']:
+                file.write('lumi_13p6TeV_2324 lnN ')
+                for i in range(nBins+2):
+                    file.write(lumi_extra['lumi_13p6TeV_2324'][year]+' ')
+                file.write('- - -\n')
 
-        # lumi_13p6TeV_2324 if applicable
-        if year in lumi_extra['lumi_13p6TeV_2324']:
-            file.write('lumi_13p6TeV_2324 lnN ')
-            for i in range(2*nBins+4):
-                file.write(lumi_extra['lumi_13p6TeV_2324'][year]+' ')
+            # lumi_13p6TeV_2024 if applicable
+            if year in lumi_extra['lumi_13p6TeV_2024']:
+                file.write('lumi_13p6TeV_2024 lnN ')
+                for i in range(nBins+2):
+                    file.write(lumi_extra['lumi_13p6TeV_2024'][year]+' ')
+                file.write('- - -\n')
+        else:
+            # correlated Run-3 lumi nuisances
+            # lumi_13p6TeV_222324 (2022,2023,2024)
+            file.write('lumi_13p6TeV_222324 lnN ')
+            for i in range(nBins+4): 
+                # All except ZX
+                file.write(lumi[year]+' ')
             file.write('-\n')
 
-        # lumi_13p6TeV_2024 if applicable
-        if year in lumi_extra['lumi_13p6TeV_2024']:
-            file.write('lumi_13p6TeV_2024 lnN ')
-            for i in range(2*nBins+4):
-                file.write(lumi_extra['lumi_13p6TeV_2024'][year]+' ')
-            file.write('-\n')
+            # lumi_13p6TeV_2324 if applicable
+            if year in lumi_extra['lumi_13p6TeV_2324']:
+                file.write('lumi_13p6TeV_2324 lnN ')
+                for i in range(nBins+4):
+                    file.write(lumi_extra['lumi_13p6TeV_2324'][year]+' ')
+                file.write('-\n')
+
+            # lumi_13p6TeV_2024 if applicable
+            if year in lumi_extra['lumi_13p6TeV_2024']:
+                file.write('lumi_13p6TeV_2024 lnN ')
+                for i in range(nBins+4):
+                    file.write(lumi_extra['lumi_13p6TeV_2024'][year]+' ')
+                file.write('-\n')
 
     else:
 
@@ -473,10 +498,14 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
         else:
             file.write('lumi_13TeV_'+year+' lnN ')
 
-        # for i in range(nBins+4): # All except ZX
-        for i in range(2*nBins+4): # All except ZX
-            file.write(lumi[year]+' ')
-        file.write('-\n') # ZX
+        if zzfloating:
+            for i in range(nBins+2): # All except ZX
+                file.write(lumi[year]+' ')
+            file.write('- - -\n') # ZX
+        else:
+            for i in range(nBins+4): # All except ZX
+                file.write(lumi[year]+' ')
+            file.write('-\n') # ZX
 
             
     # Lepton efficiency
