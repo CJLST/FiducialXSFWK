@@ -167,22 +167,25 @@ def add_uncertainties(year, zzfloating, JES, eff_unc):
 
     if JES:
 
-        jesnames = ['Absolute','Absolute_year','BBEC1','BBEC1_year','EC2','EC2_year','FlavorQCD','HF','HF_year','RelativeBal','RelativeSample_year']
+        if year == "Run3": years_jes = ['2022', '2022EE', '2023preBPix', '2023postBPix', '2024']
 
+        jesnames = ['Absolute','Absolute_year','BBEC1','BBEC1_year','EC2','EC2_year','FlavorQCD','HF','HF_year','RelativeBal','RelativeSample_year']
+        
         jesuncs = []
 
         for name in jesnames:
-            if name.endswith('_year'):
-                if year == "2023preBPix":
-                    year_jes = "2023"
-                elif year == "2023postBPix":
-                    year_jes = "2023BPix"
+            for year_jes in years_jes:
+                if name.endswith('_year'):
+                    if year_jes == "2023preBPix":
+                        year_jes = "2023"
+                    elif year_jes == "2023postBPix":
+                        year_jes = "2023BPix"
+                    else:
+                        year_jes = year_jes 
+                    base = name.replace('_year','')
+                    jesuncs += [f'CMS_scale_j_{base}_{year_jes}']
                 else:
-                    year_jes = year 
-                base = name.replace('_year','')
-                jesuncs += [f'CMS_scale_j_{base}_{year_jes}']
-            else:
-                jesuncs.append(f'CMS_scale_j_{name}')
+                    jesuncs.append(f'CMS_scale_j_{name}')
 
         nuis += jesuncs
 
@@ -227,13 +230,13 @@ def produceDatacards(obsName, observableBins, ModelName, physicalmodel):
         for fState in fStates:
             if obsName != "mass4l":
                 for obsBin in range(nBins):
-                    ndata = createXSworkspace(obsName,fState, nBins, obsBin, observableBins, True, ModelName, physicalmodel, year, JES, opt.INTER, opt.NOK1K2, doubleDiff, opt.LOWER_BOUND, opt.UPPER_BOUND, opt.OBSNAME) #creates a statistical workspace for the observable and bin.
+                    ndata = createXSworkspace(obsName,fState, nBins, obsBin, observableBins, True, ModelName, physicalmodel, year, JES, opt.INTER, opt.NOK1K2, opt.ZZ, doubleDiff, opt.LOWER_BOUND, opt.UPPER_BOUND, opt.OBSNAME) #creates a statistical workspace for the observable and bin.
                     createDatacard(obsName, fState, nBins, obsBin, observableBins, physicalmodel, year, ndata, JES, opt.LOWER_BOUND, opt.UPPER_BOUND, opt.YEAR) #creates a datacard with the relevant signal and background info.
                     #createDatacard_ggH(obsName, fState, nBins, obsBin, observableBins, physicalmodel, year, ndata, JES, opt.LOWER_BOUND, opt.UPPER_BOUND, opt.YEAR)
                     if (opt.EFF_UNC): pdfUnc_matrices.run_pdf_unc_matrices(f"{path['eos_path']}inputs/inputs_sig_{obsName}_{year}.py", obsName, year, physicalmodel)
                     os.chdir('../datacard/datacard_'+year)
             else:
-                ndata = createXSworkspace(obsName,fState, nBins, 0, observableBins, True, ModelName, physicalmodel, year, JES, opt.INTER, opt.NOK1K2, doubleDiff, opt.LOWER_BOUND, opt.UPPER_BOUND, opt.OBSNAME)
+                ndata = createXSworkspace(obsName,fState, nBins, 0, observableBins, True, ModelName, physicalmodel, year, JES, opt.INTER, opt.NOK1K2, opt.ZZ, doubleDiff, opt.LOWER_BOUND, opt.UPPER_BOUND, opt.OBSNAME)
                 createDatacard(obsName, fState, nBins, 0, observableBins, physicalmodel, year, ndata, JES, opt.LOWER_BOUND, opt.UPPER_BOUND, opt.YEAR)
                 if (opt.EFF_UNC): pdfUnc_matrices.run_pdf_unc_matrices(f"{path['eos_path']}inputs/inputs_sig_{obsName}_{year}_ORIG.py", obsName, year, physicalmodel)
                 os.chdir('../datacard/datacard_'+year)
@@ -444,14 +447,17 @@ def runFiducialXS():
     else:
          obsName = opt.OBSNAME
          doubleDiff = False
+
     _th_MH = opt.THEORYMASS
     # prepare the set of bin boundaries to run over, it is retrieved from inputs file
     #_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins'], -1)
 
     if opt.INTER:
-        _temp = __import__('inputs_sig_extrap_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins'], 0) # spencer
+        if opt.ZZ:  _temp = __import__('inputs_sig_extrap_'+obsName.rsplit('_', 1)[0]+'_'+opt.YEAR, globals(), locals(), ['observableBins'], 0) # spencer
+        else: _temp = __import__('inputs_sig_extrap_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins'], 0) # spencer
     else:
-        _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins'], 0) # spencer
+        if opt.ZZ: _temp = __import__('inputs_sig_'+obsName.rsplit('_', 1)[0]+'_'+opt.YEAR, globals(), locals(), ['observableBins'], 0) # spencer
+        else: _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins'], 0) # spencer
 
     observableBins = _temp.observableBins
     print('Running Fiducial XS computation - '+obsName+' - bin boundaries: ', observableBins, '\n')
@@ -461,6 +467,11 @@ def runFiducialXS():
     _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'Nj'}
     if obsName not in _obsName:
         _obsName[obsName] = obsName
+
+    if opt.ZZ:
+        old_obsName = obsName
+        obsName += '_zzfloating'
+        _obsName[obsName] = _obsName[old_obsName] + '_zzfloating'
 
     # _fit_dir = os.getcwd()
 
@@ -497,7 +508,9 @@ def runFiducialXS():
         years_bis.append('2022_2023')
     for year in years_bis:
 
-        cmd = 'python3 addConstrainedModel.py -l -q -b --obsName="'+obsName+'" --year="'+year+'"'
+        if opt.ZZ: cmd = 'python3 addConstrainedModel.py -l -q -b --obsName="'+obsName.rsplit('_', 1)[0]+'" --year="'+year+'"'
+        else: cmd = 'python3 addConstrainedModel.py -l -q -b --obsName="'+obsName+'" --year="'+year+'"'
+
         if doubleDiff: cmd += ' --doubleDiff'
         if opt.INTER: cmd += ' --interpolation'
         print(cmd)
@@ -519,9 +532,11 @@ def runFiducialXS():
     #_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['acc'], -1)
 
     if opt.INTER:
-        _temp = __import__('inputs_sig_extrap_'+obsName+'_'+opt.YEAR, globals(), locals(), ['acc'], 0) # spencer
+        if opt.ZZ: _temp = __import__('inputs_sig_extrap_'+obsName.rsplit('_', 1)[0]+'_'+opt.YEAR, globals(), locals(), ['acc'], 0) # spencer
+        else: _temp = __import__('inputs_sig_extrap_'+obsName+'_'+opt.YEAR, globals(), locals(), ['acc'], 0) # spencer
     else:
-        _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['acc'], 0) # spencer
+        if opt.ZZ: _temp = __import__('inputs_sig_'+obsName.rsplit('_', 1)[0]+'_'+opt.YEAR, globals(), locals(), ['acc'], 0) # spencer
+        else: _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['acc'], 0) # spencer
 
     acc = _temp.acc
     
@@ -936,6 +951,7 @@ if (('pTj1' in obsName) | ('pTHj' in obsName) | ('mHj' in obsName) | ('pTj2' in 
     JES = True
 else:
     JES = False
+
 runFiducialXS()
 os.chdir(_fit_dir)
 if (os.path.exists('commands_'+obsName+'.py')):

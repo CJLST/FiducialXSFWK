@@ -33,6 +33,7 @@ def parseOptions():
     parser.add_option('',   '--year',  dest='YEAR',  type='string',default='2022',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--m4lLower',  dest='LOWER_BOUND',  type='int',default=105,   help='Lower bound for m4l')
     parser.add_option('',   '--m4lUpper',  dest='UPPER_BOUND',  type='int',default=160,   help='Upper bound for m4l')
+    parser.add_option('',   '--ZZfloating',action='store_true', dest='ZZ',default=False, help='Let ZZ normalisation to float')
     # store options and arguments as global variables
     global opt, args
     (opt, args) = parser.parse_args()
@@ -230,10 +231,13 @@ def GetFakeRate(lep_Pt, lep_eta, lep_ID):
         else: return g_FR_mu_EE.GetY()[bin]
 
 # Open Fake Rates files
-def openFR(year):
+def openFR(year, setting):
     
     if (year == "2022" or year == "2022EE" or year == "2023preBPix" or year == "2023postBPix" or year == "2024"):
-        fnameFR = path['eos_path_FR']+"FAKERATES/%s/FakeRates_SS_%s.root" % (year, year)
+        if setting == "inc":
+            fnameFR = path['eos_path_FR']+"FAKERATES/%s/FakeRates_SS_%s.root" % (year, year)
+        elif setting == "2j":
+            fnameFR = path['eos_path_FR']+"FAKERATES_2J/%s_2J/FakeRates_SS_%s.root" % (year, year)
     else:
         raise ValueError(f"ERROR: Unsupported year")
 
@@ -254,86 +258,168 @@ def findFSZX(df):
     df['FinState'] = [FindFinalState(x,y) for x,y in zip(df['Z1Flav'], df['Z2Flav'])]
     return df
 
-def comb(year):
-    if year == "2022": # 2022 from HIG 24 13, 2023 from SPENCER
-        cb_SS = np.array([
-            1.239, # 4e
-            1.093, # 4mu
-            1.057, # 2e2mu
-            1.254, # 2mu2e
-        ])
-    elif year == "2022EE":
-        cb_SS = np.array([
-            1.067, # 4e
-            1.015, # 4mu
-            1.049, # 2e2mu
-            0.905, # 2mu2e
-        ])
-    elif year == "2023preBPix":
-        cb_SS = np.array([
-            1.116, # 4e
-            1.036, # 4mu
-            0.989, # 2e2mu
-            1.141, # 2mu2e
-        ])
-    elif year == "2023postBPix":
-        cb_SS = np.array([
-            0.795, # 4e
-            1.025, # 4mu
-            1.074, # 2e2mu
-            1.078, # 2mu2e
-        ])
-    elif year == "2024": 
-        cb_SS = np.array([
-            0.787, # 4e
-            0.960, # 4mu
-            0.958, # 2e2mu
-            0.749, # 2mu2e
-        ])
+def comb(year, setting):
+    if setting == "inc":
+        if year == "2022": # 2022 from HIG 24 13, 2023 from SPENCER
+            cb_SS = np.array([
+                1.239, # 4e
+                1.093, # 4mu
+                1.057, # 2e2mu
+                1.254, # 2mu2e
+            ])
+        elif year == "2022EE":
+            cb_SS = np.array([
+                1.067, # 4e
+                1.015, # 4mu
+                1.049, # 2e2mu
+                0.905, # 2mu2e
+            ])
+        elif year == "2023preBPix":
+            cb_SS = np.array([
+                1.116, # 4e
+                1.036, # 4mu
+                0.989, # 2e2mu
+                1.141, # 2mu2e
+            ])
+        elif year == "2023postBPix":
+            cb_SS = np.array([
+                0.795, # 4e
+                1.025, # 4mu
+                1.074, # 2e2mu
+                1.078, # 2mu2e
+            ])
+        elif year == "2024": 
+            cb_SS = np.array([
+                0.787, # 4e
+                0.960, # 4mu
+                0.958, # 2e2mu
+                0.749, # 2mu2e
+            ])
+    elif setting == "2j":
+        # cb_SS
+        if year == "2022":
+            cb_SS = np.array([
+                1.220, 
+                1.125,
+                1.084,  
+                1.197,
+                ])  # 2022preEE OK
+        if year == "2022EE":
+            cb_SS = np.array([
+                1.184, # 4e
+                1.109, # 4mu
+                1.096, # 2e2mu
+                1.119, # 2mu2e
+                ])  # 2022EE OK
+        if year == "2023preBPix":
+            cb_SS = np.array([
+                1.275, 
+                1.116, 
+                1.114, 
+                1.269,
+                ])  # 2023preBPix OK
+        if year == "2023postBPix":
+            cb_SS = np.array([
+                1.256, # 4e
+                1.093, # 4mu
+                1.105, # 2e2mu
+                1.472, # 2mu2e
+                ])  # 2023postBPix OK
+        if year == "2024":
+            cb_SS = np.array([
+                1.156, # 4e
+                1.140, # 4mu
+                1.118, # 2e2mu
+                1.167, # 2mu2e
+                ])  # 2024 OK
+    else:
+        print("specify setting for cb_SS")
+
     return cb_SS
 
-def ratio(year): # 2022 from HIG 24 13, 2023 from SPENCER
-    if year == "2022":
-        OS_SS = np.array([
-            1.030,   # 4e
-            1.165,  # 4mu
-            0.966,   # 2e2mu
-            1.041,  # 2mu2e
-            ])
-    elif year == "2022EE":
-        OS_SS = np.array([
-            0.990,   # 4e
-            0.997,  # 4mu
-            1.039,   # 2e2mu
-            1.016,  # 2mu2e
-            ])
-    elif year == "2023preBPix":
-        OS_SS = np.array([
-            0.992,   # 4e
-            1.024,  # 4mu
-            1.102,   # 2e2mu
-            1.024,  # 2mu2e
-            ])
-    elif year == "2023postBPix":
-        OS_SS = np.array([
-            1.006,   # 4e
-            1.040,  # 4mu
-            1.078,   # 2e2mu
-            1.025,  # 2mu2e
-            ])
-    elif year == "2024": 
-        OS_SS = np.array([
-            0.997,   # 4e
-            1.028,  # 4mu
-            1.051,   # 2e2mu
-            1.024,  # 2mu2e
-            ])
+def ratio(year, setting): # 2022 from HIG 24 13, 2023 from SPENCER
+    if setting == "inc":
+        if year == "2022":
+            OS_SS = np.array([
+                1.030,   # 4e
+                1.165,  # 4mu
+                0.966,   # 2e2mu
+                1.041,  # 2mu2e
+                ])
+        elif year == "2022EE":
+            OS_SS = np.array([
+                0.990,   # 4e
+                0.997,  # 4mu
+                1.039,   # 2e2mu
+                1.016,  # 2mu2e
+                ])
+        elif year == "2023preBPix":
+            OS_SS = np.array([
+                0.992,   # 4e
+                1.024,  # 4mu
+                1.102,   # 2e2mu
+                1.024,  # 2mu2e
+                ])
+        elif year == "2023postBPix":
+            OS_SS = np.array([
+                1.006,   # 4e
+                1.040,  # 4mu
+                1.078,   # 2e2mu
+                1.025,  # 2mu2e
+                ])
+        elif year == "2024": 
+            OS_SS = np.array([
+                0.997,   # 4e
+                1.028,  # 4mu
+                1.051,   # 2e2mu
+                1.024,  # 2mu2e
+                ])
+    elif setting == "2j":
+            # fs_ROS_SS
+        if year == "2022":
+            OS_SS = np.array([
+                1.111, 
+                1.125, 
+                1.002,
+                1.090,
+                ])  # 2022preEE
+        if year == "2022EE":
+            OS_SS = np.array([
+                1.024,   # 4e
+                1.107,  # 4mu
+                1.227,   # 2e2mu
+                0.997,  # 2mu2e
+                ])  # 2022EE
+        if year == "2023preBPix":
+            OS_SS = np.array([
+                0.988, 
+                1.004, 
+                1.153, 
+                1.026,
+                ])  # 2023preBPix OK
+        if year == "2023postBPix":
+            OS_SS = np.array([
+                1.070,   # 4e
+                0.964,  # 4mu
+                1.624,   # 2e2mu
+                1.085,  # 2mu2e
+                ])  # 2023postBPix OK
+        if year == "2024":
+            OS_SS = np.array([
+                1.017,   # 4e
+                1.043,  # 4mu
+                1.028,   # 2e2mu
+                1.016,  # 2mu2e
+                ])  # 2024 OK
+    else:
+        print("specify setting for OS_SS")
+
     return OS_SS
 
 # Calculate yield for Z+X (data in CRZLL control region are scaled in signal region through yields)
-def ZXYield(df, year, year_mc):
-    cb_SS = comb(year_mc)
-    fs_ROS_SS = ratio(year_mc)
+def ZXYield(df, year, year_mc, setting):
+    cb_SS = comb(year_mc, setting)
+    fs_ROS_SS = ratio(year_mc, setting)
     vec = df.to_numpy()
     Yield = np.zeros(len(vec), float)
     for i in range(len(vec)):
@@ -344,7 +430,7 @@ def ZXYield(df, year, year_mc):
         Yield[i] = cb_SS[finSt] * fs_ROS_SS[finSt] * GetFakeRate(lepPt[2], lepEta[2], lepID[2]) * GetFakeRate(lepPt[3], lepEta[3], lepID[3])
     return Yield
 
-def doZX(year, year_mc):
+def doZX(year, year_mc, setting):
     keyZX = 'CRZLLTree/candTree'
 
     PATH = path['eos_path_sig']
@@ -362,7 +448,7 @@ def doZX(year, year_mc):
         dfZX[b] = ttreeZX[b]
     dfZX = dfZX[dfZX.Z2Flav > 0] #Keep just same-sign events
     dfZX = findFSZX(dfZX)
-    dfZX['yield_SR'] = ZXYield(dfZX, year, year_mc)
+    dfZX['yield_SR'] = ZXYield(dfZX, year, year_mc, setting)
     return dfZX
 
 # ------------------------------- FUNCTIONS FOR TEMPLATES ----------------------------------------------------
@@ -384,7 +470,7 @@ def fillEmptyBinsHist(h1d, floor):
     nXbins=h1d.GetNbinsX()
     for i in range(1, nXbins+1): h1d.SetBinContent(i, h1d.GetBinContent(i)+floor)
 
-def doTemplates(df_irr, df_red, binning, var, var_string, var_2nd='None'):
+def doTemplates(df_irr, df_inc, df_2j, binning, var, var_string, var_2nd='None'):
     for year in years_MC:
         checkDir(str(year))
         checkDir(str(year)+"/"+var_string)
@@ -578,20 +664,68 @@ def doTemplates(df_irr, df_red, binning, var, var_string, var_2nd='None'):
                     outFile.Close()
                     histo.Delete()
 
+            len_tot = {}
+
+            for f in ['2e2mu', '4e', '4mu']:
+
+                len_tot[f] = 0
+
+                for i in range(nBins):
+
+                    if var_string == "Nj": bins_inc = [0,1]
+                    elif var_string == "Nj_pT4l": bins_inc = [0,1,2,3,4,5,6,7,8,9]
+                    elif var_string in ["pTj2", "mjj", "absdetajj", "dphijj", "pTHjj", "absdetajj_mjj"]: bins_inc = [0]
+                    elif var_string in ["pTj1_pTj2"]: bins_inc = [0,1]
+                    else: bins_inc = [0,1,2,3,4,5,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+
+                    if i in bins_inc:
+                        df_red = df_inc
+                    else:
+                        df_red = df_2j
+
+                    if not doubleDiff:
+                        bin_low = binning[i]
+                        bin_high = binning[i+1]
+                    else:
+                        bin_low = binning[i][0]
+                        bin_high = binning[i][1]
+                        bin_low_2nd = binning[i][2]
+                        bin_high_2nd = binning[i][3]
+
+                    if(f == '4e'):
+                        sel_f_state_zx = df_red[year]['FinState'] == 0
+                    elif(f == '4mu'):
+                        sel_f_state_zx = df_red[year]['FinState'] == 1
+                    elif(f == '2e2mu'):
+                        sel_f_state_zx = (df_red[year]['FinState'] == 2) | (df_red[year]['FinState'] == 3)
+
+                    if not doubleDiff:
+                        df = df_red[year][(sel_f_state_zx) & (df_red[year].ZZMass >= opt.LOWER_BOUND) & (df_red[year].ZZMass <=opt.UPPER_BOUND) & (df_red[year][var] >= bin_low) & (df_red[year][var] < bin_high)].copy()
+                    else:
+                        df = df_red[year][(sel_f_state_zx) & (df_red[year].ZZMass >= opt.LOWER_BOUND) & (df_red[year].ZZMass <=opt.UPPER_BOUND) & (df_red[year][var] >= bin_low) & (df_red[year][var] < bin_high) & (df_red[year][var_2nd] >= bin_low_2nd) & (df_red[year][var_2nd] < bin_high_2nd)].copy()
+                    df_inclusive = df.copy()
+
+                    len_tot[f] += df['yield_SR'].sum() # Total number of bkg events in final state f
+
+                yield_bkg[year,'ZX',f] = len_tot[f]
+                print("ZX: ", year, f, len_tot)
+
         # ZX for different final states
         for f in ['2e2mu', '4e', '4mu']:
-            if(f == '4e'):
-                sel_f_state_zx = df_red[year]['FinState'] == 0
-            elif(f == '4mu'):
-                sel_f_state_zx = df_red[year]['FinState'] == 1
-            elif(f == '2e2mu'):
-                sel_f_state_zx = (df_red[year]['FinState'] == 2) | (df_red[year]['FinState'] == 3)
-            df = df_red[year][(sel_f_state_zx) & (df_red[year].ZZMass >= opt.LOWER_BOUND) & (df_red[year].ZZMass <=opt.UPPER_BOUND)].copy()
-            df_inclusive = df.copy()
-            len_tot = df['yield_SR'].sum() # Total number of bkg events in final state f
-            yield_bkg[year,'ZX',f] = len_tot
-            print("ZX: ", year, f, len_tot)
+
             for i in range(nBins):
+
+                if var_string == "Nj": bins_inc = [0,1]
+                elif var_string == "Nj_pT4l": bins_inc = [0,1,2,3,4,5,6,7,8,9]
+                elif var_string in ["pTj2", "mjj", "absdetajj", "dphijj", "pTHjj", "absdetajj_mjj"]: bins_inc = [0]
+                elif var_string in ["pTj1_pTj2"]: bins_inc = [0,1]
+                else: bins_inc = [0,1,2,3,4,5,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+
+                if i in bins_inc:
+                    df_red = df_inc
+                else:
+                    df_red = df_2j
+
                 if not doubleDiff:
                     bin_low = binning[i]
                     bin_high = binning[i+1]
@@ -600,6 +734,7 @@ def doTemplates(df_irr, df_red, binning, var, var_string, var_2nd='None'):
                     bin_high = binning[i][1]
                     bin_low_2nd = binning[i][2]
                     bin_high_2nd = binning[i][3]
+
                 sel_bin_low = df_red[year][var] >= bin_low
                 sel_bin_high = df_red[year][var] < bin_high
                 if doubleDiff:
@@ -615,7 +750,7 @@ def doTemplates(df_irr, df_red, binning, var, var_string, var_2nd='None'):
                 df = df_red[year][sel].copy()
                 len_bin = df['yield_SR'].sum() # Number of bkg events in bin i
 
-                fractionBkg['ZJetsCR_'+f+'_'+var_string+'_recobin'+str(i)] = float(len_bin/len_tot)
+                fractionBkg['ZJetsCR_'+f+'_'+var_string+'_recobin'+str(i)] = float(len_bin/len_tot[f])
 
                 # ------
                 if(len_bin <= 0): df = df_inclusive
@@ -724,6 +859,9 @@ if doubleDiff:
     obs_name_2nd = opt.OBSNAME.split(' vs ')[1]
     obs_name = obs_name + '_' + obs_name_2nd
 
+if opt.ZZ:
+    obs_name = obs_name + '_zzfloating'
+
 print('Following observables extracted from dictionary: RECO = ',obs_reco)
 if doubleDiff:
     print('It is a double-differential measurement: RECO_2nd = ',obs_reco_2nd)
@@ -781,8 +919,18 @@ branches_ZX = ['ZZMass', 'Z1Flav', 'Z2Flav', 'LepLepId', 'LepEta', 'LepPt', 'Z2M
 
 dfZX={}
 for year, year_mc in zip(years, years_MC):
-    g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE = openFR(year_mc)
-    dfZX[year_mc] = doZX(year, year_mc)
+    g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE = openFR(year_mc, "inc")
+    dfZX[year_mc] = doZX(year, year_mc, "inc")
+    # dfZX[year]['njets_pt30_eta2p5'] = [add_njets(i,j) for i,j in zip(dfZX[year]['JetPt'],dfZX[year]['JetEta'])]
+    # dfZX[year]['pTj1'] = [add_leadjet(i,j) for i,j in zip(dfZX[year]['JetPt'],dfZX[year]['JetEta'])]
+    # dfZX[year] = add_rapidity(dfZX[year])
+
+    print(year,'done')
+
+dfZX_2j={}
+for year, year_mc in zip(years, years_MC):
+    g_FR_mu_EB, g_FR_mu_EE, g_FR_e_EB, g_FR_e_EE = openFR(year_mc, "2j")
+    dfZX_2j[year_mc] = doZX(year, year_mc, "2j")
     # dfZX[year]['njets_pt30_eta2p5'] = [add_njets(i,j) for i,j in zip(dfZX[year]['JetPt'],dfZX[year]['JetEta'])]
     # dfZX[year]['pTj1'] = [add_leadjet(i,j) for i,j in zip(dfZX[year]['JetPt'],dfZX[year]['JetEta'])]
     # dfZX[year] = add_rapidity(dfZX[year])
@@ -794,9 +942,10 @@ yield_bkg = {}
 if ( obs_name == "rapidity4l" or obs_name == "rapidity4l_pT4l" ):
     for year, year_mc in zip(years, years_MC):
         dfZX[year_mc].rename(columns={'ZZyAbs': 'ZZy'}, inplace=True) # spencer
+        dfZX_2j[year_mc].rename(columns={'ZZyAbs': 'ZZy'}, inplace=True) # spencer
         
-if not doubleDiff:doTemplates(d_bkg, dfZX, obs_bins, obs_reco, obs_name)
-else: doTemplates(d_bkg, dfZX, obs_bins, obs_reco, obs_name, obs_reco_2nd)
+if not doubleDiff:doTemplates(d_bkg, dfZX, dfZX_2j, obs_bins, obs_reco, obs_name)
+else: doTemplates(d_bkg, dfZX, dfZX_2j, obs_bins, obs_reco, obs_name, obs_reco_2nd)
 
 #Write file with expected background yields
 with open('../inputs/inputs_bkgTemplate_'+obs_name+'.py', 'w') as f:
