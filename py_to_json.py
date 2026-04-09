@@ -36,7 +36,10 @@ def _get_key_v4(var, ch, i):
     return f"SM_125_{var}_{ch}_genbin{i}"
 
 def _get_key_v3_inclusive(var, i):
-    # v3 inclusive is usually old style (no channel)
+    return f"SM_125_{var}_genbin{i}"
+
+def _get_zzkey_v3_inclusive(var, i):
+    #return f"SM_125_{var}_zznorm_genbin{i}"
     return f"SM_125_{var}_genbin{i}"
 
 def _theory_suffix(variable_name, channel):
@@ -78,6 +81,7 @@ def parse_results(channel, variable_name, year):
         print(f"Error: File '{input_file}' not found")
         sys.exit(1)
 
+    print(input_file)
     resultsXS = load_results(input_file)
 
     # --- Count bins correctly for each format ---
@@ -99,13 +103,20 @@ def parse_results(channel, variable_name, year):
     else:
         num_bins = len([k for k in resultsXS if k.startswith(f"SM_125_{variable_name}_genbin") and "_statOnly" not in k])
 
-    if "_" in variable_name and variable_name != "mass4l_zzfloating":
+    if "_" in variable_name and "zzfloating" not in variable_name:
         bins, doubleDiff = binning(variable_name.split("_")[0] + " vs " + variable_name.split("_")[1])
+    elif  "_" in variable_name and "zzfloating" in variable_name:
+        bins, doubleDiff = binning(variable_name.rsplit("_", 1)[0])
     else:
         bins, doubleDiff = binning(variable_name)
 
     exp_xs, err_up, err_down = [], [], []
     stat_up, stat_down = [], []
+
+    zznorm_exp, zznorm_up_exp, zznorm_down_exp = [], [], []
+    zznorm_stat_up_exp, zznorm_stat_down_exp = [], []
+    zznorm_obs, zznorm_up_obs, zznorm_down_obs = [], [], []
+    zznorm_stat_up_obs, zznorm_stat_down_obs = [], []
 
     if (variable_name == "mass4l" or variable_name == "mass4l_zzfloating") and channel != "4l":
         # unchanged mass4l special handling
@@ -123,6 +134,34 @@ def parse_results(channel, variable_name, year):
             err_down.append(round(abs(main_dn), 3))
             stat_up.append(round(statUp, 3))
             stat_down.append(round(abs(statDn), 3))
+
+        if "zzfloating" in variable_name:
+            zzkey = f"SM_125_{variable_name}_zznorm{channel}_genbin0"
+            zzstat_key = f"{zzkey}_statOnly"
+            resultsXS_exp = load_results('LHScans/resultsXS_LHScan_expected_mass4l_zzfloating_v2.py')
+            resultsXS_obs = load_results('LHScans/resultsXS_LHScan_observed_mass4l_zzfloating_v2.py')
+            if zzkey in resultsXS_exp and zzstat_key in resultsXS_exp:
+                zz_central_exp = resultsXS_exp[zzkey]['central']
+                zz_up_exp = abs(resultsXS_exp[zzkey]['uncerUp'])
+                zz_dn_exp = abs(resultsXS_exp[zzkey]['uncerDn'])
+                zz_statUp_exp  = abs(resultsXS_exp[zzstat_key]['uncerUp'])
+                zz_statDn_exp  = abs(resultsXS_exp[zzstat_key]['uncerDn'])
+                zznorm_exp.append(round(zz_central_exp, 3))
+                zznorm_up_exp.append(round(zz_up_exp, 3))
+                zznorm_down_exp.append(round(zz_dn_exp, 3))
+                zznorm_stat_up_exp.append(round(zz_statUp_exp, 3))
+                zznorm_stat_down_exp.append(round(zz_statDn_exp, 3))
+            if zzkey in resultsXS_obs and zzstat_key in resultsXS_obs:
+                zz_central_obs = resultsXS_obs[zzkey]['central']
+                zz_up_obs = abs(resultsXS_obs[zzkey]['uncerUp'])
+                zz_dn_obs = abs(resultsXS_obs[zzkey]['uncerDn'])
+                zz_statUp_obs  = abs(resultsXS_obs[zzstat_key]['uncerUp'])
+                zz_statDn_obs  = abs(resultsXS_obs[zzstat_key]['uncerDn'])
+                zznorm_obs.append(round(zz_central_obs, 3))
+                zznorm_up_obs.append(round(zz_up_obs, 3))
+                zznorm_down_obs.append(round(zz_dn_obs, 3))
+                zznorm_stat_up_obs.append(round(zz_statUp_obs, 3))
+                zznorm_stat_down_obs.append(round(zz_statDn_obs, 3))
         else:
             print(f"Warning: Missing keys for channel {channel} in mass4l")
 
@@ -161,9 +200,12 @@ def parse_results(channel, variable_name, year):
 
             else:
                 # your existing non-SPECIAL_OBS logic (unchanged)
-                if channel in ["4l", "2e2mu"]:
+                if channel in ["4l"]:
                     key = f"SM_125_{variable_name}_genbin{i}"
                     stat_key = f"{key}_statOnly"
+
+                    #if i < num_bins/2:
+
                     if key in resultsXS and stat_key in resultsXS:
                         central = resultsXS[key]['central']
                         main_up = abs(resultsXS[key]['uncerUp'])
@@ -174,9 +216,47 @@ def parse_results(channel, variable_name, year):
                         err_up.append(round(main_up, 3))
                         err_down.append(round(main_dn, 3))
                         stat_up.append(round(statUp, 3))
-                        stat_down.append(round(statDn, 3))
+                        stat_down.append(round(statDn, 3))          
                     else:
                         print(f"Warning: Missing keys for {channel}, bin {i}: {key} / {stat_key}")
+
+                    if "zzfloating" in variable_name:
+
+                        if i < num_bins/2: continue
+
+                        if "mass4l" in variable_name:
+                            resultsXS_exp = load_results(f'LHScans/resultsXS_LHScan_expected_{variable_name}_v2.py')
+                            resultsXS_obs = load_results(f'LHScans/resultsXS_LHScan_observed_{variable_name}_v2.py')
+                        else:
+                            resultsXS_exp = load_results(f'LHScans/resultsXS_LHScan_expected_{variable_name}_v3.py')
+                            resultsXS_obs = load_results(f'LHScans/resultsXS_LHScan_observed_{variable_name}_v3.py')
+
+                        zzkey = _get_zzkey_v3_inclusive(variable_name, i)
+                        zzstat_key = f"{zzkey}_statOnly"
+                        if zzkey in resultsXS_exp and zzstat_key in resultsXS_exp:
+                            zz_central_exp = resultsXS_exp[zzkey]['central']
+                            zz_up_exp = abs(resultsXS_exp[zzkey]['uncerUp'])
+                            zz_dn_exp = abs(resultsXS_exp[zzkey]['uncerDn'])
+                            zz_statUp_exp  = abs(resultsXS_exp[zzstat_key]['uncerUp'])
+                            zz_statDn_exp  = abs(resultsXS_exp[zzstat_key]['uncerDn'])
+                            zznorm_exp.append(round(zz_central_exp, 3))
+                            zznorm_up_exp.append(round(zz_up_exp, 3))
+                            zznorm_down_exp.append(round(zz_dn_exp, 3))
+                            zznorm_stat_up_exp.append(round(zz_statUp_exp, 3))
+                            zznorm_stat_down_exp.append(round(zz_statDn_exp, 3))
+                        if zzkey in resultsXS_obs and zzstat_key in resultsXS_obs:
+                            zz_central_obs = resultsXS_obs[zzkey]['central']
+                            zz_up_obs = abs(resultsXS_obs[zzkey]['uncerUp'])
+                            zz_dn_obs = abs(resultsXS_obs[zzkey]['uncerDn'])
+                            zz_statUp_obs  = abs(resultsXS_obs[zzstat_key]['uncerUp'])
+                            zz_statDn_obs  = abs(resultsXS_obs[zzstat_key]['uncerDn'])
+                            zznorm_obs.append(round(zz_central_obs, 3))
+                            zznorm_up_obs.append(round(zz_up_obs, 3))
+                            zznorm_down_obs.append(round(zz_dn_obs, 3))
+                            zznorm_stat_up_obs.append(round(zz_statUp_obs, 3))
+                            zznorm_stat_down_obs.append(round(zz_statDn_obs, 3))
+                        else:
+                            print(f"Warning: Missing keys for {channel}, bin {i}: {zzkey} / {zzstat_key}")
                 else:
                     raise ValueError(f"Unsupported channel: {channel}")
 
@@ -211,7 +291,7 @@ def parse_results(channel, variable_name, year):
             x_lim = [0, 200]
             y_lim_bottom = 1e-4
             y_lim_top = 5
-        elif variable_name == "rapidity4l":
+        elif variable_name == "rapidity4l" or variable_name == "rapidity4l_zzfloating":
             do_log = 0
             x_unit = ""
             y_unit = " (fb)"
@@ -231,8 +311,8 @@ def parse_results(channel, variable_name, year):
             y_unit = " (fb)"
             x_lim = [0, 5]
             y_lim_bottom = 10e-4
-            y_lim_top = 100
-        elif variable_name == "pTj1":
+            y_lim_top = 1000
+        elif variable_name == "pTj1" or variable_name == "pTj1_zzfloating":
             x_lim = [-30, 240]
         elif variable_name == "pTj2":
             x_lim = [-10, 140]
@@ -294,6 +374,16 @@ def parse_results(channel, variable_name, year):
             "err_down": err_down,
             "stat_up": stat_up,
             "stat_down": stat_down,
+            "zznorm_exp": zznorm_exp,
+            "zznorm_up_exp": zznorm_up_exp,
+            "zznorm_down_exp": zznorm_down_exp,
+            "zznorm_stat_up_exp": zznorm_stat_up_exp,
+            "zznorm_stat_down_exp": zznorm_stat_down_exp,
+            "zznorm_obs": zznorm_obs,
+            "zznorm_up_obs": zznorm_up_obs,
+            "zznorm_down_obs": zznorm_down_obs,
+            "zznorm_stat_up_obs": zznorm_stat_up_obs,
+            "zznorm_stat_down_obs": zznorm_stat_down_obs,
             "output_name": variable_name,
             "is_data": data,
             "last_bin_center": last_bin_center,

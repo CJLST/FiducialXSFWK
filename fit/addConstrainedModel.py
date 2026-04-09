@@ -101,8 +101,10 @@ higgs4l_br = _temp.higgs4l_br
 higgs4l_br['125.38_4l'] = higgs4l_br['125.38_2e2mu']+higgs4l_br['125.38_4e']+higgs4l_br['125.38_4mu']
 
 # if (obsName=="mass4l"): fStates = ['4e','4mu','2e2mu','4l'] #AT Mi sembra che 4l non venga usato
-if (obsName=="mass4l"): fStates = ['4e','4mu','2e2mu']
-else: fStates = ['4e','4mu','2e2mu']
+#if (obsName=="mass4l"): fStates = ['4e','4mu','2e2mu']
+#else: fStates = ['4e','4mu','2e2mu']
+
+fStates = ['4e','4mu','2e2mu', '4l']
 
 for fState in fStates:
 
@@ -117,9 +119,6 @@ for fState in fStates:
         fout_WH = max(outinratio['WH125_'+fState+'_'+obsName+'_genbin'+str(recobin)+'_recobin'+str(recobin)],0.0)
         fout_ZH = max(outinratio['ZH125_'+fState+'_'+obsName+'_genbin'+str(recobin)+'_recobin'+str(recobin)],0.0)
         fout_ttH = max(outinratio['ttH125_'+fState+'_'+obsName+'_genbin'+str(recobin)+'_recobin'+str(recobin)],0.0)
-
-        fout_ZH = 0.0 # spencer
-        fout_ttH = 0.0 # spencer
 
         ggHxs_allgen=0.0
         VBFxs_allgen=0.0
@@ -170,7 +169,6 @@ for fState in fStates:
                         err_outinratio['WH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(recobin)]**2 +
                         err_outinratio['ZH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(recobin)]**2 +
                         err_outinratio['ttH125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(recobin)]**2)
-
 
             err_eff['SM_125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(recobin)] = err_effsm
             err_outinratio['SM_125_'+fState+'_'+obsName+'_genbin'+str(genbin)+'_recobin'+str(recobin)] = err_outinratiosm
@@ -261,6 +259,8 @@ if opt.INTER:
     file = path['eos_path']+'inputs/inputs_sig_extrap_'+opt.OBSNAME+'_'+opt.YEAR+'.py'
 else:
     file = path['eos_path']+'inputs/inputs_sig_'+opt.OBSNAME+'_'+opt.YEAR+'.py'
+
+print('Saving new inputs to: '+file)
 
 with open(file, 'w') as f:
     f.write('observableBins = '+str(observableBins)+' \n')

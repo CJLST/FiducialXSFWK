@@ -34,6 +34,7 @@ def parseOptions():
     parser.add_option('',   '--year',  dest='YEAR',  type='string',default='Full',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--interpolation', action='store_true', dest='INTER', default=False, help='Calculate acceptances at 124 and 126 GeV')
     #parser.add_option('',   '--NOK1K2',action='store_true', dest='NOK1K2',default=False, help='remove K1 K2 parameters')
+    parser.add_option('',   '--ZZfloating',action='store_true', dest='ZZ',default=False, help='Let ZZ normalisation to float')
 
     # Unblind option
     parser.add_option('',   '--unblind', action='store_true', dest='UNBLIND', default=False, help='Use real data')
@@ -82,7 +83,7 @@ def processCmd(cmd, quiet=0):
         raise RuntimeError(f"Command '{cmd}' failed with exit status: {p.returncode}")
     return output
 
-def impactPlots():
+def impactPlots(obsName):
 
     sys.path.append(path['eos_path']+'inputs/')
     #_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins'], -1)
@@ -91,6 +92,7 @@ def impactPlots():
     else:   
         _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['observableBins'], 0) # spencer
     observableBins = _temp.observableBins
+    acc = _temp.acc
     sys.path.remove(path['eos_path']+'inputs/')
     ## Run for the given observable
     #print('NP impacts calculation - '+obsName+' - bin boundaries: ', observableBins, '\n')
@@ -99,15 +101,6 @@ def impactPlots():
     _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_xs_136TeV','higgs4l_br'], 0) # spencer
     higgs_xs = _temp.higgs_xs_136TeV
     higgs4l_br = _temp.higgs4l_br
-
-    sys.path.append(path['eos_path']+'inputs/')
-    #_temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['acc'], -1)
-    if opt.INTER:
-        _temp = __import__('inputs_sig_extrap_'+obsName+'_'+opt.YEAR, globals(), locals(), ['acc'], 0) # spencer
-    else:
-        _temp = __import__('inputs_sig_'+obsName+'_'+opt.YEAR, globals(), locals(), ['acc'], 0) # spencer
-    sys.path.remove(path['eos_path']+'inputs/')
-    acc = _temp.acc
 
 
     # Impact plot
@@ -120,9 +113,12 @@ def impactPlots():
 
     _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'Nj'}
     if obsName in _obsName:
-        obsName_poi = _obsName[obsName]
+        if opt.ZZ: obsName_poi = _obsName[obsName] + '_zzfloating'
+        else: obsName_poi = _obsName[obsName]
     else:
-        obsName_poi = obsName
+        if opt.ZZ: obsName_poi = obsName + '_zzfloating'
+        else: obsName_poi = obsName
+
 
     #nBins = len(observableBins)
     tmp_xs = {}
@@ -227,6 +223,8 @@ def impactPlots():
     if (obsName.startswith("mass4l")): max_sigma = '5'
     # else: max_sigma = '2.5'
     else: max_sigma = '5'
+
+    if opt.ZZ: obsName = obsName + '_zzfloating'
 
     ### First step (Files from asimov and data have the same name)
     cmd = 'combineTool.py -M Impacts -d ' + path['eos_path']+'combine_files/SM_125_all_13TeV_xs_'+obsName+'_bin_'+opt.PHYSICSMODEL+'_'+str(opt.YEAR)+'.root -m 125.38 --cminDefaultMinimizerStrategy 0 --doInitialFit --robustFit 1'
@@ -418,6 +416,7 @@ def impactPlots():
 
 # ----------------- Main -----------------
 cmds = [] #List of all cmds
+
 if 'vs' in opt.OBSNAME:
     obsName_tmp = opt.OBSNAME.split(' vs ')
     obsName = obsName_tmp[0]+'_'+obsName_tmp[1]
@@ -425,7 +424,9 @@ if 'vs' in opt.OBSNAME:
 else:
     obsName = opt.OBSNAME
     doubleDiff = False
-impactPlots()
+
+impactPlots(obsName)
+
 if (os.path.exists('commands_impacts_'+obsName+'_'+opt.PHYSICSMODEL+'.py')):
     os.system('rm commands_impacts_'+obsName+'_'+opt.PHYSICSMODEL+'.py')
 with open('commands_impacts_'+obsName+'_'+opt.PHYSICSMODEL+'.py', 'w') as f:
@@ -434,10 +435,15 @@ with open('commands_impacts_'+obsName+'_'+opt.PHYSICSMODEL+'.py', 'w') as f:
         f.write('\n')
 
 
+if opt.ZZ:
+    outdir = f"{path['plots_path']}IMPACTS/{obsName}_zzfloating/{opt.YEAR}/"
+    os.makedirs(outdir, exist_ok=True)
+    os.system(f"cp impacts*_{opt.YEAR}_*{obsName}_zzfloating*.pdf {outdir}")
+else:
+    outdir = f"{path['plots_path']}IMPACTS/{obsName}/{opt.YEAR}/"
+    os.makedirs(outdir, exist_ok=True)
+    os.system(f"cp impacts*_{opt.YEAR}_*{obsName}*.pdf {outdir}")
 
-outdir = f"{path['plots_path']}IMPACTS/{obsName}/{opt.YEAR}/"
-os.makedirs(outdir, exist_ok=True)
-os.system(f"cp impacts*_{opt.YEAR}_*{obsName}*.pdf {outdir}")
 if opt.PHYSICSMODEL=='v2':
     os.system(f"cp impacts_v2_{obsName}*.pdf {outdir}")
 

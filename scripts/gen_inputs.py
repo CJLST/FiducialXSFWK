@@ -14,8 +14,10 @@ obsNames=["mass4l_zzfloating"]
 #obsNames=["pTj1", "pTj2", "mjj", "absdetajj", "dphijj", "pTHj", "pTHjj", "mHj", "TCjmax", "TBjmax", "Nj"]
 #obsNames=["massZ1_massZ2", "rapidity4l_pT4l", "pTj1_pTj2", "pT4l_pTHj", "absdetajj_mjj", "TCjmax_pT4l"] #, "Nj_pT4l"
 
-#obsNames=["mjj","pTj2", "pTHjj"]
-#obsNames=["rapidity4l_pT4l"]
+
+#obsNames=["pTj2", "mjj", "absdetajj", "dphijj", "pTHjj", "pTj1_pTj2", "absdetajj_mjj", "Nj", "Nj_pT4l"]
+#obsNames=["pTj2", "mjj", "absdetajj", "dphijj", "pTHjj", "pTj1_pTj2", "absdetajj_mjj", "Nj"]
+#obsNames=["Nj_pT4l"]
 
 #YEARS = ["2022", "2022EE", "2023preBPix", "2023postBPix", "2024"]
 #YEARS = ["2024"]

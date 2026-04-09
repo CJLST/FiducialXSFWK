@@ -37,7 +37,7 @@ _temp = __import__('higgs_xsbr_13TeV', globals(), locals(), ['higgs_xs','higgs_x
 higgs_xs = _temp.higgs_xs_136TeV
 higgs4l_br = _temp.higgs4l_br
 
-HCOMB_NAMES = {'mass4l': 'mass4l', 'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'pTj2': 'pTj2', 'Nj': 'Nj', 'mjj': 'mjj', 'absdetajj': 'absdetajj', 'dphijj': 'dphijj', 'mHj': 'mHj', 'pTHj': 'pTHj', 'pTHjj': 'pTHjj', 'TCjmax': 'TCjmax', 'TBjmax': 'TBjmax', 'costhetaZ1': 'costhetaZ1', 'costhetaZ2': 'costhetaZ2', 'costhetastar': 'costhetastar', 'phi': 'phi', 'phi1': 'phi1', 'massZ1': 'massZ1', 'massZ2': 'massZ2', 'rapidity4l_pT4l': 'rapidity4l_pT4l', 'Nj_pT4l': 'Nj_pT4l', 'pT4l_pTHj': 'pT4l_pTHj', 'massZ1_massZ2': 'massZ1_massZ2', 'pTj1_pTj2': 'pTj1_pTj2', 'absdetajj_mjj': 'absdetajj_mjj', 'TCjmax_pT4l': 'TCjmax_pT4l'}
+HCOMB_NAMES = {'mass4l': 'mass4l', 'mass4l_zzfloating': 'mass4l_zzfloating', 'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'pTj2': 'pTj2', 'Nj': 'Nj', 'mjj': 'mjj', 'absdetajj': 'absdetajj', 'dphijj': 'dphijj', 'mHj': 'mHj', 'pTHj': 'pTHj', 'pTHjj': 'pTHjj', 'TCjmax': 'TCjmax', 'TBjmax': 'TBjmax', 'costhetaZ1': 'costhetaZ1', 'costhetaZ2': 'costhetaZ2', 'costhetastar': 'costhetastar', 'phi': 'phi', 'phi1': 'phi1', 'massZ1': 'massZ1', 'massZ2': 'massZ2', 'rapidity4l_pT4l': 'rapidity4l_pT4l', 'Nj_pT4l': 'Nj_pT4l', 'pT4l_pTHj': 'pT4l_pTHj', 'massZ1_massZ2': 'massZ1_massZ2', 'pTj1_pTj2': 'pTj1_pTj2', 'absdetajj_mjj': 'absdetajj_mjj', 'TCjmax_pT4l': 'TCjmax_pT4l'}
 DECAY_OBS = ['costhetaZ1','costhetaZ2','costhetastar','phi','phi1','massZ1','massZ2']
 CHANNELS = ['4l', '2e2mu']
 
@@ -85,14 +85,14 @@ class Observable():
         self.dsigmas = []
         self.acceptance = {}
         self.get_bins(obs)
-
         self.nr_bins = int(len(self.bins))
 
         #self.get_bins_centers()
         self.set_acceptance(obs)
         
     def get_bins(self, obs):
-        self.bins = binning.binning_v2(obs.replace("_", " vs "))
+        obs_name = obs.replace("_zzfloating", "").replace("_", " vs ")
+        self.bins = binning.binning_v2(obs_name)
         
     def nr_bins(self):
         self.n_bins = len(self.bins)
@@ -380,13 +380,14 @@ def fill(_file, _obs, _commands):
 
 if __name__ == '__main__':
 
-  #mass4l = ['mass4l']
-  #leps = ['pT4l', 'rapidity4l'] 
-  #angles = ['massZ1', 'massZ2','costhetaZ1', 'costhetaZ2', 'costhetastar', 'phi', 'phi1']
-  #jets = ['pTj1', 'pTj2', 'Nj', 'mjj', 'absdetajj','dphijj', 'mHj', 'pTHj', 'pTHjj', 'TCjmax', 'TBjmax']
-  #doubles = ['rapidity4l_pT4l', 'Nj_pT4l', 'pT4l_pTHj', 'massZ1_massZ2', 'pTj1_pTj2', 'absdetajj_mjj']
+  mass4l = ['mass4l']
+  leps = ['pT4l', 'rapidity4l'] 
+  angles = ['massZ1', 'massZ2','costhetaZ1', 'costhetaZ2', 'costhetastar', 'phi', 'phi1']
+  jets = ['pTj1', 'pTj2', 'Nj', 'mjj', 'absdetajj','dphijj', 'mHj', 'pTHj', 'pTHjj', 'TCjmax', 'TBjmax']
+  doubles = ['rapidity4l_pT4l', 'pT4l_pTHj', 'massZ1_massZ2', 'pTj1_pTj2', 'absdetajj_mjj', 'Nj_pT4l', 'TCjmax_pT4l'] # 'Nj_pT4l'
 
-  vars = ['TCjmax_pT4l']
+  #vars = mass4l + leps + angles + jets + doubles
+  vars = ['mass4l']#, 'TCjmax_pT4l'] 
 
   dump_file = open('pval_cmds.txt','w')
 
@@ -403,9 +404,9 @@ if __name__ == '__main__':
     fill(dump_file, _obs, commands)
     fname = f"higgsCombine{compatibilitySM.output}.MultiDimFit.mH125.38.root"
     # if _obs in HCOMB_NAMES: fname = fname.replace(_obs, HCOMB_NAMES[_obs])
-    if (os.path.isfile(fname) | os.path.isfile(f"{PVAL_PATH}/{fname}")): 
-     print(f"................. Skip {_obs}, fit already done")
-     continue
+    #if (os.path.isfile(fname) | os.path.isfile(f"{PVAL_PATH}/{fname}")): 
+    # print(f"................. Skip {_obs}, fit already done")
+    # continue
 
     os.system(bestFit.command)
     os.system(compatibilitySM.command)

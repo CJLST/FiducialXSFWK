@@ -56,8 +56,6 @@ def makeCR(_df, _flag, year):
     # CRZLLos_2P2F 22 --> 4194304
     # CRZLLss 21 --> 2097152
 
-    # the bits are not used
-
     if _flag == '3P1F':
         bit = '8388608'
         filter = 'ZLLbest3P1FIdx>-1'
@@ -152,9 +150,8 @@ def makeCR(_df, _flag, year):
 
     if  year == "2024":
         df_out = ( df_out.Define('MET', "PFMET_pt") )
-    elif year == "2022" or year == "2022EE":
+    else:
         df_out = ( df_out.Define('MET', "MET_pt") )
-    ## skip 2023 for now
 
     return df_out
 
@@ -560,7 +557,7 @@ ROOT::VecOps::RVec<int> get_jet_idx(const std::string& year,
 
         // Example: raise pT threshold in endcap region; and in forward region for Run-3 years
         if ((std::abs(jet_eta[i]) >= 2.5f && std::abs(jet_eta[i]) < 3.0f) ||
-            (std::abs(jet_eta[i]) >= 3.0f && (year == "2022" || year == "2022EE" || year == "2023" || year == "2023BPix")))
+            (std::abs(jet_eta[i]) >= 3.0f && (year == "2022" || year == "2022EE" || year == "2023" || year == "2023BPix" || year == "2024"))) // TESTING 2024
         {
             pt_cut = 50.0f;
         }
@@ -613,7 +610,7 @@ ROOT::VecOps::RVec<int> get_genjet_idx(const std::string& year,
 
         // Example: raise pT threshold in endcap region; and in forward region for Run-3 years
         if ((std::abs(jet_eta[i]) >= 2.5f && std::abs(jet_eta[i]) < 3.0f) ||
-            (std::abs(jet_eta[i]) >= 3.0f && (year == "2022" || year == "2022EE" || year == "2023" || year == "2023BPix")))
+            (std::abs(jet_eta[i]) >= 3.0f && (year == "2022" || year == "2022EE" || year == "2023" || year == "2023BPix" || year == "2024"))) // TESTING 2024
         {
             pt_cut = 50.0f;
         }

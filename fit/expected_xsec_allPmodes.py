@@ -31,6 +31,7 @@ def parseOptions():
     parser.add_option('',   '--nnlops', action='store_true', dest='NNLOPS', default=False, help='nnlops prediction')
     parser.add_option('',   '--split', action='store_true', dest='SPLIT', default=False, help='use HIG 19 001 acceptances')
     parser.add_option('',   '--interpolation', action='store_true', dest='INTER', default=False, help='Calculate acceptances at 124 and 126 GeV')
+    parser.add_option('',   '--ZZfloating',action='store_true', dest='ZZ',default=False, help='Let ZZ normalisation to float')
     # store options and arguments as global variables
     global opt, args
     (opt, args) = parser.parse_args()
@@ -223,10 +224,13 @@ def exp_xsec():
         xs_xh_fs ['4e4mu'][k] = bin_xh_fs ['4e'] + bin_xh_fs ['4mu']
         # --------------------------------------------------------
 
+    fname = '../inputs/xsec_'+obsName+'_'+opt.YEAR+'.py'
+
     with open('../inputs/xsec_'+obsName+'_'+opt.YEAR+'.py', 'w') as f:
         f.write('xsec = '+str(xs)+' \n')
 
     obsFull = obsName
+    if opt.ZZ: obsFull += "_zzfloating"
 
     # helper to write fidXS files (keeps your exact content structure)
     import math

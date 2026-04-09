@@ -10,9 +10,9 @@ obsName="${1//_/' vs '}"
 #obsName="$1"
 year="$2"
 
-python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --split #--interpolation
-python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --nnlops --split #--interpolation
+python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --split --ZZfloating #--interpolation
+python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --nnlops --split --ZZfloating #--interpolation
 
 cd ../coefficients
 
-python3 pdfUncertainties.py --obsName "$obsName" --year "$year" --split
+python3 pdfUncertainties.py --obsName "$obsName" --year "$year" --split --ZZfloating

@@ -234,6 +234,7 @@ def openFR(year):
     
     if (year == "2022" or year == "2022EE" or year == "2023preBPix" or year == "2023postBPix" or year == "2024"):
         fnameFR = path['eos_path_FR']+"FAKERATES/%s/FakeRates_SS_%s.root" % (year, year)
+        #fnameFR = path['eos_path_FR']+"FAKERATES/2024_DIJET/FakeRates_SS_%s.root" % (year)
     else:
         raise ValueError(f"ERROR: Unsupported year")
 

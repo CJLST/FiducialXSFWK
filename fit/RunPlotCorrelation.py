@@ -17,6 +17,9 @@ import importlib.util
 from paths import path
 from higgs_xsbr_13TeV import *
 
+plt.rcParams['text.usetex'] = True
+plt.rcParams['font.family'] = 'serif'
+
 def parseOptions():
 
     global opt, args, runAllSteps
@@ -46,6 +49,40 @@ def parseOptions():
     # store options and arguments as global variables
     global opt, args
     (opt, args) = parser.parse_args()
+
+
+VAR_LABELS = {
+    "mass4l": r"$m_{4\ell}$",
+    "mass4l_zzfloating": r"$m_{4\ell}^{\text{ZZ floating}}$",
+    "pT4l": r"$p^T_{4\ell}$",
+    "rapidity4l": r"$|y_{4\ell}|$",
+    "massZ1": r"$m_{Z_1}$",
+    "massZ2": r"$m_{Z_2}$",
+    "Nj": r"$N_{jets}$",
+    "pTj1": r"$p^T_{j_1}$",
+    "pTj2": r"$p^T_{j_2}$",
+    "mjj": r"$m_{jj}$",
+    "absdetajj": r"$|\Delta\eta_{jj}|$",
+    "dphijj": r"$\Delta\Phi_{jj}$",
+    "pTHj": r"$p^T_{Hj}$",
+    "pTHjj": r"$p^T_{Hjj}$",
+    "mHj": r"$m_{Hj}$",
+    "TCjmax": r"$\mathcal{T}_C^{max}$",
+    "TBjmax": r"$\mathcal{T}_B^{max}$",
+    "rapidity4l_pT4l": r"$|y_{H}|$ vs. $p^T_{4\ell}$",
+    "massZ1_massZ2": r"$m_{Z_1}$ vs. $m_{Z_2}$",
+    "Nj_pT4l": r"$N_{jets}$ vs. $p^T_{4\ell}$",
+    "pTj1_pTj2": r"$p^T_{j_1}$ vs. $p^T_{j_2}$",
+    "pTHj_pT4l": r"$p^T_{Hj}$ vs. $p^T_{4\ell}$",
+    "TCjmax_pT4l": r"$\mathcal{T}_C^{max}$ vs. $p^T_{4\ell}$",
+    "pT4l_pTHj": r"$p^T_{4\ell}$ vs. $p^T_{Hj}$",
+    "absdetajj_mjj": r"$|\Delta\eta_{jj}|$ vs. $m_{jj}$",
+    "costhetaZ1": r"$\cos\theta_{Z_1}$",
+    "costhetaZ2": r"$\cos\theta_{Z_2}$",
+    "costhetastar": r"$\cos\theta^{*}_{ZZ}$",
+    "phi": r"$\Phi$",
+    "phi1": r"$\Phi_1$",
+}
 
 # parse the arguments and options
 parseOptions()
@@ -80,7 +117,7 @@ def PlotCorrelation():
         else:
             # pois += ['CMS_eff_e']
             # pois_plot += ['eff_e']
-            _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'PTJET', 'Nj': 'NJ'}
+            _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'Nj'}
             if obsName not in _obsName:
                 _obsName[obsName] = obsName
             for obsBin in range(nBins):
@@ -133,12 +170,14 @@ def PlotCorrelation():
         print(theMap)
 
         fig, ax = plt.subplots(figsize = (20, 10))
-        ax.text(0., 1.005, r'$\bf{{CMS}}$', fontsize = 35, transform = ax.transAxes)
+        ax.text(0., 1.01, r'$\bf{{CMS}}$', fontsize = 20, transform = ax.transAxes)
 
-        ax.text(0.7, 1.005, r'171 fb$^{-1}$ (13.6 TeV)', fontsize = 20, transform = ax.transAxes)
-        ax.text(0.63, 0.9, r'H$\rightarrow$ ZZ', fontsize = 25, transform = ax.transAxes)
-        ax.text(0.55, 0.85, r'm$_{\mathrm{H}}$ = 125.38 GeV', fontsize = 25, transform = ax.transAxes)
-        ax.text(0.55, 0.8, obsName, fontsize = 25, transform = ax.transAxes)
+        ax.text(0.7, 1.01, r'171 fb$^{-1}$ (13.6 TeV)', fontsize = 20, transform = ax.transAxes)
+        #ax.text(0.63, 0.9, r'H$\rightarrow$ ZZ', fontsize = 25, transform = ax.transAxes)
+        #ax.text(0.55, 0.85, r'm$_{\mathrm{H}}$ = 125.38 GeV', fontsize = 25, transform = ax.transAxes)
+
+        #ax.text(0.45, 0.95, VAR_LABELS[obsName]+r' - H$\rightarrow$ ZZ, m$_{\mathrm{H}}$ = 125.38 GeV', fontsize = 12, transform = ax.transAxes)
+        ax.text(0.7, 0.8, VAR_LABELS[obsName], fontsize = 30, transform = ax.transAxes)
 
         mask = np.zeros_like(theMap)
         mask[np.triu_indices_from(mask, k = 1)] = True
@@ -154,7 +193,7 @@ def PlotCorrelation():
                 annot = True,
                 fmt = '.2f',
                 square = True,
-                annot_kws={'size': 12, 'weight': 'bold'},
+                annot_kws={'size': 12},
                 cmap = palette,
                 cbar_kws={'pad': .005, 'ticks':np.arange(-1.2, 1.2, 0.2)})
         hmap.figure.axes[-1].tick_params(axis = 'y', labelsize =24, direction='in', length = 10)
@@ -164,7 +203,7 @@ def PlotCorrelation():
                 t.set_text('0.00')
 
         plt.yticks(rotation=0, fontsize = 20)
-        plt.xticks(fontsize = 20)
+        plt.xticks(fontsize = 20, rotation=45)
 
         plt.axhline(y=0, color='k',linewidth=2.5)
         plt.axhline(y=theMap.shape[1], color='k',linewidth=2.5)
@@ -180,8 +219,8 @@ def PlotCorrelation():
         os.makedirs(outdir, exist_ok=True)
         path_png = os.path.join(outdir, f'corr_{opt.YEAR}_{obsName}_{physicalModel}.png')
         path_pdf = os.path.join(outdir, f'corr_{opt.YEAR}_{obsName}_{physicalModel}.pdf')
-        plt.savefig(path_png, bbox_inches='tight')
-        plt.savefig(path_pdf, bbox_inches='tight')
+        plt.savefig(path_png, bbox_inches='tight', dpi=600)
+        plt.savefig(path_pdf, bbox_inches='tight', dpi=600)
         plt.tight_layout()
         plt.close()
 

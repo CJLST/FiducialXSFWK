@@ -22,6 +22,7 @@ from paths import path
 sys.path.append('../inputs/')
 from higgs_xsbr_13TeV import *
 
+
 def parseOptions():
 
     global opt, args, runAllSteps
@@ -149,7 +150,7 @@ def RunCombineCorrelation():
 
 
         elif physicalModel == 'v3':
-            _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'NJ'}
+            _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'Nj'}
             if obsName not in _obsName:
                 _obsName[obsName] = obsName
             fitName = _obsName[obsName]

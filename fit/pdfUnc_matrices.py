@@ -372,9 +372,12 @@ def append_uncertainties(input_file, obsName, year, physicalModel, percent_diffs
 
     if variable == "pT4l":
         variable = "PTH"
-    
+    if variable == "pT4l_zzfloating":
+        variable = "PTH_zzfloating"
     if variable == "rapidity4l":
         variable = "YH"
+    if variable == "rapidity4l_zzfloating":
+        variable = "YH_zzfloating"
 
     out_dir = Path(f"../datacard/datacard_{year}")
 
@@ -387,6 +390,7 @@ def append_uncertainties(input_file, obsName, year, physicalModel, percent_diffs
         genbins = len(values["pdf"]["rms"][0])
 
         for i in range(recobins):
+
             # Prepare target file path
             datacard_path = out_dir / f"hzz4l_{fs}S_13TeV_xs_{variable}_bin{i}_{physicalModel}.txt"
             print(f"Processing datacard: {datacard_path}")
@@ -456,6 +460,9 @@ def run_pdf_unc_matrices(input_file, obsName, year, physicalModel):
         NNLOPS = True
     else:
         NNLOPS = False
+
+    if 'zzfloating' in input_file:
+        input_file = input_file.replace('_zzfloating', '')
 
     module = load_module_from_file(input_file)
     eff_num_var = module.eff_num_var

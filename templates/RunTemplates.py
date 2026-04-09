@@ -713,6 +713,13 @@ def doTemplates(df_irr, df_inc, df_2j, binning, var, var_string, var_2nd='None')
         # ZX for different final states
         for f in ['2e2mu', '4e', '4mu']:
 
+            if(f == '4e'):
+                sel_f_state_zx = df_red[year]['FinState'] == 0
+            elif(f == '4mu'):
+                sel_f_state_zx = df_red[year]['FinState'] == 1
+            elif(f == '2e2mu'):
+                sel_f_state_zx = (df_red[year]['FinState'] == 2) | (df_red[year]['FinState'] == 3)
+
             for i in range(nBins):
 
                 if var_string == "Nj": bins_inc = [0,1]
@@ -767,6 +774,14 @@ def doTemplates(df_irr, df_inc, df_2j, binning, var, var_string, var_2nd='None')
                     histo = ROOT.TH1D("m4l_"+var_string+"_"+str(bin_low)+"_"+str(bin_high), "m4l_"+var_string+"_"+str(bin_low)+"_"+str(bin_high), 20, opt.LOWER_BOUND, opt.UPPER_BOUND)
                 else:
                     histo = ROOT.TH1D("m4l_"+var_string+"_"+str(int(bin_low))+"_"+str(int(bin_high)), "m4l_"+var_string+"_"+str(int(bin_low))+"_"+str(int(bin_high)), 20, opt.LOWER_BOUND, opt.UPPER_BOUND)
+
+                if len(mass4l) == 0:
+                    mass4l = np.array([0.0], dtype=np.float64)
+                    w = np.array([0.0], dtype=np.float64)
+
+                print(len(mass4l))
+                print(mass4l)
+                print(w)
 
                 histo.FillN(len(mass4l), mass4l, w)
                 smoothAndNormaliseTemplate(histo, 1)

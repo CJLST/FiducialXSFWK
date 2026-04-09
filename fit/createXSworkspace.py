@@ -1120,7 +1120,7 @@ def createXSworkspace(obsName, channel, nBins, obsBin, observableBins, addfakeH,
     df = ROOT.RDataFrame("ZZTree/candTree", data_obs_file)
     df = df.Define("Nj_d", "double(Nj)")   # <-- replace Nj with your actual branch name
 
-    tmpname = f"tmp_cast_{year}.root"
+    tmpname = f"tmp_cast_{year}_{obsName}.root"
     df.Snapshot("candTree", tmpname)
 
     tmpfile = ROOT.TFile.Open(tmpname)

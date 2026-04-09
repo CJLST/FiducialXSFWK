@@ -21,28 +21,29 @@ python3 RunCoefficients.py --obsName "$obsName" --year "$year" --merge --nnlops 
 python3 RunInterpolation.py --obsName "$obsName" --year "$year"
 python3 RunInterpolation.py --obsName "$obsName" --year "$year" --nnlops
 
-python3 RunPlotCoefficients.py --obsName "$obsName" --year "$year" --interpolation
-python3 RunPlotCoefficients.py --obsName "$obsName" --year "$year" --nnlops --interpolation
-
 cd ../templates
 
-python3 RunTemplates.py --obsName "$obsName" --year "$year"
+python3 RunTemplates.py --obsName "$obsName" --year "$year" #--ZZfloating
 python3 plot_templates.py --obsName "$obsName" --year "$year"
 
 cd ../fit
 
-python3 RunFiducialXS.py --obsName "$obsName" --year "$year" --eff_unc --interpolation --NOK1K2
-python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --interpolation
-python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --nnlops --interpolation
-python3 impacts.py --obsName "$obsName" --year "$year" --interpolation
+python3 RunFiducialXS.py --obsName "$obsName" --year "$year" --eff_unc --interpolation --NOK1K2 #--ZZfloating
+python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --interpolation #--ZZfloating
+python3 expected_xsec_allPmodes.py --obsName "$obsName" --year "$year" --nnlops --interpolation #--ZZfloating 
+python3 impacts.py --obsName "$obsName" --year "$year" --interpolation #--ZZfloating
 
-python3 RunFiducialXS.py --obsName "$obsName" --year "$year" --eff_unc --interpolation --unblind --NOK1K2
-python3 impacts.py --obsName "$obsName" --year "$year" --interpolation --unblind
+python3 RunFiducialXS.py --obsName "$obsName" --year "$year" --eff_unc --interpolation --unblind --NOK1K2 #--ZZfloating
+python3 impacts.py --obsName "$obsName" --year "$year" --interpolation --unblind #--ZZfloating
+
+cd ../coefficients
+
+#python3 RunPlotCoefficients.py --obsName "$obsName" --year "$year" --interpolation
 
 cd ..
 
-python3 plotShapes.py --obsName "$obsName" --year "$year" --interpolation --dir /eos/user/s/sellissp/HZZ/combine_files/ --unblind
+#python3 plotShapes.py --obsName "$obsName" --year "$year" --interpolation --dir /eos/user/s/sellissp/HZZ/combine_files/ --unblind
 
 cd LHScans
 
-python3 plot_LLScan.py --obsName "$obsName" --year "$year" --interpolation --unblind
+python3 plot_LLScan.py --obsName "$obsName" --year "$year" --interpolation --unblind #--ZZfloating

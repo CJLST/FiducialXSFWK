@@ -40,6 +40,7 @@ def parseOptions():
     parser.add_option('',   '--year',  dest='YEAR',  type='string', default='2022',   help='Year -> 2016 or 2017 or 2018 or Full')
     parser.add_option('',   '--split', action='store_true', dest='SPLIT', default=False,   help='split eras')
     parser.add_option('',   '--merge', action='store_true', dest='MERGE', default=False,   help='2022full - 2023full - Run3')
+    parser.add_option('',   '--ZZfloating', action='store_true', dest='ZZ', default=False,   help='ZZ floating')
 
     global opt, args
     (opt, args) = parser.parse_args()
@@ -261,10 +262,12 @@ def get_th_xsec(process, obs_gen, suffix, year, doubleDiff, channel, obs_gen_2nd
 
         if ('ZH' not in process) and ('W' not in process):
             pname = process.replace("NNLOPS_", "").split("125")[0]
-            module_name = f'fidXS_{suffix}{obs_name}_{pname}{chan_tag}_{year}'
+            if opt.ZZ: module_name = f'fidXS_{suffix}{obs_name}_zzfloating_{pname}{chan_tag}_{year}'
+            else: module_name = f'fidXS_{suffix}{obs_name}_{pname}{chan_tag}_{year}'
         else:
-            module_name = f'fidXS_{suffix}{obs_name}_VH{chan_tag}_{year}'
-
+            if opt.ZZ: module_name = f'fidXS_{suffix}{obs_name}_zzfloating_VH{chan_tag}_{year}'
+            else: module_name = f'fidXS_{suffix}{obs_name}_VH{chan_tag}_{year}'
+ 
     print(module_name)
 
     # Import module dynamically
@@ -401,9 +404,12 @@ def save_uncertainties(process, obs_gen, nnlops, year, years, unc, h, channel, d
 
     channel_tag = "" if channel == "4l" else f"_{channel}"
 
-    print(f'WRITING - ../inputs/fidXS_{suffix}{obs_name}_{pname}{channel_tag}_{opt.YEAR}.py')
+    fname = f'../inputs/fidXS_{suffix}{obs_name}_{pname}{channel_tag}_{opt.YEAR}.py'
+    if opt.ZZ: fname = f'../inputs/fidXS_{suffix}{obs_name}_zzfloating_{pname}{channel_tag}_{opt.YEAR}.py'
+
+    print(f'WRITING - {fname}')
          
-    with open(f'../inputs/fidXS_{suffix}{obs_name}_{pname}{channel_tag}_{opt.YEAR}.py', mode = 'w') as f:
+    with open(fname, mode = 'w') as f:
         f.write(f'Boundaries = {bins}\n')
         f.write(f'fidXS = {th_xs.fidXS}\n')
         f.write(f'fidXS_scale_up = {list(unc[process][1]["qcd"].values())}\n')
@@ -627,13 +633,19 @@ if __name__ == '__main__':
     m4l_high = 160
     #year = opt.YEAR
 
-    bins, doubleDiff = binning(opt.OBSNAME)
-    if doubleDiff:
-        obs_name = opt.OBSNAME.split(' vs ')[0]
-        obs_name_2nd = opt.OBSNAME.split(' vs ')[1]
-        obs_name_2d = opt.OBSNAME
+    if "zzfloating" in opt.OBSNAME:
+        OBSNAME = opt.OBSNAME.rsplit('_', 1)[0]
     else:
-        obs_name = opt.OBSNAME
+        OBSNAME = opt.OBSNAME
+
+    bins, doubleDiff = binning(OBSNAME)
+    if doubleDiff:
+        obs_name = OBSNAME.split(' vs ')[0]
+        obs_name_2nd = OBSNAME.split(' vs ')[1]
+        obs_name_2d = OBSNAME
+    else:
+        obs_name = OBSNAME
+
     
     _temp = __import__('observables', globals(), locals(), ['observables'], 0) # spencer
     observables = _temp.observables
@@ -738,9 +750,11 @@ if __name__ == '__main__':
                 print(f'Processing {process}...')
 
                 if doubleDiff:
-                    fname_ALL = f'../inputs/fidXS_{suffix}{obs_name}_{obs_name_2nd}_{pname}{channel_tag}_{opt.YEAR}.py'
+                    if opt.ZZ: fname_ALL = f'../inputs/fidXS_{suffix}{obs_name}_{obs_name_2nd}_zzfloating_{pname}{channel_tag}_{opt.YEAR}.py'
+                    else: fname_ALL = f'../inputs/fidXS_{suffix}{obs_name}_{obs_name_2nd}_{pname}{channel_tag}_{opt.YEAR}.py'
                 else:
-                    fname_ALL = f'../inputs/fidXS_{suffix}{obs_name}_{pname}{channel_tag}_{opt.YEAR}.py'
+                    if opt.ZZ: fname_ALL = f'../inputs/fidXS_{suffix}{obs_name}_zzfloating_{pname}{channel_tag}_{opt.YEAR}.py'
+                    else: fname_ALL = f'../inputs/fidXS_{suffix}{obs_name}_{pname}{channel_tag}_{opt.YEAR}.py'
 
 
                 th_xs = get_th_xsec(pname, obs_gen, suffix, opt.YEAR, doubleDiff, channel, obs_gen_2nd)
@@ -756,15 +770,19 @@ if __name__ == '__main__':
                     if (pname == "ZH"): pname = "VH"
 
                     if doubleDiff:
-                        fname = f'../inputs/fidXS_{suffix}{obs_name}_{obs_name_2nd}_{pname}{channel_tag}_{year}.py'
+                        if opt.ZZ: fname_ALL = f'../inputs/fidXS_{suffix}{obs_name}_{obs_name_2nd}_zzfloating_{pname}{channel_tag}_{year}.py'
+                        else: fname_ALL = f'../inputs/fidXS_{suffix}{obs_name}_{obs_name_2nd}_{pname}{channel_tag}_{year}.py'
                     else:
-                        fname = f'../inputs/fidXS_{suffix}{obs_name}_{pname}{channel_tag}_{year}.py'
+                        if opt.ZZ: fname_ALL = f'../inputs/fidXS_{suffix}{obs_name}_zzfloating_{pname}{channel_tag}_{year}.py'
+                        else: fname_ALL = f'../inputs/fidXS_{suffix}{obs_name}_{pname}{channel_tag}_{year}.py'
 
-                    if os.path.exists(fname):
+                    if os.path.exists(fname_ALL):
 
                         module_name = f'fidXS_{suffix}{obs_name}_{pname}{channel_tag}_{year}'
+                        if opt.ZZ: module_name = f'fidXS_{suffix}{obs_name}_zzfloating_{pname}{channel_tag}_{year}'
+
                         print(module_name)
-                        spec = importlib.util.spec_from_file_location(module_name, fname)
+                        spec = importlib.util.spec_from_file_location(module_name, fname_ALL)
                         module = importlib.util.module_from_spec(spec)
                         spec.loader.exec_module(module)
 
@@ -815,7 +833,7 @@ if __name__ == '__main__':
                                     h_tot_scale_pdf_TOT[idx][key] += val
 
                     else:
-                        print(f'../inputs/fidXS_{suffix}{obs_name}_{pname}{channel_tag}_{opt.YEAR}.py' + ' does not exist!')
+                        print(f'{fname_ALL}' + ' does not exist!')
                         continue
                 
 

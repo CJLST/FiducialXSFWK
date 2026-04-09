@@ -54,14 +54,22 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
 
     if physicalModel == 'v3':
         _obsName = {'pT4l': 'PTH', 'rapidity4l': 'YH', 'pTj1': 'pTj1', 'Nj': 'Nj'}
-        if obsName not in _obsName:
-            _obsName[obsName] = obsName
+        if zzfloating:
+            if obsName.rsplit('_', 1)[0] not in _obsName: 
+                _obsName[obsName] = obsName
+            else:
+                _obsName[obsName] = _obsName[obsName.rsplit('_', 1)[0]]+'_zzfloating'
+        else:
+            if obsName not in _obsName:
+                _obsName[obsName] = obsName 
+            else:
+                _obsName[obsName] = _obsName[obsName]
         binName = 'hzz_' + _obsName[obsName] + '_' + _recobin + '_cat' + channel
         processName = 'smH_' + _obsName[obsName]
     else:
         _obsName = {}
         _obsName[obsName] = obsName
-        binName = 'a'+str(channelNumber)+'_recobin'+str(obsBin)
+        binName = 'a'+str(channelNumber)+'_rerfcobin'+str(obsBin)
         processName = 'trueH'+channel+'Bin'
 
     # Background expectations
@@ -76,10 +84,12 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
 
         sys.path.append('../coefficients/JES')
         #_temp = __import__('JESNP_'+obsName, globals(), locals(), ['JESNP'], -1)
-        _temp = __import__('JESNP_'+obsName+'_'+year, globals(), locals(), ['JESNP'], 0) # spencer
+        if 'zzfloating' in obsName: _temp = __import__('JESNP_'+obsName.rsplit('_', 1)[0]+'_'+year, globals(), locals(), ['JESNP'], 0) # spencer
+        else: _temp = __import__('JESNP_'+obsName+'_'+year, globals(), locals(), ['JESNP'], 0) # spencer
         jesnp = _temp.JESNP
         #_temp = __import__('JESNP_evts_'+obsName, globals(), locals(), ['evts_noWeight'], -1)
-        _temp = __import__('JESNP_evts_'+obsName+'_'+year, globals(), locals(), ['evts_noWeight'], 0) # spencer
+        if 'zzfloating' in obsName: _temp = __import__('JESNP_evts_'+obsName.rsplit('_', 1)[0]+'_'+year, globals(), locals(), ['evts_noWeight'], 0) # spencer
+        else: _temp = __import__('JESNP_evts_'+obsName+'_'+year, globals(), locals(), ['evts_noWeight'], 0) # spencer
         jes_evts_noWeight = _temp.evts_noWeight
 
         if year == "2023preBPix":
@@ -331,6 +341,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
     
     # -------------------------------------------------------------------------------------------------
 
+
     print('OPENING ../datacard/datacard_'+year+'/hzz4l_'+channel+'S_13TeV_xs_'+_obsName[obsName]+'_bin'+str(obsBin)+'_'+physicalModel+'.txt')
     file = open('../datacard/datacard_'+year+'/hzz4l_'+channel+'S_13TeV_xs_'+_obsName[obsName]+'_bin'+str(obsBin)+'_'+physicalModel+'.txt', 'w+')
 
@@ -393,7 +404,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
         if physicalModel == 'v3':
             #min_range = 0
             #file.write('zz_norm_'+str(obsBin)+' rateParam '+binName+' bkg_*zz '+str(expected_yield['ZZ_'+str(obsBin)])+' ['+str(min_range)+','+str(expected_yield['ZZ_'+str(obsBin)]+100)+']\n')
-            file.write('zz_norm_'+str(obsBin)+' rateParam '+binName+' bkg_*zz '+str(expected_yield['ZZ_'+str(obsBin)])+' ['+str(expected_yield['ZZ_'+str(obsBin)]-100)+','+str(expected_yield['ZZ_'+str(obsBin)]+100)+']\n')
+            file.write('zz_norm_'+str(obsBin)+' rateParam '+binName+' bkg_*zz '+str(expected_yield['ZZ_'+str(obsBin)])+' ['+str(expected_yield['ZZ_'+str(obsBin)]*0.5)+','+str(expected_yield['ZZ_'+str(obsBin)]*1.5)+']\n')
 
         elif physicalModel == 'v2':
             if channel == '2e2mu':
@@ -624,6 +635,7 @@ def createDatacard(obsName, channel, nBins, obsBin, observableBins, physicalMode
         elif obsName == "TCjmax_pT4l": obsName_jes = "TCjMax_ZZPt"
         else: obsName_jes = obsName
 
+        if 'zzfloating' in obsName_jes: obsName_jes = obsName_jes.rsplit('_', 1)[0]
 
         for index,jesName in enumerate(jesNames_datacard):
             file.write('CMS_scale_j_'+jesName+' lnN ')

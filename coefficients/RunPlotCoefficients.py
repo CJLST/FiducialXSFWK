@@ -1,4 +1,5 @@
 import matplotlib
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
@@ -12,11 +13,18 @@ import json
 import copy
 import os
 import importlib.util
+import mplhep as hep
+import matplotlib.pyplot as plt
 
 sys.path.append('../helperstuff/')
 from paths import path
 
 sys.path.append(path['eos_path']+'inputs/')
+
+plt.rcParams['text.usetex'] = True
+plt.rcParams['font.family'] = 'serif'
+
+#hep.style.use("CMS")  # CMS plotting style
 
 def parseOptions():
 
@@ -67,11 +75,28 @@ def tickBin(binning, name): # Create labels for each bin
                 tick.append(str(trunc(binning[i][0]))+'-'+str(trunc(binning[i][1]))+'/'+str(trunc(binning[i][2]))+'-'+str(trunc(binning[i][3])))
     else: # Single differential
         for i in range(len(binning)-1):
-            tick.append(str(binning[i])+'-'+str(binning[i+1]))
+            if binning[i] == -100: 
+                if name == "absdetajj" or name == "mjj" or name == "pTj2" or name == "pTHjj":  
+                    tick.append("0/1 j") 
+                    continue
+                if name == "pTj1" or name == "mHj" or name == "pTHj" or name == "TCjmax" or name == "TBjmax":
+                    tick.append("0 j") 
+                    continue
+            if i>3:
+                if binning[i+1] == 10 or binning[i+1] == 10000:
+                    binning[i+1] = r'$\infty$'
+                    
+            if name == "Nj":
+                if i==4:
+                    tick.append('$\geq$'+str(int(binning[i]))+' j')
+                else:
+                    tick.append(str(int(binning[i]))+' j')
+            else:
+                tick.append(str(binning[i])+' - '+str(binning[i+1]))
+            
     return tick
 
 def matrix(obs_bins, obs_name, label):
-    chans = ['4e', '4mu', '2e2mu']
 
     if doubleDiff:
         obs_bins_label = [i for i in range(len(obs_bins))]
@@ -81,6 +106,13 @@ def matrix(obs_bins, obs_name, label):
         obs_bins_label = [i for i in range(len(obs_bins))]
         obs_bins_label_medium = [i+0.5 for i in range(len(obs_bins)-1)]
         bin_max = len(obs_bins)-1
+
+    if bin_max > 8: 
+        textsize = 'small'
+        textsize_error = 'xx-small'
+    else: 
+        textsize = 'medium'
+        textsize_error = 'x-small'
 
     tickLabel = tickBin(obs_bins, obs_name)
     print(tickLabel)
@@ -123,26 +155,27 @@ def matrix(obs_bins, obs_name, label):
                 my_cmap = copy.copy(matplotlib.colormaps.get_cmap("rainbow"))
                 my_cmap.set_under('w')
 
+                plt.figure(figsize=(8,6))
+
                 # Define pcolormesh
-                if doubleDiff: plt.pcolormesh(eps, cmap = my_cmap, alpha=0.6)
-                else: plt.pcolormesh(obs_bins_label, obs_bins_label, eps, cmap = my_cmap, alpha=0.6)
+                if doubleDiff: plt.pcolormesh(eps, cmap = my_cmap, alpha=0.6, vmin=0.01, vmax=1)
+                else: plt.pcolormesh(obs_bins_label, obs_bins_label, eps, cmap = my_cmap, alpha=0.6,vmin=0.01, vmax=1)
                 # Fill the matrix
                 for (i, j), z in np.ndenumerate(eps):
                     if(z >= 0.01):
                         if not doubleDiff:
                             if (eps_err[i,j] < 0.002):
                                 if not doubleDiff:
-                                    plt.text(j+0.5, i+0.5, '{:.3f}'.format(z), ha='center', va='baseline', size = 'x-small')
-                                    #plt.text(j+0.5, i+0.5,'\n\n$\pm${:.4f}'.format(eps_err[i,j]), ha='center', va='center_baseline', size = 'x-small')
+                                    plt.text(j+0.5, i+0.5, '{:.3f}'.format(z), ha='center', va='baseline', size = textsize)
+                                    plt.text(j+0.5, i+0.5,'\n\n$\pm${:.3f}'.format(eps_err[i,j]), ha='center', va='center_baseline', size = textsize_error)
                             else:
-                                plt.text(j+0.5, i+0.5, '{:.3f}'.format(z), ha='center', va='baseline', size = 'x-small')
-                                #plt.text(j+0.5, i+0.5,'\n\n$\pm${:.3f}'.format(eps_err[i,j]), ha='center', va='center_baseline', size = 'x-small')
+                                plt.text(j+0.5, i+0.5, '{:.3f}'.format(z), ha='center', va='baseline', size = textsize)
+                                plt.text(j+0.5, i+0.5,'\n\n$\pm${:.3f}'.format(eps_err[i,j]), ha='center', va='center_baseline', size = textsize_error)
                         elif doubleDiff:
-                            plt.text(j+0.5, i+0.5, '{:.2f}'.format(z), ha='center', va='center', size = 'x-small')
-                            # plt.text(j+0.5, i+0.5,'\n\n$\pm${:.4f}'.format(eps_err[i,j]), ha='center', va='center_baseline', size = 'x-small')
-                plt.clim(vmin=0.01, vmax=1) # Range colorbar
-                plt.colorbar(label = 'EFFICIENCY (> 0.01)')
-                #plt.colorbar(label = 'F_NONFID (> 0.01)') 
+                            plt.text(j+0.5, i+0.5, '{:.3f}'.format(z), ha='center', va='center', size = textsize)
+                            plt.text(j+0.5, i+0.5,'\n\n$\pm${:.3f}'.format(eps_err[i,j]), ha='center', va='center_baseline', size = textsize_error)
+                cbar = plt.colorbar()
+                cbar.set_label(label = r'$\varepsilon$', rotation=0, labelpad=15, size=14)
                 plt.xticks(obs_bins_label_medium, tickLabel)
                 for tick in plt.gca().get_xaxis().get_major_ticks(): # Remove central tick
                     tick.tick1line.set_markersize(0)
@@ -154,15 +187,15 @@ def matrix(obs_bins, obs_name, label):
                 plt.xlim(0,bin_max)
                 plt.ylim(0,bin_max)
                 if not doubleDiff: _fontsize = 14
-                elif doubleDiff: _fontsize = 13
-                if obs_name != 'rapidity4l' and obs_name != 'D0m' and obs_name != 'Dcp' and not doubleDiff:
-                    plt.xlabel(label+' (fid) [GeV]', fontsize=_fontsize)
-                    plt.ylabel(label+' (reco) [GeV]', fontsize=_fontsize)
+                elif doubleDiff: _fontsize = 14
+                if "rapidity" not in obs_name and "eta" not in obs_name and "phi" not in obs_name and not doubleDiff and obs_name != "Nj":
+                    plt.xlabel(label+' (fid) [GeV]', fontsize=_fontsize, labelpad=20)
+                    plt.ylabel(label+' (reco) [GeV]', fontsize=_fontsize, labelpad=20)
                 else:
-                    plt.xlabel(label+' (fid)', fontsize=_fontsize)
-                    plt.ylabel(label+' (reco)', fontsize=_fontsize)
-                plt.rcParams['xtick.labelsize']=13
-                plt.rcParams['ytick.labelsize']=13
+                    plt.xlabel(label+' (fid)', fontsize=_fontsize, labelpad=20)
+                    plt.ylabel(label+' (reco)', fontsize=_fontsize , labelpad=20)
+                plt.rcParams['xtick.labelsize']=10
+                plt.rcParams['ytick.labelsize']=10
 
                 plt.gca().get_xaxis().set_minor_locator(ticker.MultipleLocator(1))
                 plt.gca().get_yaxis().set_minor_locator(ticker.MultipleLocator(1))
@@ -172,7 +205,7 @@ def matrix(obs_bins, obs_name, label):
                     tick.tick1line.set_markersize(5)
                 # Grey lines for sub-matrices in case of double-differential measurements
                 if type(obs_bins) is dict: # If binning is a dictionary it is a double differential analysis
-                    if obs_name == 'njets_pt30_eta2p5_pT4l':
+                    if obs_name == 'Nj':
                         plt.axhline(y=4, color='grey', linewidth=0.5, ls='dotted')
                         plt.axhline(y=8, color='grey', linewidth=0.5, ls='dotted')
                         plt.axhline(y=12, color='grey', linewidth=0.5, ls='dotted')
@@ -182,23 +215,36 @@ def matrix(obs_bins, obs_name, label):
 
                 #Final steps
                 if signal == 'SM_125':
-                    signal_output = 'SM_125_38'
+                    signal_output = 'SM125'
                 else:
                     signal_output = signal
-                plt.title('%s - %s - %s' %(year, signal_output, fState), loc = 'left', fontweight = 'bold')
+                
+                #with mpl.rc_context({"text.usetex": False}):
+                #    hep.cms.label(f" - {signal_output}.38 ({fState})", lumi=171, com=13.6, loc=0)
+
+                if fState == '4mu':
+                    fState_output = '4$\mu$'
+                elif fState == '4e':
+                    fState_output = '4e'
+                elif fState == '2e2mu':
+                    fState_output = '2e2$\mu$'
+                elif fState == '4l':
+                    fState_output = '4$\ell$'
+
+                #plt.title('Efficiencies - %s.38 (%s)' %(signal_output, fState_output), loc = 'center', pad=10)
+                plt.title('%s.38 (%s)' %(signal_output, fState_output), loc = 'center', pad=10, fontsize=16)
 
                 outdir = path['plots_path'] + 'MATRICES/%s/%s' % (obs_name, year)
                 os.makedirs(outdir, exist_ok=True)
 
-                plt.savefig(outdir + '/eff_%s_%s_%s_%s.png' % (year, obs_name, signal_output, fState),bbox_inches='tight')
-                plt.savefig(outdir + '/eff_%s_%s_%s_%s.pdf' % (year, obs_name, signal_output, fState),bbox_inches='tight')
+                plt.savefig(outdir + '/eff_%s_%s_%s_%s.png' % (year, obs_name, signal_output, fState),bbox_inches='tight', dpi=400)
+                plt.savefig(outdir + '/eff_%s_%s_%s_%s.pdf' % (year, obs_name, signal_output, fState),bbox_inches='tight', dpi=400)
 
                 plt.tight_layout()
                 plt.close()
 
 
 def nonFid(obs_bins, obs_name, label):
-    chans = ['4e', '4mu', '2e2mu']
 
     if doubleDiff:
         obs_bins_label_x = [i for i in range(len(obs_bins))]
@@ -212,6 +258,12 @@ def nonFid(obs_bins, obs_name, label):
     obs_bins_label_y_medium = [0.5,1.5,2.5,3.5,4.5,5.5] # Medium point of each row and column
     bin_max = len(obs_bins)-1
 
+    if bin_max > 8: 
+        textsize = 'small'
+        textsize_error = 'xx-small'
+    else: 
+        textsize = 'medium'
+        textsize_error = 'x-small'
 
     tickLabel = tickBin(obs_bins, obs_name)
     print(tickLabel)
@@ -228,7 +280,7 @@ def nonFid(obs_bins, obs_name, label):
 
         outinratio = _temp.outinratio
         err_outinratio = _temp.err_outinratio
-        for fState in ['4e', '4mu', '2e2mu']:
+        for fState in ['4l']: #['4e', '4mu', '2e2mu']:
             eps = np.zeros((len(obs_bins_label_y)-1, len(obs_bins_label_x)-1)) # Efficienty matrix
             eps_err = np.zeros((len(obs_bins_label_y)-1, len(obs_bins_label_x)-1)) # Efficienty error matrix
             index_signal = 0
@@ -240,43 +292,47 @@ def nonFid(obs_bins, obs_name, label):
                 index_signal +=1
             print(eps)
 
+            plt.figure(figsize=(8,6))
+
             # The following two lines set white color for bin with zero efficiency
             #my_cmap = copy.copy(matplotlib.cm.get_cmap("rainbow"))
             my_cmap = copy.copy(matplotlib.colormaps.get_cmap("rainbow"))
             my_cmap.set_under('w')
 
-            plt.pcolormesh(obs_bins_label_x, obs_bins_label_y, eps, cmap = my_cmap, alpha=0.6)
+            plt.pcolormesh(obs_bins_label_x, obs_bins_label_y, eps, cmap = my_cmap, alpha=0.6, vmin=0.01, vmax=1)
             for (i, j), z in np.ndenumerate(eps):
                 if(z >= 0.00001):
                     if not doubleDiff:
                         if (eps_err[i,j] < 0.001):
-                            plt.text(j+0.5, i+0.5, '{:.4f}'.format(z), ha='center', va='baseline', size = 'medium')
-                            plt.text(j+0.5, i+0.5,'\n\n$\pm${:.4f}'.format(eps_err[i,j]), ha='center', va='center_baseline', size = 'x-small')
+                            plt.text(j+0.5, i+0.5, '{:.3f}'.format(z), ha='center', va='baseline', size = textsize)
+                            plt.text(j+0.5, i+0.5,'\n\n$\pm${:.3f}'.format(eps_err[i,j]), ha='center', va='center_baseline', size = textsize_error)
                         else:
-                            plt.text(j+0.5, i+0.5, '{:.3f}'.format(z), ha='center', va='baseline', size = 'medium')
-                            plt.text(j+0.5, i+0.5,'\n\n$\pm${:.3f}'.format(eps_err[i,j]), ha='center', va='center_baseline', size = 'x-small')
+                            plt.text(j+0.5, i+0.5, '{:.3f}'.format(z), ha='center', va='baseline', size = textsize)
+                            plt.text(j+0.5, i+0.5,'\n\n$\pm${:.3f}'.format(eps_err[i,j]), ha='center', va='center_baseline', size = textsize_error)
                     elif doubleDiff:
                             plt.text(j+0.5, i+0.5, '{:.3f}'.format(z), ha='center', va='center', size = 'small')
-            plt.clim(vmin=0.0001, vmax=0.5) # Range colorbar
-            plt.colorbar(label = 'FRACTION (> 0.00001)')
+                            plt.text(j+0.5, i+0.5,'\n\n$\pm${:.3f}'.format(eps_err[i,j]), ha='center', va='center_baseline', size = 'x-small')
+            cbar = plt.colorbar()
+            cbar.set_label(label = r'$f_{nonfid}$', rotation=0, labelpad=25, size=14)
             plt.xticks(obs_bins_label_x_medium, tickLabel)
             for tick in plt.gca().get_xaxis().get_major_ticks(): # Remove central tick
                 tick.tick1line.set_markersize(0)
             if not doubleDiff: plt.setp(plt.gca().get_xticklabels(), ha="right",rotation = 25, rotation_mode="anchor") # Rotate xticks
             elif doubleDiff: plt.setp(plt.gca().get_xticklabels(), ha="right",rotation = 40, rotation_mode="anchor") # Rotate xticks
-            plt.yticks(obs_bins_label_y_medium, ['ggH', 'VBF', 'WH', 'ZH', 'ttH', 'SM_125_38'])
+            plt.yticks(obs_bins_label_y_medium, ['ttH', 'ZH', 'WH', 'VBF', 'ggH', 'SM'])
             for tick in plt.gca().get_yaxis().get_major_ticks(): # Remove central tick
                 tick.tick1line.set_markersize(0)
+            plt.axhline(y=5, color='black', linewidth=1)
             plt.xlim(0,bin_max)
             plt.ylim(0,6)
             if not doubleDiff: _fontsize = 14
-            elif doubleDiff: _fontsize = 13
-            if obs_name != 'rapidity4l' and obs_name != 'D0m' and obs_name != 'Dcp' and not doubleDiff:
+            elif doubleDiff: _fontsize = 14
+            if "rapidity" not in obs_name and "eta" not in obs_name and "phi" not in obs_name and not doubleDiff and obs_name != "Nj":
                 plt.xlabel(label+' (fid) [GeV]', fontsize=_fontsize)
             else:
                 plt.xlabel(label+' (fid)', fontsize=_fontsize)
-            plt.rcParams['xtick.labelsize']=13
-            plt.rcParams['ytick.labelsize']=13
+            plt.rcParams['xtick.labelsize']=10
+            plt.rcParams['ytick.labelsize']=10
             # Dimension and resolution of the figure
             if doubleDiff:
                 plt.rcParams['figure.figsize']= [10,4.8]
@@ -288,13 +344,31 @@ def nonFid(obs_bins, obs_name, label):
                 tick.tick1line.set_markersize(5)
             for tick in plt.gca().get_yaxis().get_minor_ticks():
                 tick.tick1line.set_markersize(5)
-            #Final steps
-            plt.title('%s - %s' %(year, fState), loc = 'left', fontweight = 'bold')
 
-            outdir = os.path.join(path['plots_path'], 'MATRICES', obs_name, year)
+            if signal == 'SM_125':
+                signal_output = 'SM125'
+            else:
+                signal_output = signal
+
+            if fState == '4mu':
+                fState_output = '4$\mu$'
+            elif fState == '4e':
+                fState_output = '4e'
+            elif fState == '2e2mu':
+                fState_output = '2e2$\mu$'
+            elif fState == '4l':
+                fState_output = '4$\ell$'
+
+            #Final steps
+            #plt.title('%s - %s' %(year, fState), loc = 'left', fontweight = 'bold')
+            #plt.title('Non-fiducial fractions - %s.38 (%s)' %(signal_output, fState_output), loc = 'center', pad=15)
+            plt.title('%s.38 (%s)' %(signal_output, fState_output), loc = 'center', pad=15, fontsize=16)
+
+
+            outdir = os.path.join(path['plots_path'], 'NONFID')
             os.makedirs(outdir, exist_ok=True)
-            plt.savefig(os.path.join(outdir,'nonFid_%s_%s_%s.png' % (year, obs_name, fState)),bbox_inches='tight')
-            plt.savefig(os.path.join(outdir,'nonFid_%s_%s_%s.pdf' % (year, obs_name, fState)),bbox_inches='tight')
+            plt.savefig(os.path.join(outdir,'nonFid_%s_%s_%s.png' % (year, obs_name, fState)),bbox_inches='tight', dpi=400)
+            plt.savefig(os.path.join(outdir,'nonFid_%s_%s_%s.pdf' % (year, obs_name, fState)),bbox_inches='tight', dpi=400)
             plt.tight_layout()
             plt.close()
 
@@ -304,7 +378,8 @@ def nonFid(obs_bins, obs_name, label):
 # -----------------------------------------------------------------------------------------
 
 signals_original = ['VBFH125', 'ggH125', 'ttH125', 'WminusH125', 'WplusH125', 'ZH125']
-signals = ['ggH125', 'VBFH125', 'WH125', 'ZH125', 'ttH125']
+#signals = ['ggH125', 'VBFH125', 'WH125', 'ZH125', 'ttH125']
+signals = ['ttH125', 'ZH125', 'WH125', 'VBFH125', 'ggH125']
 #eos_path_sig = '/eos/user/a/atarabin/MC_samples/'
 #key = 'candTree'
 #key_failed = 'candTree_failed'
@@ -322,27 +397,29 @@ if (opt.YEAR == '2024'): years = ["2024"]
 
 if (opt.YEAR == '2022full'): years = ["2022", "2022EE"]
 if (opt.YEAR == '2023full'): years = ["2023preBPix", "2023postBPix"]
-if (opt.YEAR == 'Run3'): years = ["2022", "2022EE", "2023preBPix", "2023postBPix", "2024"]
+if (opt.YEAR == 'Run3'): years = ["Run3"] #["2022", "2022EE", "2023preBPix", "2023postBPix", "2024", "Run3"]
 
 # obs_bins = {0:(opt.OBSBINS.split("|")[1:(len(opt.OBSBINS.split("|"))-1)]),1:['0','inf']}[opt.OBSBINS=='inclusive']
 # obs_bins = [float(i) for i in obs_bins] #Convert a list of str to a list of float
 obs_name = opt.OBSNAME
 if(obs_name == 'rapidity4l'):
-    label = '|y$_H$|'
+    label = '$|y_{4\ell}|$'
 elif(obs_name == 'pT4l'):
-    label = 'p$_T^H$ (GeV)'
+    label = '$p^T_{4\ell}$'
+elif(obs_name == 'pT4l_pTHj'):
+    label = '$p^T_{4\ell}$ vs $p^T_{Hj}$'
 elif(obs_name == 'massZ1'):
-    label = 'm$_{Z1}$ (GeV)'
+    label = '$m_{Z_1}$'
 elif(obs_name == 'massZ2'):
-    label = 'm$_{Z2}$ (GeV)'
+    label = '$m_{Z_2}$'
 elif (obs_name == "Nj"):
-    label = 'N$_{jet}$'
+    label = '$N_{jet}$'
 elif(obs_name == 'Nj vs pT4l'):
     obs_name = 'Nj_pT4l' #Change name of obs_name
-    label = 'N$_{jet}$/p$_T^H$(GeV)'
+    label = '$N_{jet}$ vs $p^T_{4\ell}$[GeV]'
 elif(obs_name == 'massZ1_massZ2'):
     obs_name = 'massZ1_massZ2' #Change name of obs_name
-    label = 'm$_{Z1}$(GeV)/m$_{Z2}$(GeV)'
+    label = '$m_{Z1}$[GeV] vs. $m_{Z2}$[GeV]'
 elif(obs_name == 'D0m'):
     label = 'D0m'
 elif(obs_name == 'Dcp'):
@@ -354,50 +431,50 @@ elif(obs_name == 'Dint'):
 elif(obs_name == 'DL1'):
     label = 'DL1'
 elif(obs_name == 'pTj1'):
-    label = 'p$_T^{j1}$ (GeV)'
+    label = '$p^T_{j1}$'
 elif(obs_name == 'pTj2'):
-    label = 'p$_T^{j2}$ (GeV)'
+    label = '$p^T_{j2}$'
 elif(obs_name == 'pTj1 vs pTj2'):
     obs_name = 'pTj1_pTj2'
-    label = 'p$_T^{j1}$(GeV)/p$_T^{j2}$(GeV)'
+    label = '$p^T_{j1}$[GeV] vs. $p^T_{j2}$[GeV]'
 elif(obs_name == 'pTHj'):
-    label = 'p$_T^{Hj}$ (GeV)'
+    label = '$p^T_{Hj}$'
 elif(obs_name == 'pTHjj'):
-    label = 'p$_T^{Hjj}$ (GeV)'
+    label = '$p^T_{Hjj}$'
 elif(obs_name == 'mHj'):
-    label = 'm$^{Hj}$ (GeV)'
+    label = '$m_{Hj}$'
 elif(obs_name == 'mass4l'):
-    label = 'm$_4/ell$ (GeV)'
+    label = '$m_{4\ell}$'
 elif(obs_name == 'mass4l_zzfloating'):
-    label = 'm$_4/ell$ (GeV)'
+    label = '$m_{4\ell}^{ZZfloating}$'
 elif(obs_name == 'costhetaZ1'):
-    label = 'costhetaZ1'
+    label = r'$\cos(\theta_{Z_1})$'
 elif(obs_name == 'costhetaZ2'):
-    label = 'costhetaZ2'
+    label = r'$\cos(\theta_{Z_2})$'
 elif(obs_name == 'costhetastar'):
-    label = 'costhetastar'
+    label = r'$\cos(\theta_{*})$'
 elif(obs_name == 'phi'):
-    label = 'phi'
+    label = '$\Phi$'
 elif(obs_name == 'phi1'):
-    label = 'phi1'
+    label = '$\Phi_1$'
 elif(obs_name == 'absdetajj'):
     label = '$|\Delta\eta_{jj}|$'
 elif(obs_name == 'mjj'):
-    label = '$m_{jj}$(GeV)'
+    label = '$m_{jj}$'
 elif(obs_name == 'dphijj'):
     label = '$\Delta\Phi_{jj}$'
 elif(obs_name == 'rapidity4l_pT4l'):
-    label = '|y$_H$|/p$_T^H$ (GeV)'
+    label = '$|y_H|$ vs. $p^T_{4\ell}$[GeV]'
 elif(obs_name == 'TCjmax'):
-    label = '$\mathcal{T}_{\text{C}}^{\text{max}}$ (GeV)'
+    label = '$\mathcal{T}_{C}^{max}$'
 elif(obs_name == 'TBjmax'):
-    label = '$\mathcal{T}_{\text{B}}^{\text{max}}$ (GeV)'
-elif(obs_name == 'TCjmax vs pT4l'):
+    label = '$\mathcal{T}_{B}^{max}$'
+elif(obs_name == 'TCjmax_pT4l'):
     obs_name = 'TCjmax_pT4l' 
-    label = '$\mathcal{T}_{\text{C}}^{\text{max}}$(GeV)/p$_T^H$(GeV)'
-elif(obs_name == 'absdetajj vs mjj'):
+    label = '$\mathcal{T}_{C}^{max}$[GeV] vs. $p^T_{4\ell}$[GeV]'
+elif(obs_name == 'absdetajj_mjj'):
     obs_name = 'absdetajj_mjj' 
-    label = '$|\Delta\eta_{jj}|$/$m_{jj}$(GeV)'
+    label = '$|\Delta\eta_{jj}|$ vs. $m_{jj}$[GeV]'
 else:
     label = ''
 
